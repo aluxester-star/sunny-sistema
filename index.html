@@ -20,8 +20,6 @@
 </head>
 <body>
 <div id="root"><div id="loading"><div class="spinner"></div>Carregando Sunny Cleaning...</div></div>
-
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -37,103 +35,38 @@
   const db = firebase.firestore();
   const auth = firebase.auth();
 </script>
-
-<!-- React -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-
-<script type="text/babel">
+<script type="text/babel" data-type="module">
 const{useState,useMemo,useCallback,useEffect}=React;
-
-// Firebase Firestore wrapper
 const FB={
-  get:async(k)=>{
-    try{
-      const doc=await db.collection("sunny").doc(k).get();
-      if(doc.exists)return{key:k,value:doc.data().value};
-      return null;
-    }catch(e){console.error("FB get:",e);return null;}
-  },
-  set:async(k,v)=>{
-    try{
-      const val=typeof v==="string"?v:JSON.stringify(v);
-      await db.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});
-      return{key:k,value:val};
-    }catch(e){console.error("FB set:",e);return null;}
-  },
-  del:async(k)=>{
-    try{
-      await db.collection("sunny").doc(k).delete();
-      return{key:k,deleted:true};
-    }catch(e){console.error("FB del:",e);return null;}
-  }
+  get:async(k)=>{try{const doc=await db.collection("sunny").doc(k).get();if(doc.exists)return{key:k,value:doc.data().value};return null;}catch(e){console.error("FB get:",e);return null;}},
+  set:async(k,v)=>{try{const val=typeof v==="string"?v:JSON.stringify(v);await db.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});return{key:k,value:val};}catch(e){console.error("FB set:",e);return null;}},
+  del:async(k)=>{try{await db.collection("sunny").doc(k).delete();return{key:k,deleted:true};}catch(e){console.error("FB del:",e);return null;}}
 };
-
-// Login Screen Component
 function LoginScreen({onLogin}){
-  const[email,setEmail]=useState("");
-  const[pass,setPass]=useState("");
-  const[err,setErr]=useState("");
-  const[loading,setLoading]=useState(false);
-  const handleLogin=async(e)=>{
-    e.preventDefault();
-    setErr("");setLoading(true);
-    try{
-      await auth.signInWithEmailAndPassword(email,pass);
-      onLogin();
-    }catch(error){
-      if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");
-      else if(error.code==="auth/user-not-found")setErr("Usuário não encontrado");
-      else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas. Tente novamente mais tarde");
-      else setErr("Erro ao entrar. Verifique seus dados.");
-    }
-    setLoading(false);
-  };
-  return React.createElement("div",{style:{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 50%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}},
-    React.createElement("div",{style:{background:"#111833",border:"1px solid #1A2545",borderRadius:16,padding:"40px 36px",maxWidth:400,width:"100%",textAlign:"center"}},
-      React.createElement("div",{style:{marginBottom:28}},
-        React.createElement("svg",{width:154,height:70,viewBox:"0 0 220 100",style:{margin:"0 auto"}},
-          React.createElement("text",{x:5,y:82,fontFamily:"Georgia,serif",fontWeight:"800",fontSize:68,fill:"#1B2A4A",letterSpacing:-2},"Sunny"),
-          React.createElement("path",{d:"M130 8 Q170 2 195 30",stroke:"#00E5FF",strokeWidth:7,fill:"none",strokeLinecap:"round"}),
-          React.createElement("path",{d:"M125 22 Q160 14 188 42",stroke:"#00C4D8",strokeWidth:6.5,fill:"none",strokeLinecap:"round"}),
-          React.createElement("path",{d:"M122 36 Q154 28 180 54",stroke:"#0094B0",strokeWidth:6,fill:"none",strokeLinecap:"round"}),
-          React.createElement("polygon",{points:"118,28 121,18 124,28 134,31 124,34 121,44 118,34 108,31",fill:"#1B8A9A"}),
-          React.createElement("polygon",{points:"119.5,26 121,22 122.5,26 126.5,27.5 122.5,29 121,33 119.5,29 115.5,27.5",fill:"#00C4D8"})
-        ),
-        React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}},"Sunny Cleaning Services"),
-        React.createElement("div",{style:{fontSize:11,color:"#707A8A",marginTop:4}},"Sistema de Gestão")
-      ),
-      React.createElement("form",{onSubmit:handleLogin},
-        React.createElement("div",{style:{marginBottom:14,textAlign:"left"}},
-          React.createElement("label",{style:{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}},"Email"),
-          React.createElement("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),required:true,placeholder:"seu@email.com",style:{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}})
-        ),
-        React.createElement("div",{style:{marginBottom:20,textAlign:"left"}},
-          React.createElement("label",{style:{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}},"Senha"),
-          React.createElement("input",{type:"password",value:pass,onChange:e=>setPass(e.target.value),required:true,placeholder:"••••••••",style:{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}})
-        ),
-        err&&React.createElement("div",{style:{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}},err),
-        React.createElement("button",{type:"submit",disabled:loading,style:{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}},loading?"Entrando...":"Entrar")
-      ),
-      React.createElement("div",{style:{fontSize:10,color:"#707A8A",marginTop:20}},"Acesso restrito • Dados protegidos")
-    )
-  );
+  const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);
+  const handleLogin=async(e)=>{e.preventDefault();setErr("");setLoading(true);try{await auth.signInWithEmailAndPassword(email,pass);onLogin();}catch(error){if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");else if(error.code==="auth/user-not-found")setErr("Usuário não encontrado");else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas.");else setErr("Erro ao entrar.");}setLoading(false);};
+  return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 50%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:16,padding:"40px 36px",maxWidth:400,width:"100%",textAlign:"center"}}>
+      <div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gestão</div></div>
+      <form onSubmit={handleLogin}>
+        <div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="seu@email.com" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div>
+        <div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} required placeholder="••••••••" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div>
+        {err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}
+        <button type="submit" disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button>
+      </form>
+      <div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito • Dados protegidos</div>
+    </div></div>;
 }
-
-// Main App Wrapper with Auth
 function AppWrapper(){
-  const[user,setUser]=useState(null);
-  const[checking,setChecking]=useState(true);
-  useEffect(()=>{
-    const unsub=auth.onAuthStateChanged(u=>{setUser(u);setChecking(false);});
-    return()=>unsub();
-  },[]);
-  if(checking)return React.createElement("div",{style:{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16,fontFamily:"sans-serif"}},"Verificando acesso...");
-  if(!user)return React.createElement(LoginScreen,{onLogin:()=>{}});
-  return React.createElement(App,{onLogout:()=>auth.signOut()});
+  const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);
+  useEffect(()=>{const unsub=auth.onAuthStateChanged(u=>{setUser(u);setChecking(false);});return()=>unsub();},[]);
+  if(checking)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16,fontFamily:"sans-serif"}}>Verificando acesso...</div>;
+  if(!user)return <LoginScreen onLogin={()=>{}}/>;
+  return <App onLogout={()=>auth.signOut()}/>;
 }
-
 const D=[{c:"Josh Green",n:"Endless Summer",a:"14137 Thacher Ave, Largo",ip:210,ep:110},{c:"Josh Green",n:"Insta-Worth",a:"1468 Marjohn Ave, Clearwater",ip:210,ep:100},{c:"Josh Green",n:"Jungle Villa",a:"700 25th St SW, Largo",ip:250,ep:110},{c:"Josh Green",n:"Tranquil Top Floor (Madeira)",a:"155 Medallion Blvd #G, Madeira Beach",ip:110,ep:45},{c:"Josh Green",n:"St Pete 3bd Heated Pool (Yellow)",a:"2580 57th Ave N, St. Petersburg",ip:300,ep:90},{c:"Josh Green",n:"Boho (Orange)",a:"3406 Keene Park Dr, Largo",ip:190,ep:90},{c:"Josh Green",n:"Heated Pool Home (Belleair)",a:"1774 Belleair Rd, Clearwater",ip:285,ep:110},{c:"Josh Green",n:"ClearWater Heated pool (Oasis)",a:"1678 Wildwood Road, Clearwater",ip:245,ep:100},{c:"Josh Green",n:"The Palm Haven",a:"12311 Julia St, Seminole",ip:280,ep:110},{c:"Josh Green",n:"Pink Waves Pool",a:"11221 Sol Vista Dr, Largo",ip:250,ep:110},{c:"Josh Green",n:"Putter Course",a:"10047 Nassau Ct, Seminole",ip:250,ep:100},{c:"Josh Green",n:"ClearWater Pickleball",a:"2237 Lawton Drive, Clearwater",ip:320,ep:110},{c:"Josh Green",n:"Iconic",a:"1484 Bugle Lane, Clearwater",ip:240,ep:100},{c:"Josh Green",n:"7bd Jungle Villa",a:"2217 Lawton Drive, Clearwater",ip:475,ep:125},{c:"Josh Green",n:"5bd Heated Pool Home",a:"14465 86th Ave N, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Waterfront Heated Pool Home",a:"835 Seacrest Dr, Largo",ip:380,ep:140},{c:"Josh Green",n:"Paradise Oasis",a:"1085 Hickory Drive, Largo",ip:280,ep:100},{c:"Josh Green",n:"Clearwater Aqua!",a:"1475 Viewtop Drive, Clearwater",ip:250,ep:110},{c:"Josh Green",n:"Surfs Up",a:"11088, 112th Street North, Largo",ip:260,ep:110},{c:"Josh Green",n:"Luxe Palms",a:"1078 Damrosch St, Largo",ip:320,ep:110},{c:"Josh Green",n:"St Pete Sun",a:"7289 61st Ave, St Pete",ip:210,ep:110},{c:"Josh Green",n:"Poinsettia",a:"13045 Poinsettia Ave, Seminole FL",ip:440,ep:170},{c:"Josh Green",n:"Coastal Charm",a:"83rd Place North 14311, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Southview",a:"1758 Southview Rd, Largo",ip:250,ep:110},
 {c:"Travis Fieldman",n:"Unit A",a:"2610 North Highland Ave, Tampa FL #A",ip:180,ep:85},{c:"Travis Fieldman",n:"Unit B",a:"2610 North Highland Ave, Tampa FL #B",ip:180,ep:85},
 {c:"PMI",n:"Cupecoy Circle",a:"Cupecoy Circle 1775, Lutz",ip:120,ep:60},{c:"PMI",n:"Barkfield Street",a:"112 Barkfield Street, Brandon",ip:240,ep:100},{c:"PMI",n:"Coastal Haven",a:"509 1st St, Indian Rocks Beach",ip:310,ep:140},
@@ -190,6 +123,7 @@ try{const r=await FB.get("lb3");if(r?.value)setLbp(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ep3");if(r?.value)setEmpProfiles(JSON.parse(r.value));}catch{}
 })();},[]);
 const sv=async(k,d)=>{try{await FB.set(k,JSON.stringify(d));}catch{}};
+const _dbt={};const dsv=(k,d,ms=1500)=>{clearTimeout(_dbt[k]);_dbt[k]=setTimeout(()=>sv(k,d),ms);};
 const fl=m=>{setToast(m);setTimeout(()=>setToast(""),3e3);};
 const cls=useMemo(()=>[...new Set(db.map(p=>p.c))].sort(),[db]);
 const clP=useMemo(()=>db.filter(p=>p.c===iC),[db,iC]);
@@ -208,7 +142,7 @@ const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc
 
 const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id&&e.ref!=="pi-"+id);setFin(uf);await sv("fn3",uf);};
 const delI=async id=>{const u=sI.filter(i=>i.id!==id);setSI(u);await sv("si3",u);const uf=fin.filter(e=>e.ref!=="si-"+id);setFin(uf);await sv("fn3",uf);};
-const uDB=async n=>{setDb(n);await sv("db3",n);};const uEM=async n=>{setEm(n);await sv("em3",n);};
+const uDB=async n=>{setDb(n);dsv("db3",n);};const uEM=async n=>{setEm(n);dsv("em3",n);};
 
 const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date).getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,week:fF.week});fl("✅ Lançamento salvo!");};
 const delFin=async id=>{const u=fin.filter(e=>e.id!==id);setFin(u);await sv("fn3",u);};
@@ -219,7 +153,7 @@ const fIn=fFil.filter(e=>e.type==="entrada"),fOut=fFil.filter(e=>e.type==="saida
 const fTI=fIn.reduce((s,e)=>s+e.amt,0),fTO=fOut.reduce((s,e)=>s+e.amt,0),fLu=fTI-fTO;
 const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut.forEach(e=>{fBCO[e.cat]=(fBCO[e.cat]||0)+e.amt;});
 
-const uPr=async n=>{setProd(n);await sv("pr3",n);};const uLn=async n=>{setLin(n);await sv("ln3",n);};const uLB=async n=>{setLbp(n);await sv("lb3",n);};
+const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
 if(!em.includes(empForm.name)){const ne=[...em,empForm.name];uEM(ne);}
@@ -623,9 +557,5 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 <Card style={{fontSize:10,color:T.dm}}>💡 Clique duas vezes em qualquer propriedade para editar</Card>
 </div>}
 </div></div>);}
-
-const root=ReactDOM.createRoot(document.getElementById("root"));
-root.render(React.createElement(AppWrapper));
-</script>
-</body>
-</html>
+const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
+</script></body></html>
