@@ -7,50 +7,29 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0A0F1E">
 <title>Sunny Cleaning Services - Sistema</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0A0F1E; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-  #root { min-height: 100vh; }
-  #loading { display:flex; align-items:center; justify-content:center; height:100vh; color:#00B4D8; font-size:18px; font-family:sans-serif; flex-direction:column; gap:12px; }
-  #loading .spinner { width:40px; height:40px; border:4px solid #1A2545; border-top:4px solid #00B4D8; border-radius:50%; animation:spin 1s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  @media print { .np { display: none !important; } }
-</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0A0F1E;font-family:'DM Sans',sans-serif;overflow-x:hidden}#root{min-height:100vh}#loading{display:flex;align-items:center;justify-content:center;height:100vh;color:#00B4D8;font-size:18px;font-family:sans-serif;flex-direction:column;gap:12px}#loading .spinner{width:40px;height:40px;border:4px solid #1A2545;border-top:4px solid #00B4D8;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media print{.np{display:none!important}}</style>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div id="root"><div id="loading"><div class="spinner"></div>Carregando Sunny Cleaning...</div></div>
+<div id="root"><div id="loading"><div class="spinner"></div>Carregando...</div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script>
-  firebase.initializeApp({apiKey:"AIzaSyDnMDfF3_k2r9ooDGzn_FN75a8nPNQRWbA",authDomain:"sunny-cleaning.firebaseapp.com",projectId:"sunny-cleaning",storageBucket:"sunny-cleaning.firebasestorage.app",messagingSenderId:"644489166887",appId:"1:644489166887:web:1a39e38137861567cb8e02"});
-  const db=firebase.firestore();const auth=firebase.auth();
-</script>
+<script>firebase.initializeApp({apiKey:"AIzaSyDnMDfF3_k2r9ooDGzn_FN75a8nPNQRWbA",authDomain:"sunny-cleaning.firebaseapp.com",projectId:"sunny-cleaning",storageBucket:"sunny-cleaning.firebasestorage.app",messagingSenderId:"644489166887",appId:"1:644489166887:web:1a39e38137861567cb8e02"});const db=firebase.firestore();const auth=firebase.auth();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/plain" id="app-jsx">
 const{useState,useMemo,useCallback,useEffect}=React;
 const FB={
-  get:async(k)=>{try{const doc=await db.collection("sunny").doc(k).get();if(doc.exists)return{key:k,value:doc.data().value};return null;}catch(e){console.error("FB get:",e);return null;}},
-  set:async(k,v)=>{try{const val=typeof v==="string"?v:JSON.stringify(v);await db.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});return{key:k,value:val};}catch(e){console.error("FB set:",e);return null;}},
-  del:async(k)=>{try{await db.collection("sunny").doc(k).delete();return{key:k,deleted:true};}catch(e){console.error("FB del:",e);return null;}}
+  get:async(k)=>{try{const doc=await db.collection("sunny").doc(k).get();if(doc.exists)return{key:k,value:doc.data().value};return null;}catch(e){return null;}},
+  set:async(k,v)=>{try{const val=typeof v==="string"?v:JSON.stringify(v);await db.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});return{key:k,value:val};}catch(e){return null;}},
+  del:async(k)=>{try{await db.collection("sunny").doc(k).delete();return{key:k,deleted:true};}catch(e){return null;}}
 };
 function LoginScreen({onLogin}){
   const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);
   const handleLogin=async(e)=>{e.preventDefault();setErr("");setLoading(true);try{await auth.signInWithEmailAndPassword(email,pass);onLogin();}catch(error){if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");else if(error.code==="auth/user-not-found")setErr("Usuário não encontrado");else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas.");else setErr("Erro ao entrar.");}setLoading(false);};
-  return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 50%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-    <div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:16,padding:"40px 36px",maxWidth:400,width:"100%",textAlign:"center"}}>
-      <div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gestão</div></div>
-      <div>
-        <div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div>
-        <div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter")handleLogin(e);}}/></div>
-        {err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}
-        <button onClick={handleLogin} disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button>
-      </div>
-      <div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito • Dados protegidos</div>
-    </div></div>;
+  return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 50%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:16,padding:"40px 36px",maxWidth:400,width:"100%",textAlign:"center"}}><div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gestão</div></div><div><div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div><div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter")handleLogin(e);}}/></div>{err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}<button onClick={handleLogin} disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button></div><div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito • Dados protegidos</div></div></div>;
 }
 function AppWrapper(){
   const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);
@@ -539,8 +518,8 @@ return(
 if(isE)return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:T.aD}}>
 <TI value={eD.n||""} onChange={e=>setED({...eD,n:e.target.value})} style={{...inp,fontSize:10}}/>
 <TI value={eD.a||""} onChange={e=>setED({...eD,a:e.target.value})} style={{...inp,fontSize:10}}/>
-<input type="number" value={eD.ip||""} onChange={e=>setED({...eD,ip:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
-<input type="number" value={eD.ep||""} onChange={e=>setED({...eD,ep:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
+<NI value={eD.ip||""} onChange={e=>setED({...eD,ip:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
+<NI value={eD.ep||""} onChange={e=>setED({...eD,ep:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
 <button onClick={()=>{const n=[...db];n[gI]={...n[gI],...eD};uDB(n);setEIdx(null);fl("✅!");}} style={bt(T.gr,T.bg,{padding:"4px 6px",fontSize:9})}>✓</button>
 <button onClick={()=>setEIdx(null)} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);
 return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11,cursor:"pointer"}} onDoubleClick={()=>{setEIdx(gI);setED({n:p.n,a:p.a,ip:p.ip,ep:p.ep});}}>
@@ -554,16 +533,7 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
 </script>
 <script>
-(function(){
-  try{
-    var jsx=document.getElementById('app-jsx').textContent;
-    var js=Babel.transform(jsx,{presets:['react']}).code;
-    new Function(js)();
-  }catch(e){
-    console.error('Build error:',e);
-    document.getElementById('root').innerHTML='<div style="color:#FF6B6B;padding:40px;font-family:sans-serif"><h2>Erro ao carregar</h2><p>'+e.message+'</p></div>';
-  }
-})();
+(function(){try{var jsx=document.getElementById('app-jsx').textContent;var js=Babel.transform(jsx,{presets:['react']}).code;new Function(js)();}catch(e){console.error(e);document.getElementById('root').innerHTML='<div style="color:#FF6B6B;padding:40px"><h2>Erro</h2><pre>'+e.message+'</pre></div>';}})();
 </script>
 </body>
 </html>
