@@ -38,6 +38,18 @@ function NI({value,onChange,style}){const[v,setV]=useState(value);useEffect(()=>
 function BarChart({data,h=180,colors}){const mx=Math.max(...data.map(d=>Math.max(d.v1||0,d.v2||0)),1);return <div style={{display:"flex",alignItems:"flex-end",gap:6,height:h,padding:"0 4px"}}>{data.map((d,i)=><div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><div style={{display:"flex",gap:2,alignItems:"flex-end",width:"100%",justifyContent:"center",height:h-24}}>{d.v1!=null&&<div style={{width:"40%",height:Math.max(2,(d.v1/mx)*(h-30)),background:colors?.[0]||"#00B4D8",borderRadius:"3px 3px 0 0",minHeight:2}}/>}{d.v2!=null&&<div style={{width:"40%",height:Math.max(2,(d.v2/mx)*(h-30)),background:colors?.[1]||"#FF6B6B",borderRadius:"3px 3px 0 0",minHeight:2}}/>}</div><span style={{fontSize:8,color:"#707A8A",whiteSpace:"nowrap"}}>{d.l}</span></div>)}</div>;}
 function DonutChart({data,size=140}){const total=data.reduce((s,d)=>s+d.v,0);let cum=0;const r=size/2,ir=r*0.6;const segs=data.map(d=>{const pct=d.v/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;return{...d,pct,start,end};});return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{segs.map((s,i)=>{const x1=r+r*0.95*Math.cos(s.start),y1=r+r*0.95*Math.sin(s.start),x2=r+r*0.95*Math.cos(s.end),y2=r+r*0.95*Math.sin(s.end);const ix1=r+ir*Math.cos(s.start),iy1=r+ir*Math.sin(s.start),ix2=r+ir*Math.cos(s.end),iy2=r+ir*Math.sin(s.end);const lg=s.pct>0.5?1:0;return <path key={i} d={`M${x1},${y1}A${r*0.95},${r*0.95},0,${lg},1,${x2},${y2}L${ix2},${iy2}A${ir},${ir},0,${lg},0,${ix1},${iy1}Z`} fill={s.c} opacity={0.85}/>})}<text x={r} y={r-6} textAnchor="middle" fill="#E8EBF0" fontSize="18" fontWeight="800">${fm(total)}</text><text x={r} y={r+12} textAnchor="middle" fill="#707A8A" fontSize="9">TOTAL</text></svg>;}
 function MiniLine({data,w=200,h=50,color="#00B4D8"}){if(!data.length)return null;const mx=Math.max(...data),mn=Math.min(...data);const range=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/range)*(h-10)-5}`).join(" ");return <svg width={w} height={h}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={h-((v-mn)/range)*(h-10)-5} r="3" fill={color}/>)}</svg>;}
+const INSP_CHECKLIST={
+"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"}],
+"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true}],
+"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"}],
+"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"}],
+"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"}],
+"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true}]};
+const ALL_INSP_ITEMS=Object.values(INSP_CHECKLIST).flat();
+const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v&&v!=="na"&&v!=="");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
+const getScoreColor=(s)=>s>=95?"#4ADE80":s>=90?"#00B4D8":s>=80?"#FFB547":"#FF6B6B";
+const getScoreLabel=(s)=>s>=95?"Excelente":s>=90?"Padrão Sunny":s>=80?"Atenção":"Reprovado";
+
 function InspForm({init,cls2,db2,em2,onSave,onCancel}){
 const[f,setF]=useState(init);
 const uf=(k,v)=>setF(p=>({...p,[k]:v}));
@@ -169,17 +181,7 @@ const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut
 
 const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
 const uInsp=async n=>{setInspections(n);await sv("insp3",n);};
-const INSP_CHECKLIST={
-"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"}],
-"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true}],
-"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"}],
-"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"}],
-"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"}],
-"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true}]};
-const ALL_INSP_ITEMS=Object.values(INSP_CHECKLIST).flat();
-const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v&&v!=="na"&&v!=="");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
-const getScoreColor=(s)=>s>=95?"#4ADE80":s>=90?"#00B4D8":s>=80?"#FFB547":"#FF6B6B";
-const getScoreLabel=(s)=>s>=95?"Excelente":s>=90?"Padrão Sunny":s>=80?"Atenção":"Reprovado";
+
 const newInspection=()=>{const checks={};ALL_INSP_ITEMS.forEach(i=>{checks[i.id]="";});setInspForm({house:"",client:"",date:new Date().toISOString().split("T")[0],type:"Turnover",employees:[],inspector:"",checks,notes:{},status:"pending",generalNotes:""});setInspView("form");};
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
