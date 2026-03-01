@@ -586,12 +586,13 @@ return(
 
 {Object.entries(INSP_CHECKLIST).map(([area,items])=><Card key={area} style={{padding:0,overflow:"hidden"}}>
 <div style={{padding:"10px 16px",background:T.ac+"10",fontSize:12,fontWeight:700,color:T.ac}}>{area}</div>
-<div style={{padding:"0 16px"}}>{items.map(item=><div key={item.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd}}>
-<span style={{fontSize:11}}>{item.t}{item.id.startsWith("s")&&<span style={{color:T.rd,fontSize:8,marginLeft:4}}>⚡CRITICAL</span>}</span>
+<div style={{padding:"0 16px"}}>{items.map(item=><div key={item.id}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:(inspForm.checks[item.id]==="adjust"||inspForm.checks[item.id]==="fail")?"none":"1px solid "+T.bd}}>
+<span style={{fontSize:11}}>{item.t}{item.id.startsWith("s")&&<span style={{color:T.rd,fontSize:8,marginLeft:4}}>CRITICAL</span>}</span>
 <div style={{display:"flex",gap:3,alignItems:"center"}}>
-{[{k:"ok",l:"✅ OK",c:T.gr},{k:"adjust",l:"⚠️",c:T.or},{k:"fail",l:"❌",c:T.rd},{k:"na",l:"N/A",c:T.dm}].map(o=><button key={o.k} onClick={()=>{const ch={...inspForm.checks,[item.id]:o.k};setInspForm({...inspForm,checks:ch});}} style={{padding:"3px 8px",borderRadius:4,fontSize:8,fontWeight:600,cursor:"pointer",border:inspForm.checks[item.id]===o.k?"2px solid "+o.c:"1px solid "+T.bd,background:inspForm.checks[item.id]===o.k?o.c+"22":T.cd,color:o.c,fontFamily:"inherit"}}>{o.l}</button>)}
+{[{k:"ok",l:"OK",c:T.gr},{k:"adjust",l:"ADJ",c:T.or},{k:"fail",l:"FAIL",c:T.rd},{k:"na",l:"N/A",c:T.dm}].map(o=><button key={o.k} onClick={()=>{const ch={...inspForm.checks,[item.id]:o.k};setInspForm({...inspForm,checks:ch});}} style={{padding:"3px 8px",borderRadius:4,fontSize:8,fontWeight:600,cursor:"pointer",border:inspForm.checks[item.id]===o.k?"2px solid "+o.c:"1px solid "+T.bd,background:inspForm.checks[item.id]===o.k?o.c+"22":T.cd,color:o.c,fontFamily:"inherit"}}>{o.l}</button>)}
 </div></div>
-{(inspForm.checks[item.id]==="adjust"||inspForm.checks[item.id]==="fail")&&<div style={{padding:"4px 0 6px 16px"}}><input placeholder={"Note: why "+item.t.toLowerCase()+"?"} value={inspForm.notes?.[item.id]||""} onChange={e=>{const n={...(inspForm.notes||{}),[item.id]:e.target.value};setInspForm({...inspForm,notes:n});}} style={{...inp,fontSize:9,width:"100%",background:inspForm.checks[item.id]==="fail"?T.rd+"08":T.or+"08"}}/></div>}
+{(inspForm.checks[item.id]==="adjust"||inspForm.checks[item.id]==="fail")&&<div style={{padding:"4px 0 6px 16px",borderBottom:"1px solid "+T.bd}}><input placeholder={"Note: "+item.t.toLowerCase()} value={inspForm.notes?.[item.id]||""} onChange={e=>{const n={...(inspForm.notes||{}),[item.id]:e.target.value};setInspForm({...inspForm,notes:n});}} style={{...inp,fontSize:9,width:"100%",background:inspForm.checks[item.id]==="fail"?T.rd+"08":T.or+"08"}}/></div>}
 </div>)}
 {(()=>{const areaItems=items.map(i=>inspForm.checks[i.id]).filter(v=>v&&v!=="na");const areaScore=areaItems.length?Math.round((areaItems.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(areaItems.length*2))*100):0;return areaItems.length>0?<div style={{padding:"6px 0",fontSize:10,fontWeight:700,color:getScoreColor(areaScore),textAlign:"right"}}>{area}: {areaScore}%</div>:null;})()}
 </div></Card>)}
