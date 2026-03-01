@@ -53,7 +53,7 @@ const[nEmpN,setNEmpN]=useState("");const[eIdx,setEIdx]=useState(null);const[eD,s
 const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState("Fevereiro");const[fWk,setFWk]=useState("");
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:"2026-02-25",dateFrom:"",dateTo:""});
 const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");
-const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});
+const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Laundry"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
@@ -120,16 +120,17 @@ const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut
 const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
 const uInsp=async n=>{setInspections(n);await sv("insp3",n);};
 const INSP_CHECKLIST={
-"Bedrooms":[{id:"b1",t:"Bed properly made"},{id:"b2",t:"Sheets stain-free"},{id:"b3",t:"Correct pillows"},{id:"b4",t:"Dust removed"},{id:"b5",t:"Floor clean"},{id:"b6",t:"Good smell"},{id:"b7",t:"No items left behind"}],
-"Bathrooms":[{id:"ba1",t:"Toilet sanitized"},{id:"ba2",t:"Mirror spotless"},{id:"ba3",t:"Shower clean"},{id:"ba4",t:"Drain clean"},{id:"ba5",t:"Correct towels"},{id:"ba6",t:"Good smell"}],
-"Kitchen":[{id:"k1",t:"Counters clean"},{id:"k2",t:"Stove clean"},{id:"k3",t:"Microwave clean"},{id:"k4",t:"Fridge organized"},{id:"k5",t:"Trash can clean"},{id:"k6",t:"Utensils organized"}],
-"Living Room":[{id:"l1",t:"Sofa aligned"},{id:"l2",t:"Pillows organized"},{id:"l3",t:"TV working"},{id:"l4",t:"Dust removed"}],
-"Outdoor":[{id:"o1",t:"Furniture organized"},{id:"o2",t:"Floor clean"},{id:"o3",t:"Pool visually clean"}],
-"Safety & Ops":[{id:"s1",t:"Locks working"},{id:"s2",t:"Lights working"},{id:"s3",t:"AC working"},{id:"s4",t:"Wi-Fi working"}]};
-const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v!=="na");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
+"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"}],
+"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true}],
+"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"}],
+"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"}],
+"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"}],
+"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true}]};
+const ALL_INSP_ITEMS=Object.values(INSP_CHECKLIST).flat();
+const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v&&v!=="na"&&v!=="");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
 const getScoreColor=(s)=>s>=95?"#4ADE80":s>=90?"#00B4D8":s>=80?"#FFB547":"#FF6B6B";
 const getScoreLabel=(s)=>s>=95?"Excelente":s>=90?"Padrão Sunny":s>=80?"Atenção":"Reprovado";
-const newInspection=()=>{const checks={};Object.values(INSP_CHECKLIST).flat().forEach(i=>{checks[i.id]="";});setInspForm({house:"",client:"",date:new Date().toISOString().split("T")[0],type:"Turnover",employees:[],inspector:"",checks,notes:{},status:"pending"});setInspView("form");};
+const newInspection=()=>{const checks={};ALL_INSP_ITEMS.forEach(i=>{checks[i.id]="";});setInspForm({house:"",client:"",date:new Date().toISOString().split("T")[0],type:"Turnover",employees:[],inspector:"",checks,notes:{},status:"pending",generalNotes:""});setInspView("form");};
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
 if(!em.includes(empForm.name)){const ne=[...em,empForm.name];uEM(ne);}
@@ -545,120 +546,180 @@ return(
 
 {/* INSPECT */}
 {vw==="inspect"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+
 {inspView==="list"&&<>
 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-{(()=>{const thisMonth=MO[new Date().getMonth()];const mi=inspections.filter(i=>i.date&&MO[new Date(i.date).getMonth()]===thisMonth);const avg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):0;return[{i:"🔍",l:"TOTAL",v:String(inspections.length),s:"inspeções",cl:T.ac},{i:"📅",l:"ESTE MÊS",v:String(mi.length),s:thisMonth,cl:T.bl},{i:"⭐",l:"MÉDIA MÊS",v:String(avg),s:getScoreLabel(avg),cl:getScoreColor(avg)},{i:"🏆",l:"SCORE 100%",v:String(mi.filter(i=>i.score===100).length),s:"perfeitas",cl:T.gr}];})().map((s,i)=><div key={i} style={{background:T.cd,borderRadius:12,padding:"14px 16px",border:"1px solid "+T.bd}}><div style={{fontSize:14,marginBottom:4}}>{s.i}</div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase"}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:9,color:T.dm}}>{s.s}</div></div>)}
+{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);const avg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):0;const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const td=inspections.filter(i=>i.date===today).length;const wk=inspections.filter(i=>i.date>=weekAgo).length;return[{i:"🔍",l:"TOTAL",v:String(inspections.length),s:td+" hoje · "+wk+" semana",cl:T.ac},{i:"📅",l:mo.toUpperCase(),v:String(mi.length),s:"inspeções no mês",cl:T.bl},{i:"⭐",l:"MÉDIA MÊS",v:String(avg||"—"),s:avg?getScoreLabel(avg):"—",cl:avg?getScoreColor(avg):T.dm},{i:"🏆",l:"NOTA 100",v:String(mi.filter(i=>i.score===100).length),s:"perfeitas",cl:T.gr}];})().map((s,i)=><div key={i} style={{background:T.cd,borderRadius:12,padding:"14px 16px",border:"1px solid "+T.bd}}><div style={{fontSize:14,marginBottom:4}}>{s.i}</div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase"}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:9,color:T.dm}}>{s.s}</div></div>)}
 </div>
-<div style={{display:"flex",gap:8}}>
+<div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
 <button onClick={newInspection} style={bt(T.ac,T.bg,{padding:"10px 20px",borderRadius:8,fontSize:12})}>+ Nova Inspeção</button>
-<button onClick={()=>setInspView("ranking")} style={bt(T.pu+"15",T.pu,{padding:"10px 20px",borderRadius:8,fontSize:12})}>🏆 Ranking</button>
-<button onClick={()=>setInspView("reports")} style={bt(T.or+"15",T.or,{padding:"10px 20px",borderRadius:8,fontSize:12})}>📊 Relatórios</button>
+<button onClick={()=>setInspView("ranking")} style={bt(T.pu+"18",T.pu,{padding:"10px 16px",borderRadius:8,fontSize:11})}>🏆 Ranking</button>
+<button onClick={()=>setInspView("reports")} style={bt(T.or+"18",T.or,{padding:"10px 16px",borderRadius:8,fontSize:11})}>📊 Relatórios</button>
+<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110}}>{MO.map(m=><option key={m}>{m}</option>)}</select>
 </div>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📋 Inspeções Recentes</div>
 <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
 <select value={inspFilter.month} onChange={e=>setInspFilter({...inspFilter,month:e.target.value})} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
 <select value={inspFilter.emp} onChange={e=>setInspFilter({...inspFilter,emp:e.target.value})} style={{...sel,width:"auto",minWidth:140}}><option value="">Todos func.</option>{em.map(e=><option key={e}>{e}</option>)}</select>
+<select value={inspFilter.house||""} onChange={e=>setInspFilter({...inspFilter,house:e.target.value})} style={{...sel,width:"auto",minWidth:140}}><option value="">Todas casas</option>{[...new Set(db.map(p=>p.n))].map(h=><option key={h}>{h}</option>)}</select>
+{(inspFilter.emp||inspFilter.month||inspFilter.house)&&<button onClick={()=>setInspFilter({emp:"",house:"",month:""})} style={bt(T.rd+"15",T.rd,{padding:"6px 10px"})}>Limpar</button>}
 </div>
-{(()=>{let fi=inspections;if(inspFilter.month)fi=fi.filter(i=>i.date&&MO[new Date(i.date).getMonth()]===inspFilter.month);if(inspFilter.emp)fi=fi.filter(i=>(i.employees||[]).includes(inspFilter.emp));return fi.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma inspeção.</div>:fi.slice(0,30).map(ins=><div key={ins.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+{(()=>{let fi=inspections;if(inspFilter.month)fi=fi.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspFilter.month);if(inspFilter.emp)fi=fi.filter(i=>(i.employees||[]).includes(inspFilter.emp));if(inspFilter.house)fi=fi.filter(i=>(i.houseName||i.house)===inspFilter.house);return fi.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma inspeção encontrada.</div>:fi.slice(0,40).map(ins=><div key={ins.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:5,background:T.c2}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <div style={{width:40,height:40,borderRadius:8,background:getScoreColor(ins.score)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:getScoreColor(ins.score)}}>{ins.score}</div>
-<div><div style={{fontSize:12,fontWeight:700}}>{ins.houseName||ins.house}</div><div style={{fontSize:9,color:T.dm}}>{ins.date} · {ins.type} · {(ins.employees||[]).join(", ")}</div></div></div>
+<div><div style={{fontSize:12,fontWeight:700}}>{ins.houseName||ins.house}{ins.status==="blocked"&&<span style={{color:T.rd,fontSize:8,marginLeft:6}}>BLOQUEADA</span>}</div><div style={{fontSize:9,color:T.dm}}>{ins.date} · {ins.type} · {(ins.employees||[]).join(", ")}{ins.inspector?" · Insp: "+ins.inspector:""}</div></div></div>
 <div style={{display:"flex",alignItems:"center",gap:6}}>
 <span style={{padding:"3px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:getScoreColor(ins.score)+"18",color:getScoreColor(ins.score)}}>{getScoreLabel(ins.score)}</span>
-<button onClick={()=>{setInspForm(ins);setInspView("detail");}} style={bt(T.ac+"15",T.ac,{padding:"5px 8px"})}>👁</button>
-<button onClick={async()=>{await uInsp(inspections.filter(x=>x.id!==ins.id));}} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button>
+<button onClick={()=>{setInspForm(ins);setInspView("detail");}} style={bt(T.ac+"15",T.ac,{padding:"5px 10px",fontSize:9})}>Ver</button>
+<button onClick={async()=>{if(confirm("Apagar inspeção?"))await uInsp(inspections.filter(x=>x.id!==ins.id));}} style={bt(T.rd+"08",T.rd,{padding:"5px 10px",fontSize:9})}>X</button>
 </div></div>);})()}</Card>
 </>}
 
-{inspView==="form"&&inspForm&&<>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700,display:"flex",alignItems:"center"}}>🔍 Nova Inspeção</span></div>
+{inspView==="form"&&inspForm&&(()=>{
+const uf=(k,v)=>setInspForm(p=>({...p,[k]:v}));
+const uc=(id,v)=>setInspForm(p=>({...p,checks:{...p.checks,[id]:v}}));
+const un=(id,v)=>setInspForm(p=>({...p,notes:{...(p.notes||{}),[id]:v}}));
+const score=calcInspScore(inspForm.checks);
+const crits=ALL_INSP_ITEMS.filter(it=>it.crit&&inspForm.checks[it.id]==="fail");
+return <>
+<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🔍 Nova Inspeção</span></div>
 <Card>
 <div style={{display:"grid",gridTemplateColumns:"1.5fr 1.5fr 1fr 1fr",gap:8,marginBottom:12}}>
-<div><label style={lb}>Cliente</label><select value={inspForm.client} onChange={e=>{setInspForm({...inspForm,client:e.target.value,house:""});}} style={sel}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>
-<div><label style={lb}>Casa</label><select value={inspForm.house} onChange={e=>{const p=db.find(x=>x.n===e.target.value);setInspForm({...inspForm,house:e.target.value,houseName:e.target.value});}} style={sel}><option value="">—</option>{inspForm.client&&db.filter(p=>p.c===inspForm.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
-<div><label style={lb}>Data</label><input type="date" value={inspForm.date} onChange={e=>setInspForm({...inspForm,date:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Tipo</label><select value={inspForm.type} onChange={e=>setInspForm({...inspForm,type:e.target.value})} style={sel}>{["Turnover","Deep Clean","Post-Maintenance","Surprise Audit","Monthly Audit"].map(t=><option key={t}>{t}</option>)}</select></div>
+<div><label style={lb}>Cliente</label><select value={inspForm.client} onChange={e=>uf("client",e.target.value)} style={sel}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={lb}>Casa</label><select value={inspForm.house} onChange={e=>{uf("house",e.target.value);uf("houseName",e.target.value);}} style={sel}><option value="">—</option>{inspForm.client&&db.filter(p=>p.c===inspForm.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
+<div><label style={lb}>Data</label><input type="date" value={inspForm.date} onChange={e=>uf("date",e.target.value)} style={inp}/></div>
+<div><label style={lb}>Tipo</label><select value={inspForm.type} onChange={e=>uf("type",e.target.value)} style={sel}>{["Turnover","Deep Clean","Pós Manutenção","Surpresa","Auditoria Mensal"].map(t=><option key={t}>{t}</option>)}</select></div>
 </div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-<div><label style={lb}>Funcionários</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em.map(e=><button key={e} onClick={()=>{const emps=inspForm.employees||[];setInspForm({...inspForm,employees:emps.includes(e)?emps.filter(x=>x!==e):[...emps,e]});}} style={{padding:"4px 10px",borderRadius:5,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(inspForm.employees||[]).includes(e)?T.ac+"22":T.c2,color:(inspForm.employees||[]).includes(e)?T.ac:T.dm}}>{e}</button>)}</div></div>
-<div><label style={lb}>Inspetor</label><TI value={inspForm.inspector||""} onChange={e=>setInspForm({...inspForm,inspector:e.target.value})} style={inp} placeholder="Nome do inspetor"/></div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div><label style={lb}>Funcionários</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em.map(e=><button type="button" key={e} onMouseDown={ev=>{ev.preventDefault();const emps=inspForm.employees||[];uf("employees",emps.includes(e)?emps.filter(x=>x!==e):[...emps,e]);}} style={{padding:"4px 10px",borderRadius:5,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(inspForm.employees||[]).includes(e)?T.ac+"25":T.c2,color:(inspForm.employees||[]).includes(e)?T.ac:T.dm}}>{e}</button>)}</div></div>
+<div><label style={lb}>Inspetor</label><input value={inspForm.inspector||""} onChange={e=>uf("inspector",e.target.value)} style={inp} placeholder="Nome do inspetor"/></div>
 </div></Card>
 
-{Object.entries(INSP_CHECKLIST).map(([area,items])=><Card key={area} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:T.ac+"10",fontSize:12,fontWeight:700,color:T.ac}}>{area}</div>
-<div style={{padding:"0 16px"}}>{items.map(item=><div key={item.id}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:(inspForm.checks[item.id]==="adjust"||inspForm.checks[item.id]==="fail")?"none":"1px solid "+T.bd}}>
-<span style={{fontSize:11}}>{item.t}{item.id.startsWith("s")&&<span style={{color:T.rd,fontSize:8,marginLeft:4}}>CRITICAL</span>}</span>
-<div style={{display:"flex",gap:3,alignItems:"center"}}>
-{[{k:"ok",l:"OK",c:T.gr},{k:"adjust",l:"ADJ",c:T.or},{k:"fail",l:"FAIL",c:T.rd},{k:"na",l:"N/A",c:T.dm}].map(o=><button key={o.k} onClick={()=>{const ch={...inspForm.checks,[item.id]:o.k};setInspForm({...inspForm,checks:ch});}} style={{padding:"3px 8px",borderRadius:4,fontSize:8,fontWeight:600,cursor:"pointer",border:inspForm.checks[item.id]===o.k?"2px solid "+o.c:"1px solid "+T.bd,background:inspForm.checks[item.id]===o.k?o.c+"22":T.cd,color:o.c,fontFamily:"inherit"}}>{o.l}</button>)}
+{Object.entries(INSP_CHECKLIST).map(([area,items])=>{
+const areaChecked=items.map(i=>inspForm.checks[i.id]).filter(v=>v&&v!=="na"&&v!=="");
+const areaScore=areaChecked.length?Math.round((areaChecked.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(areaChecked.length*2))*100):null;
+return <Card key={area} style={{padding:0,overflow:"hidden"}}>
+<div style={{padding:"10px 16px",background:T.ac+"10",fontSize:12,fontWeight:700,color:T.ac,display:"flex",justifyContent:"space-between"}}><span>{area}</span>{areaScore!==null&&<span style={{color:getScoreColor(areaScore)}}>{areaScore}%</span>}</div>
+<div style={{padding:"0 12px"}}>{items.map(item=>{const v=inspForm.checks[item.id];return <div key={item.id} style={{borderBottom:"1px solid "+T.bd}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 4px",gap:8}}>
+<span style={{fontSize:11,flex:1}}>{item.t}{item.crit&&<span style={{color:T.rd,fontSize:7,marginLeft:4,fontWeight:700}}>CRITICO</span>}</span>
+<div style={{display:"flex",gap:3,flexShrink:0}}>
+{[["ok","OK",T.gr],["adjust","Ajuste",T.or],["fail","Repr.",T.rd],["na","N/A",T.dm]].map(([k,l,c])=><button type="button" key={k} onMouseDown={ev=>{ev.preventDefault();uc(item.id,k);}} style={{padding:"4px 9px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",border:v===k?"2px solid "+c:"1px solid "+T.bd,background:v===k?c+"22":T.cd,color:c,fontFamily:"inherit",minWidth:36,textAlign:"center"}}>{l}</button>)}
 </div></div>
-{(inspForm.checks[item.id]==="adjust"||inspForm.checks[item.id]==="fail")&&<div style={{padding:"4px 0 6px 16px",borderBottom:"1px solid "+T.bd}}><input placeholder={"Note: "+item.t.toLowerCase()} value={inspForm.notes?.[item.id]||""} onChange={e=>{const n={...(inspForm.notes||{}),[item.id]:e.target.value};setInspForm({...inspForm,notes:n});}} style={{...inp,fontSize:9,width:"100%",background:inspForm.checks[item.id]==="fail"?T.rd+"08":T.or+"08"}}/></div>}
-</div>)}
-{(()=>{const areaItems=items.map(i=>inspForm.checks[i.id]).filter(v=>v&&v!=="na");const areaScore=areaItems.length?Math.round((areaItems.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(areaItems.length*2))*100):0;return areaItems.length>0?<div style={{padding:"6px 0",fontSize:10,fontWeight:700,color:getScoreColor(areaScore),textAlign:"right"}}>{area}: {areaScore}%</div>:null;})()}
-</div></Card>)}
+{(v==="adjust"||v==="fail")&&<div style={{padding:"0 4px 6px"}}><input placeholder={"Obs: "+item.t.toLowerCase()} value={(inspForm.notes||{})[item.id]||""} onChange={e=>un(item.id,e.target.value)} style={{...inp,fontSize:9,width:"100%",padding:"6px 8px",background:v==="fail"?T.rd+"08":T.or+"08"}}/></div>}
+</div>})}</div></Card>})}
 
-<Card><label style={lb}>Observações Gerais</label><TI value={inspForm.generalNotes||""} onChange={e=>setInspForm({...inspForm,generalNotes:e.target.value})} style={{...inp,minHeight:60}} placeholder="Notas gerais..."/></Card>
+<Card><label style={lb}>Observações Gerais</label><textarea value={inspForm.generalNotes||""} onChange={e=>uf("generalNotes",e.target.value)} style={{...inp,minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="Notas gerais..."/></Card>
 
-<div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<div style={{textAlign:"center"}}><div style={{fontSize:36,fontWeight:800,color:getScoreColor(calcInspScore(inspForm.checks))}}>{calcInspScore(inspForm.checks)}</div><div style={{fontSize:10,color:T.dm}}>{getScoreLabel(calcInspScore(inspForm.checks))}</div>
-{(()=>{const safetyFails=["s1","s2","s3","s4"].filter(id=>inspForm.checks[id]==="fail");const hygieneChecks=["ba1","ba4","ba6","k5"].filter(id=>inspForm.checks[id]==="fail");const crits=[...safetyFails,...hygieneChecks];return crits.length>0?<div style={{marginTop:6,padding:"4px 10px",borderRadius:5,background:T.rd+"18",color:T.rd,fontSize:9,fontWeight:700}}>⚡ {crits.length} CRITICAL FAIL(S) — Cannot release property</div>:null;})()}
-</div>
+<div style={{textAlign:"center",padding:"8px 0"}}>
+<div style={{fontSize:40,fontWeight:800,color:getScoreColor(score)}}>{score}</div>
+<div style={{fontSize:11,color:T.dm}}>{getScoreLabel(score)}</div>
+{crits.length>0&&<div style={{marginTop:6,padding:"6px 14px",borderRadius:6,background:T.rd+"15",color:T.rd,fontSize:10,fontWeight:700,display:"inline-block"}}>CRITICO: {crits.length} falha(s) — Casa não pode ser liberada</div>}
 </div>
 <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<button onClick={async()=>{if(!inspForm.house)return fl("Selecione uma casa");const score=calcInspScore(inspForm.checks);const crits=["s1","s2","s3","s4","ba1","ba4","ba6","k5"].filter(id=>inspForm.checks[id]==="fail");const ins={...inspForm,id:Date.now(),score,status:crits.length>0?"blocked":score>=80?"approved":"failed",criticalFails:crits.length,at:new Date().toISOString()};await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(crits.length>0?"⚡ Inspeção salva — CASA BLOQUEADA (falha crítica)":"✅ Inspeção salva! Score: "+score);}} style={bt(T.gr,T.bg,{padding:"12px 30px",borderRadius:10,fontSize:13})}>💾 Salvar Inspeção</button>
+<button onClick={async()=>{if(!inspForm.house)return fl("Selecione uma casa");const s=calcInspScore(inspForm.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&inspForm.checks[it.id]==="fail");const ins={...inspForm,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()};await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(cr.length>0?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+s);}} style={bt(T.gr,T.bg,{padding:"12px 30px",borderRadius:10,fontSize:13})}>Salvar Inspeção</button>
 <button onClick={()=>{setInspForm(null);setInspView("list");}} style={bt(T.rd+"15",T.rd,{padding:"12px 20px",borderRadius:10,fontSize:13})}>Cancelar</button>
 </div>
-</>}
+</>;})()}
 
 {inspView==="detail"&&inspForm&&<>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700,display:"flex",alignItems:"center"}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
+<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-<Card><div style={{textAlign:"center"}}><div style={{fontSize:42,fontWeight:800,color:getScoreColor(inspForm.score)}}>{inspForm.score}</div><div style={{fontSize:10,color:T.dm}}>{getScoreLabel(inspForm.score)}</div>{inspForm.status==="blocked"&&<div style={{marginTop:4,padding:"4px 10px",borderRadius:5,background:T.rd+"18",color:T.rd,fontSize:9,fontWeight:700}}>⚡ BLOCKED — Critical Fails</div>}</div></Card>
+<Card><div style={{textAlign:"center"}}><div style={{fontSize:42,fontWeight:800,color:getScoreColor(inspForm.score)}}>{inspForm.score}</div><div style={{fontSize:10,color:T.dm}}>{getScoreLabel(inspForm.score)}</div>{inspForm.status==="blocked"&&<div style={{color:T.rd,fontSize:9,fontWeight:700,marginTop:4}}>BLOQUEADA</div>}</div></Card>
 <Card><div style={{fontSize:9,color:T.dm}}>DATA</div><div style={{fontSize:13,fontWeight:700}}>{inspForm.date}</div><div style={{fontSize:9,color:T.dm,marginTop:6}}>TIPO</div><div style={{fontSize:11,fontWeight:600}}>{inspForm.type}</div></Card>
 <Card><div style={{fontSize:9,color:T.dm}}>EQUIPE</div><div style={{fontSize:11,fontWeight:600}}>{(inspForm.employees||[]).join(", ")||"—"}</div><div style={{fontSize:9,color:T.dm,marginTop:6}}>INSPETOR</div><div style={{fontSize:11,fontWeight:600}}>{inspForm.inspector||"—"}</div></Card>
 </div>
 {Object.entries(INSP_CHECKLIST).map(([area,items])=><Card key={area} style={{padding:0,overflow:"hidden"}}>
 <div style={{padding:"8px 16px",background:T.ac+"10",fontSize:11,fontWeight:700,color:T.ac}}>{area}</div>
-<div style={{padding:"0 16px"}}>{items.map(item=>{const v=inspForm.checks?.[item.id];const note=inspForm.notes?.[item.id];return <div key={item.id}><div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:note?"none":"1px solid "+T.bd,fontSize:11}}>
+<div style={{padding:"0 16px"}}>{items.map(item=>{const v=inspForm.checks?.[item.id];const note=(inspForm.notes||{})[item.id];return <div key={item.id}><div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:note?"none":"1px solid "+T.bd,fontSize:11}}>
 <span>{item.t}</span>
-<span style={{fontWeight:700,color:v==="ok"?T.gr:v==="adjust"?T.or:v==="fail"?T.rd:T.dm}}>{v==="ok"?"✅ OK":v==="adjust"?"⚠️ Adjust":v==="fail"?"❌ Failed":"N/A"}</span>
-</div>{note&&<div style={{padding:"2px 0 4px 16px",borderBottom:"1px solid "+T.bd,fontSize:9,color:T.or,fontStyle:"italic"}}>📝 {note}</div>}</div>;})}</div></Card>)}
+<span style={{fontWeight:700,color:v==="ok"?T.gr:v==="adjust"?T.or:v==="fail"?T.rd:T.dm}}>{v==="ok"?"OK":v==="adjust"?"Ajuste":v==="fail"?"Reprovado":"N/A"}</span>
+</div>{note&&<div style={{padding:"2px 0 4px 16px",borderBottom:"1px solid "+T.bd,fontSize:9,color:T.or,fontStyle:"italic"}}>{note}</div>}</div>;})}</div></Card>)}
 {inspForm.generalNotes&&<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:4}}>OBSERVAÇÕES</div><div style={{fontSize:11}}>{inspForm.generalNotes}</div></Card>}
-<button onClick={()=>{const w=window.open("","_blank");w.document.write(`<html><head><title>Inspection ${inspForm.houseName}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{font-size:20px}h2{font-size:14px;color:#0094B0;margin:16px 0 6px;border-bottom:1px solid #0094B0;padding-bottom:3px}.score{font-size:48px;font-weight:800;text-align:center;margin:16px 0}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;font-size:12px}.ok{color:#4ADE80;font-weight:700}.adj{color:#FFB547;font-weight:700}.fail{color:#FF6B6B;font-weight:700}.meta{color:#888;font-size:11px}.note{padding:2px 0 4px 20px;font-size:10px;color:#FFB547;font-style:italic;border-bottom:1px solid #eee}@media print{body{padding:20px}}</style></head><body><h1>${co.name} — Inspection Report</h1><p class="meta">${co.address} | ${co.phone}</p><div class="score" style="color:${getScoreColor(inspForm.score)}">${inspForm.score}/100</div><p style="text-align:center;margin-bottom:16px;font-size:13px">${getScoreLabel(inspForm.score)}${inspForm.status==="blocked"?" ⚡ BLOCKED":""}</p><div class="row"><span><strong>Property:</strong> ${inspForm.houseName||inspForm.house}</span><span><strong>Date:</strong> ${inspForm.date}</span></div><div class="row"><span><strong>Type:</strong> ${inspForm.type}</span><span><strong>Inspector:</strong> ${inspForm.inspector||"—"}</span></div><div class="row"><span><strong>Team:</strong> ${(inspForm.employees||[]).join(", ")||"—"}</span></div>`);Object.entries(INSP_CHECKLIST).forEach(([area,items])=>{w.document.write(`<h2>${area}</h2>`);items.forEach(item=>{const v=inspForm.checks?.[item.id];const cls=v==="ok"?"ok":v==="adjust"?"adj":v==="fail"?"fail":"meta";const lbl=v==="ok"?"OK":v==="adjust"?"Adjust":v==="fail"?"Failed":"N/A";w.document.write(`<div class="row"><span>${item.t}</span><span class="${cls}">${lbl}</span></div>`);const note=inspForm.notes?.[item.id];if(note)w.document.write(`<div class="note">📝 ${note}</div>`);});});if(inspForm.generalNotes)w.document.write(`<h2>Notes</h2><p style="font-size:12px">${inspForm.generalNotes}</p>`);w.document.write(`<p class="meta" style="margin-top:24px;text-align:center">Generated on ${new Date().toLocaleDateString("en-US")}</p></body></html>`);w.document.close();setTimeout(()=>w.print(),500);fl("📄 Report generated!");}} style={bt(T.ac,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>📄 Print Report</button>
+<button onClick={()=>{const w=window.open("","_blank");w.document.write(`<html><head><title>Inspection ${inspForm.houseName}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{font-size:20px}h2{font-size:14px;color:#0094B0;margin:16px 0 6px;border-bottom:1px solid #0094B0;padding-bottom:3px}.score{font-size:48px;font-weight:800;text-align:center;margin:16px 0}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;font-size:12px}.ok{color:#4ADE80;font-weight:700}.adj{color:#FFB547;font-weight:700}.fail{color:#FF6B6B;font-weight:700}.meta{color:#888;font-size:11px}.note{padding:2px 0 4px 20px;font-size:10px;color:#FFB547;font-style:italic;border-bottom:1px solid #eee}@media print{body{padding:20px}}</style></head><body><h1>${co.name} — Inspection Report</h1><p class="meta">${co.address} | ${co.phone}</p><div class="score" style="color:${getScoreColor(inspForm.score)}">${inspForm.score}/100</div><p style="text-align:center;margin-bottom:16px;font-size:13px">${getScoreLabel(inspForm.score)}${inspForm.status==="blocked"?" — BLOCKED":""}</p><div class="row"><span><strong>Property:</strong> ${inspForm.houseName||inspForm.house}</span><span><strong>Date:</strong> ${inspForm.date}</span></div><div class="row"><span><strong>Type:</strong> ${inspForm.type}</span><span><strong>Inspector:</strong> ${inspForm.inspector||"—"}</span></div><div class="row"><span><strong>Team:</strong> ${(inspForm.employees||[]).join(", ")||"—"}</span></div>`);Object.entries(INSP_CHECKLIST).forEach(([area,items])=>{w.document.write(`<h2>${area}</h2>`);items.forEach(item=>{const v=inspForm.checks?.[item.id];const cls=v==="ok"?"ok":v==="adjust"?"adj":v==="fail"?"fail":"meta";const lbl=v==="ok"?"OK":v==="adjust"?"Adjust":v==="fail"?"Failed":"N/A";w.document.write(`<div class="row"><span>${item.t}</span><span class="${cls}">${lbl}</span></div>`);const note=(inspForm.notes||{})[item.id];if(note)w.document.write(`<div class="note">${note}</div>`);});});if(inspForm.generalNotes)w.document.write(`<h2>Notes</h2><p style="font-size:12px">${inspForm.generalNotes}</p>`);w.document.write(`<p class="meta" style="margin-top:24px;text-align:center">Generated on ${new Date().toLocaleDateString("en-US")}</p></body></html>`);w.document.close();setTimeout(()=>w.print(),500);}} style={bt(T.ac,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>📄 Imprimir Relatório</button>
 </>}
 
 {inspView==="ranking"&&<>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🏆 Ranking & Score</span></div>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score Permanente por Funcionário</div>
-{(()=>{const thisMonth=MO[new Date().getMonth()];const scores={};em.forEach(e=>{const ei=inspections.filter(i=>(i.employees||[]).includes(e));if(ei.length){const monthI=ei.filter(i=>i.date&&MO[new Date(i.date).getMonth()]===thisMonth);const monthAvg=monthI.length?Math.round(monthI.reduce((s,i)=>s+i.score,0)/monthI.length):0;const last3m=MO.slice(Math.max(0,MO.indexOf(thisMonth)-2),MO.indexOf(thisMonth)+1);const l3=ei.filter(i=>i.date&&last3m.includes(MO[new Date(i.date).getMonth()]));const l3avg=l3.length?Math.round(l3.reduce((s,i)=>s+i.score,0)/l3.length):0;const rework=ei.filter(i=>i.status==="failed"||i.status==="blocked").length;scores[e]={avg:Math.round(ei.reduce((s,i)=>s+i.score,0)/ei.length),monthAvg,l3avg,count:ei.length,perfect:ei.filter(i=>i.score===100).length,rework,reworkPct:Math.round(rework/ei.length*100),bonus:monthAvg>=95?"full":monthAvg>=92?"partial":"none"};}});const sorted=Object.entries(scores).sort((a,b)=>b[1].avg-a[1].avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados.</div>:sorted.map(([name,d],i)=><div key={name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🏆 Ranking</span>
+<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
+<Card><div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score por Funcionário — {inspRptMonth}</div>
+{(()=>{const mo=inspRptMonth;const scores={};em.forEach(e=>{const all=inspections.filter(i=>(i.employees||[]).includes(e));const mi=all.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(all.length){const avg=Math.round(all.reduce((s,i)=>s+i.score,0)/all.length);const mAvg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):null;const rework=all.filter(i=>i.status==="failed"||i.status==="blocked").length;const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const monthStart=today.slice(0,8)+"01";scores[e]={avg,mAvg,total:all.length,mTotal:mi.length,perfect:mi.filter(i=>i.score===100).length,rework:Math.round(rework/all.length*100),diaHoje:all.filter(i=>i.date===today).length,semana:all.filter(i=>i.date>=weekAgo).length,mes:mi.length,bonus:mAvg>=95?"integral":mAvg>=92?"parcial":"sem"};}});const sorted=Object.entries(scores).sort((a,b)=>(b[1].mAvg||0)-(a[1].mAvg||0));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados.</div>:sorted.map(([name,d],i)=><div key={name} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <div style={{width:28,height:28,borderRadius:7,background:i===0?T.gr+"22":T.cd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:i===0?T.gr:T.dm}}>#{i+1}</div>
-<div><div style={{fontSize:13,fontWeight:700}}>{name}</div><div style={{fontSize:9,color:T.dm}}>{d.count} insp · {d.perfect}x 💯 · {d.reworkPct}% rework · 3m: {d.l3avg}</div></div></div>
+<div><div style={{fontSize:13,fontWeight:700}}>{name}</div><div style={{fontSize:9,color:T.dm}}>{d.avg>=95?"Elite Sunny":d.avg>=90?"Profissional":d.avg>=85?"Em desenvolvimento":"Treinamento"}</div></div></div>
 <div style={{display:"flex",alignItems:"center",gap:6}}>
-{d.bonus!=="none"&&<span style={{padding:"3px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:d.bonus==="full"?T.gr+"22":T.or+"22",color:d.bonus==="full"?T.gr:T.or}}>{d.bonus==="full"?"💰 Full Bonus":"💰 Partial"}</span>}
-<span style={{padding:"3px 10px",borderRadius:5,fontSize:8,fontWeight:700,background:getScoreColor(d.avg)+"18",color:getScoreColor(d.avg)}}>{d.avg>=95?"Elite Sunny":d.avg>=90?"Profissional":d.avg>=85?"Em desenvolvimento":"Treinamento"}</span>
-<div style={{fontSize:20,fontWeight:800,color:getScoreColor(d.avg)}}>{d.avg}</div>
+{d.bonus!=="sem"&&<span style={{padding:"3px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:d.bonus==="integral"?T.gr+"22":T.or+"22",color:d.bonus==="integral"?T.gr:T.or}}>Bônus {d.bonus}</span>}
+<div style={{fontSize:22,fontWeight:800,color:d.mAvg?getScoreColor(d.mAvg):T.dm}}>{d.mAvg||"—"}</div>
+</div></div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:6}}>
+{[["Geral",d.avg,T.ac],["Mês",d.mAvg||"—",T.bl],["Insp. mês",d.mes,T.pu],["Perfeitas",d.perfect,T.gr],["Rework",d.rework+"%",T.rd],["Hoje",d.diaHoje,T.or]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:"4px",borderRadius:4,background:T.cd}}><div style={{fontSize:7,color:T.dm,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:c}}>{v}</div></div>)}
 </div></div>);})()}</Card>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>💰 Sistema de Bônus (mês atual)</div>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>Sistema de Bônus ({inspRptMonth})</div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-<div style={{padding:"8px 12px",borderRadius:6,background:T.gr+"10",border:"1px solid "+T.gr+"33",textAlign:"center"}}><div style={{fontSize:9,color:T.gr,fontWeight:700}}>FULL BONUS</div><div style={{fontSize:11,color:T.dm}}>Média ≥ 95</div></div>
-<div style={{padding:"8px 12px",borderRadius:6,background:T.or+"10",border:"1px solid "+T.or+"33",textAlign:"center"}}><div style={{fontSize:9,color:T.or,fontWeight:700}}>PARTIAL BONUS</div><div style={{fontSize:11,color:T.dm}}>Média 92-94</div></div>
-<div style={{padding:"8px 12px",borderRadius:6,background:T.rd+"10",border:"1px solid "+T.rd+"33",textAlign:"center"}}><div style={{fontSize:9,color:T.rd,fontWeight:700}}>NO BONUS</div><div style={{fontSize:11,color:T.dm}}>Média &lt; 92</div></div>
+{[["INTEGRAL","Média >= 95",T.gr],["PARCIAL","Média 92-94",T.or],["SEM BÔNUS","Média < 92",T.rd]].map(([l,d,c])=><div key={l} style={{padding:"8px 12px",borderRadius:6,background:c+"10",border:"1px solid "+c+"33",textAlign:"center"}}><div style={{fontSize:9,color:c,fontWeight:700}}>{l}</div><div style={{fontSize:10,color:T.dm}}>{d}</div></div>)}
 </div></Card>
 </>}
 
 {inspView==="reports"&&<>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>📊 Relatórios Estratégicos</span></div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Nota Média por Casa</div>
-{(()=>{const byHouse={};inspections.forEach(i=>{if(!byHouse[i.houseName||i.house])byHouse[i.houseName||i.house]={sum:0,cnt:0};byHouse[i.houseName||i.house].sum+=i.score;byHouse[i.houseName||i.house].cnt++;});const sorted=Object.entries(byHouse).map(([h,d])=>({h,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>a.avg-b.avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,10).map(d=><div key={d.h} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d.h} <span style={{color:T.dm}}>({d.cnt})</span></span><span style={{fontWeight:700,color:getScoreColor(d.avg)}}>{d.avg}</span></div>);})()}</Card>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Itens com Mais Falhas</div>
-{(()=>{const fails={};const allItems=Object.values(INSP_CHECKLIST).flat();inspections.forEach(i=>{allItems.forEach(item=>{if(i.checks?.[item.id]==="fail"||i.checks?.[item.id]==="adjust"){fails[item.t]=(fails[item.t]||0)+1;}});});const sorted=Object.entries(fails).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,8).map(([t,c])=><div key={t} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{t}</span><span style={{fontWeight:700,color:T.rd}}>{c}x</span></div>);})()}</Card>
+<div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>📊 Relatórios</span>
+<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
+<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+{[["resumo","Resumo"],["casa","Por Casa"],["cleaner","Por Cleaner"],["inspetor","Por Inspetor"],["cliente","Por Cliente"],["evolucao","Evolução"]].map(([k,l])=><button key={k} onClick={()=>setInspRpt(k)} style={{padding:"6px 14px",borderRadius:6,border:inspRpt===k?"1px solid "+T.ac:"1px solid "+T.bd,background:inspRpt===k?T.ac+"18":T.cd,color:inspRpt===k?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
 </div>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Evolução Mensal</div>
-{(()=>{const byMonth={};inspections.forEach(i=>{if(i.date){const m=MO[new Date(i.date).getMonth()];if(!byMonth[m])byMonth[m]={sum:0,cnt:0};byMonth[m].sum+=i.score;byMonth[m].cnt++;}});const data=MO.filter(m=>byMonth[m]).map(m=>({l:m.slice(0,3),v1:Math.round(byMonth[m].sum/byMonth[m].cnt)}));return data.length>0?<BarChart data={data} colors={[T.ac]}/>:<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>;})()}</Card>
+
+{inspRpt==="resumo"&&<>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Nota Média por Casa — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]={sum:0,cnt:0};byH[h].sum+=i.score;byH[h].cnt++;});const sorted=Object.entries(byH).map(([h,d])=>({h,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>a.avg-b.avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(d=><div key={d.h} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d.h} <span style={{color:T.dm}}>({d.cnt}x)</span></span><span style={{fontWeight:700,color:getScoreColor(d.avg)}}>{d.avg}</span></div>);})()}</Card>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Itens com Mais Falhas — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const fails={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail"||i.checks?.[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+1;});});const sorted=Object.entries(fails).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,10).map(([t,c])=><div key={t} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{t}</span><span style={{fontWeight:700,color:T.rd}}>{c}x</span></div>);})()}</Card>
+</div>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Volume de Inspeções — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byDay={};mi.forEach(i=>{byDay[i.date]=(byDay[i.date]||0)+1;});const sorted=Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0]));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(([d,c])=><div key={d} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d}</span><span style={{fontWeight:700,color:T.ac}}>{c} inspeções</span></div>);})()}</Card>
+</>}
+
+{inspRpt==="casa"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Casa — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return Object.keys(byH).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byH).sort((a,b)=>a[0].localeCompare(b[0])).map(([house,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const fails={};ins.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail")fails[item.t]=(fails[item.t]||0)+1;if(i.checks?.[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+0.5;});});const topFails=Object.entries(fails).sort((a,b)=>b[1]-a[1]).slice(0,5);return <div key={house} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div style={{fontSize:12,fontWeight:700}}>{house}</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp.</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
+{topFails.length>0&&<div><div style={{fontSize:9,color:T.rd,fontWeight:700,marginBottom:3}}>Problemas recorrentes:</div>{topFails.map(([t,c])=><div key={t} style={{fontSize:10,padding:"2px 0",color:T.or}}>{t} ({Math.round(c)}x)</div>)}</div>}
+{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9,marginTop:3}}><span style={{color:T.dm}}>{i.date} · {i.type} · {(i.employees||[]).join(", ")}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
+</div>;});})()}</Card>}
+
+{inspRpt==="cleaner"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cleaner — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byE={};mi.forEach(i=>{(i.employees||[]).forEach(e=>{if(!byE[e])byE[e]=[];byE[e].push(i);});});return Object.keys(byE).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byE).sort((a,b)=>a[0].localeCompare(b[0])).map(([emp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={emp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+<div style={{fontSize:12,fontWeight:700}}>{emp}</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {ins.filter(i=>i.score===100).length} perfeitas</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
+{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9}}><span style={{color:T.dm}}>{i.date} · {i.houseName||i.house} · {i.type}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
+</div>;});})()}</Card>}
+
+{inspRpt==="inspetor"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Inspetor — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byI={};mi.forEach(i=>{const k=i.inspector||"Sem inspetor";if(!byI[k])byI[k]=[];byI[k].push(i);});return Object.keys(byI).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byI).map(([insp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={insp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+<div style={{fontSize:12,fontWeight:700}}>{insp}</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} inspeções</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
+{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9}}><span style={{color:T.dm}}>{i.date} · {i.houseName||i.house} · {(i.employees||[]).join(", ")}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
+</div>;});})()}</Card>}
+
+{inspRpt==="cliente"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cliente — {inspRptMonth}</div>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byC={};mi.forEach(i=>{const c=i.client||"Sem cliente";if(!byC[c])byC[c]=[];byC[c].push(i);});return Object.keys(byC).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byC).sort((a,b)=>a[0].localeCompare(b[0])).map(([client,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const byH={};ins.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return <div key={client} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div style={{fontSize:13,fontWeight:700}}>{client}</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {Object.keys(byH).length} casas</span><span style={{fontSize:20,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
+{Object.entries(byH).map(([house,hIns])=>{const hAvg=Math.round(hIns.reduce((s,i)=>s+i.score,0)/hIns.length);return <div key={house} style={{marginLeft:12,padding:"4px 0",borderTop:"1px solid "+T.bd}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10}}><span style={{fontWeight:600}}>{house}</span><span style={{fontWeight:700,color:getScoreColor(hAvg)}}>{hAvg} ({hIns.length}x)</span></div>
+</div>;})}
+</div>;});})()}</Card>}
+
+{inspRpt==="evolucao"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Evolução Mensal</div>
+{(()=>{const byMonth={};inspections.forEach(i=>{if(i.date){const m=MO[new Date(i.date+"T12:00").getMonth()];if(!byMonth[m])byMonth[m]={sum:0,cnt:0};byMonth[m].sum+=i.score;byMonth[m].cnt++;}});const data=MO.filter(m=>byMonth[m]).map(m=>({l:m.slice(0,3),v1:Math.round(byMonth[m].sum/byMonth[m].cnt)}));return data.length>0?<div><BarChart data={data} colors={[T.ac]}/><div style={{display:"grid",gridTemplateColumns:"repeat("+data.length+",1fr)",gap:4,marginTop:8}}>{data.map(d=><div key={d.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:getScoreColor(d.v1)}}>{d.v1}</div><div style={{fontSize:8,color:T.dm}}>{d.l}</div></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>Sem dados suficientes.</div>;})()}</Card>}
+
 </>}
 </div>}
+
 
 {/* HISTORY */}
 {vw==="history"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
