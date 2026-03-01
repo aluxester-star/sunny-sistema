@@ -38,6 +38,56 @@ function NI({value,onChange,style}){const[v,setV]=useState(value);useEffect(()=>
 function BarChart({data,h=180,colors}){const mx=Math.max(...data.map(d=>Math.max(d.v1||0,d.v2||0)),1);return <div style={{display:"flex",alignItems:"flex-end",gap:6,height:h,padding:"0 4px"}}>{data.map((d,i)=><div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><div style={{display:"flex",gap:2,alignItems:"flex-end",width:"100%",justifyContent:"center",height:h-24}}>{d.v1!=null&&<div style={{width:"40%",height:Math.max(2,(d.v1/mx)*(h-30)),background:colors?.[0]||"#00B4D8",borderRadius:"3px 3px 0 0",minHeight:2}}/>}{d.v2!=null&&<div style={{width:"40%",height:Math.max(2,(d.v2/mx)*(h-30)),background:colors?.[1]||"#FF6B6B",borderRadius:"3px 3px 0 0",minHeight:2}}/>}</div><span style={{fontSize:8,color:"#707A8A",whiteSpace:"nowrap"}}>{d.l}</span></div>)}</div>;}
 function DonutChart({data,size=140}){const total=data.reduce((s,d)=>s+d.v,0);let cum=0;const r=size/2,ir=r*0.6;const segs=data.map(d=>{const pct=d.v/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;return{...d,pct,start,end};});return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{segs.map((s,i)=>{const x1=r+r*0.95*Math.cos(s.start),y1=r+r*0.95*Math.sin(s.start),x2=r+r*0.95*Math.cos(s.end),y2=r+r*0.95*Math.sin(s.end);const ix1=r+ir*Math.cos(s.start),iy1=r+ir*Math.sin(s.start),ix2=r+ir*Math.cos(s.end),iy2=r+ir*Math.sin(s.end);const lg=s.pct>0.5?1:0;return <path key={i} d={`M${x1},${y1}A${r*0.95},${r*0.95},0,${lg},1,${x2},${y2}L${ix2},${iy2}A${ir},${ir},0,${lg},0,${ix1},${iy1}Z`} fill={s.c} opacity={0.85}/>})}<text x={r} y={r-6} textAnchor="middle" fill="#E8EBF0" fontSize="18" fontWeight="800">${fm(total)}</text><text x={r} y={r+12} textAnchor="middle" fill="#707A8A" fontSize="9">TOTAL</text></svg>;}
 function MiniLine({data,w=200,h=50,color="#00B4D8"}){if(!data.length)return null;const mx=Math.max(...data),mn=Math.min(...data);const range=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/range)*(h-10)-5}`).join(" ");return <svg width={w} height={h}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={h-((v-mn)/range)*(h-10)-5} r="3" fill={color}/>)}</svg>;}
+function InspForm({init,cls2,db2,em2,onSave,onCancel}){
+const[f,setF]=useState(init);
+const uf=(k,v)=>setF(p=>({...p,[k]:v}));
+const score=calcInspScore(f.checks);
+const crits=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");
+const lb2={fontSize:10,color:"#707A8A",marginBottom:3,display:"block"};
+const inp2={width:"100%",padding:"8px 10px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:6,color:"#E8EBF0",fontSize:12,outline:"none",fontFamily:"inherit"};
+const sel2={...inp2,cursor:"pointer"};
+const bd2="#1A2545";const cd2="#111833";
+return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"flex",gap:8,marginBottom:4}}><button onClick={onCancel} style={{padding:"6px 14px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontFamily:"inherit",background:"#182040",color:"#707A8A"}}>← Voltar</button><span style={{fontSize:14,fontWeight:700,display:"flex",alignItems:"center"}}>Nova Inspeção</span></div>
+<div style={{background:cd2,borderRadius:12,padding:16,border:"1px solid "+bd2}}>
+<div style={{display:"grid",gridTemplateColumns:"1.5fr 1.5fr 1fr 1fr",gap:8,marginBottom:12}}>
+<div><label style={lb2}>Cliente</label><select value={f.client} onChange={e=>{setF(p=>({...p,client:e.target.value,house:"",houseName:""}));}} style={sel2}><option value="">—</option>{cls2.map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={lb2}>Casa</label><select value={f.house} onChange={e=>setF(p=>({...p,house:e.target.value,houseName:e.target.value}))} style={sel2}><option value="">—</option>{f.client&&db2.filter(p=>p.c===f.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
+<div><label style={lb2}>Data</label><input type="date" value={f.date} onChange={e=>uf("date",e.target.value)} style={inp2}/></div>
+<div><label style={lb2}>Tipo</label><select value={f.type} onChange={e=>uf("type",e.target.value)} style={sel2}>{["Turnover","Deep Clean","Pós Manutenção","Surpresa","Auditoria Mensal"].map(t=><option key={t}>{t}</option>)}</select></div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div><label style={lb2}>Funcionários</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em2.map(e=><button type="button" key={e} onClick={()=>{setF(p=>{const emps=p.employees||[];return{...p,employees:emps.includes(e)?emps.filter(x=>x!==e):[...emps,e]};});}} style={{padding:"4px 10px",borderRadius:5,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(f.employees||[]).includes(e)?"rgba(0,180,216,0.15)":"#182040",color:(f.employees||[]).includes(e)?"#00B4D8":"#707A8A"}}>{e}</button>)}</div></div>
+<div><label style={lb2}>Inspetor</label><input value={f.inspector||""} onChange={e=>uf("inspector",e.target.value)} style={inp2} placeholder="Nome do inspetor"/></div>
+</div></div>
+
+{Object.entries(INSP_CHECKLIST).map(([area,items])=>{
+const ac=items.map(i=>f.checks[i.id]).filter(v=>v&&v!=="na"&&v!=="");
+const as2=ac.length?Math.round((ac.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(ac.length*2))*100):null;
+return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid "+bd2,overflow:"hidden"}}>
+<div style={{padding:"10px 16px",background:"rgba(0,180,216,0.06)",fontSize:12,fontWeight:700,color:"#00B4D8",display:"flex",justifyContent:"space-between"}}><span>{area}</span>{as2!==null&&<span style={{color:getScoreColor(as2)}}>{as2}%</span>}</div>
+<div style={{padding:"0 12px"}}>{items.map(item=>{const v=f.checks[item.id];return <div key={item.id} style={{borderBottom:"1px solid "+bd2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 4px",gap:8}}>
+<span style={{fontSize:11,flex:1,color:"#E8EBF0"}}>{item.t}{item.crit&&<span style={{color:"#FF6B6B",fontSize:7,marginLeft:4,fontWeight:700}}> CRITICO</span>}</span>
+<div style={{display:"flex",gap:3,flexShrink:0}}>
+{[["ok","OK","#4ADE80"],["adjust","Ajuste","#FFB547"],["fail","Repr.","#FF6B6B"],["na","N/A","#707A8A"]].map(([k,l,c])=><button type="button" key={k} onClick={()=>setF(p=>({...p,checks:{...p.checks,[item.id]:k}}))} style={{padding:"4px 9px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",border:v===k?"2px solid "+c:"1px solid "+bd2,background:v===k?c+"22":cd2,color:c,fontFamily:"inherit",minWidth:36,textAlign:"center"}}>{l}</button>)}
+</div></div>
+{(v==="adjust"||v==="fail")&&<div style={{padding:"0 4px 6px"}}><input placeholder={"Obs: "+item.t.toLowerCase()} value={(f.notes||{})[item.id]||""} onChange={e=>setF(p=>({...p,notes:{...(p.notes||{}),[item.id]:e.target.value}}))} style={{...inp2,fontSize:9,padding:"6px 8px",background:v==="fail"?"rgba(255,107,107,0.05)":"rgba(255,181,71,0.05)"}}/></div>}
+</div>})}</div></div>})}
+
+<div style={{background:cd2,borderRadius:12,padding:12,border:"1px solid "+bd2}}>
+<label style={lb2}>Observações Gerais</label><textarea value={f.generalNotes||""} onChange={e=>uf("generalNotes",e.target.value)} style={{...inp2,minHeight:50,resize:"vertical"}} placeholder="Notas gerais..."/>
+</div>
+
+<div style={{textAlign:"center",padding:"8px 0"}}>
+<div style={{fontSize:40,fontWeight:800,color:getScoreColor(score)}}>{score}</div>
+<div style={{fontSize:11,color:"#707A8A"}}>{getScoreLabel(score)}</div>
+{crits.length>0&&<div style={{marginTop:6,padding:"6px 14px",borderRadius:6,background:"rgba(255,107,107,0.12)",color:"#FF6B6B",fontSize:10,fontWeight:700,display:"inline-block"}}>CRITICO: {crits.length} falha(s) — Casa não liberada</div>}
+</div>
+<div style={{display:"flex",gap:8,justifyContent:"center"}}>
+<button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
+<button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
+</div></div>;}
 const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","inventory","team","inspect","history","database"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["dashboard","inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["dashboard","payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["dashboard","inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["dashboard"],color:"#60A5FA"}};
 function App({onLogout,userRole="admin"}){
 const[vw,setVw]=useState("dashboard");
@@ -575,52 +625,7 @@ return(
 </div></div>);})()}</Card>
 </>}
 
-{inspView==="form"&&inspForm&&(()=>{
-const uf=(k,v)=>setInspForm(p=>({...p,[k]:v}));
-const uc=(id,v)=>setInspForm(p=>({...p,checks:{...p.checks,[id]:v}}));
-const un=(id,v)=>setInspForm(p=>({...p,notes:{...(p.notes||{}),[id]:v}}));
-const score=calcInspScore(inspForm.checks);
-const crits=ALL_INSP_ITEMS.filter(it=>it.crit&&inspForm.checks[it.id]==="fail");
-return <>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🔍 Nova Inspeção</span></div>
-<Card>
-<div style={{display:"grid",gridTemplateColumns:"1.5fr 1.5fr 1fr 1fr",gap:8,marginBottom:12}}>
-<div><label style={lb}>Cliente</label><select value={inspForm.client} onChange={e=>uf("client",e.target.value)} style={sel}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>
-<div><label style={lb}>Casa</label><select value={inspForm.house} onChange={e=>{uf("house",e.target.value);uf("houseName",e.target.value);}} style={sel}><option value="">—</option>{inspForm.client&&db.filter(p=>p.c===inspForm.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
-<div><label style={lb}>Data</label><input type="date" value={inspForm.date} onChange={e=>uf("date",e.target.value)} style={inp}/></div>
-<div><label style={lb}>Tipo</label><select value={inspForm.type} onChange={e=>uf("type",e.target.value)} style={sel}>{["Turnover","Deep Clean","Pós Manutenção","Surpresa","Auditoria Mensal"].map(t=><option key={t}>{t}</option>)}</select></div>
-</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-<div><label style={lb}>Funcionários</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em.map(e=><button type="button" key={e} onMouseDown={ev=>{ev.preventDefault();const emps=inspForm.employees||[];uf("employees",emps.includes(e)?emps.filter(x=>x!==e):[...emps,e]);}} style={{padding:"4px 10px",borderRadius:5,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(inspForm.employees||[]).includes(e)?T.ac+"25":T.c2,color:(inspForm.employees||[]).includes(e)?T.ac:T.dm}}>{e}</button>)}</div></div>
-<div><label style={lb}>Inspetor</label><input value={inspForm.inspector||""} onChange={e=>uf("inspector",e.target.value)} style={inp} placeholder="Nome do inspetor"/></div>
-</div></Card>
-
-{Object.entries(INSP_CHECKLIST).map(([area,items])=>{
-const areaChecked=items.map(i=>inspForm.checks[i.id]).filter(v=>v&&v!=="na"&&v!=="");
-const areaScore=areaChecked.length?Math.round((areaChecked.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(areaChecked.length*2))*100):null;
-return <Card key={area} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:T.ac+"10",fontSize:12,fontWeight:700,color:T.ac,display:"flex",justifyContent:"space-between"}}><span>{area}</span>{areaScore!==null&&<span style={{color:getScoreColor(areaScore)}}>{areaScore}%</span>}</div>
-<div style={{padding:"0 12px"}}>{items.map(item=>{const v=inspForm.checks[item.id];return <div key={item.id} style={{borderBottom:"1px solid "+T.bd}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 4px",gap:8}}>
-<span style={{fontSize:11,flex:1}}>{item.t}{item.crit&&<span style={{color:T.rd,fontSize:7,marginLeft:4,fontWeight:700}}>CRITICO</span>}</span>
-<div style={{display:"flex",gap:3,flexShrink:0}}>
-{[["ok","OK",T.gr],["adjust","Ajuste",T.or],["fail","Repr.",T.rd],["na","N/A",T.dm]].map(([k,l,c])=><button type="button" key={k} onMouseDown={ev=>{ev.preventDefault();uc(item.id,k);}} style={{padding:"4px 9px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",border:v===k?"2px solid "+c:"1px solid "+T.bd,background:v===k?c+"22":T.cd,color:c,fontFamily:"inherit",minWidth:36,textAlign:"center"}}>{l}</button>)}
-</div></div>
-{(v==="adjust"||v==="fail")&&<div style={{padding:"0 4px 6px"}}><input placeholder={"Obs: "+item.t.toLowerCase()} value={(inspForm.notes||{})[item.id]||""} onChange={e=>un(item.id,e.target.value)} style={{...inp,fontSize:9,width:"100%",padding:"6px 8px",background:v==="fail"?T.rd+"08":T.or+"08"}}/></div>}
-</div>})}</div></Card>})}
-
-<Card><label style={lb}>Observações Gerais</label><textarea value={inspForm.generalNotes||""} onChange={e=>uf("generalNotes",e.target.value)} style={{...inp,minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="Notas gerais..."/></Card>
-
-<div style={{textAlign:"center",padding:"8px 0"}}>
-<div style={{fontSize:40,fontWeight:800,color:getScoreColor(score)}}>{score}</div>
-<div style={{fontSize:11,color:T.dm}}>{getScoreLabel(score)}</div>
-{crits.length>0&&<div style={{marginTop:6,padding:"6px 14px",borderRadius:6,background:T.rd+"15",color:T.rd,fontSize:10,fontWeight:700,display:"inline-block"}}>CRITICO: {crits.length} falha(s) — Casa não pode ser liberada</div>}
-</div>
-<div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<button onClick={async()=>{if(!inspForm.house)return fl("Selecione uma casa");const s=calcInspScore(inspForm.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&inspForm.checks[it.id]==="fail");const ins={...inspForm,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()};await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(cr.length>0?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+s);}} style={bt(T.gr,T.bg,{padding:"12px 30px",borderRadius:10,fontSize:13})}>Salvar Inspeção</button>
-<button onClick={()=>{setInspForm(null);setInspView("list");}} style={bt(T.rd+"15",T.rd,{padding:"12px 20px",borderRadius:10,fontSize:13})}>Cancelar</button>
-</div>
-</>;})()}
+{inspView==="form"&&inspForm&&<InspForm key="inspform" init={inspForm} cls2={cls} db2={db} em2={em} onSave={async(ins)=>{await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(ins.status==="blocked"?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+ins.score);}} onCancel={()=>{setInspForm(null);setInspView("list");}}/>}
 
 {inspView==="detail"&&inspForm&&<>
 <div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
