@@ -38,6 +38,10 @@ function gImg(emp,wk,items,total,co){const cv=document.createElement("canvas"),W
 
 function TI({value,onChange,style,placeholder,type}){const[v,setV]=useState(value);useEffect(()=>{setV(value);},[value]);return <input type={type||"text"} value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v!==value)onChange({target:{value:v}});}} onKeyDown={e=>{if(e.key==="Enter"){e.target.blur();}}} style={style} placeholder={placeholder}/>;}
 function NI({value,onChange,style}){const[v,setV]=useState(value);useEffect(()=>{setV(value);},[value]);return <input type="number" value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v!==value)onChange({target:{value:v}});}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={style}/>;}
+
+function BarChart({data,h=180,colors}){const mx=Math.max(...data.map(d=>Math.max(d.v1||0,d.v2||0)),1);return <div style={{display:"flex",alignItems:"flex-end",gap:6,height:h,padding:"0 4px"}}>{data.map((d,i)=><div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><div style={{display:"flex",gap:2,alignItems:"flex-end",width:"100%",justifyContent:"center",height:h-24}}>{d.v1!=null&&<div style={{width:"40%",height:Math.max(2,(d.v1/mx)*(h-30)),background:colors?.[0]||"#00B4D8",borderRadius:"3px 3px 0 0",minHeight:2}}/>}{d.v2!=null&&<div style={{width:"40%",height:Math.max(2,(d.v2/mx)*(h-30)),background:colors?.[1]||"#FF6B6B",borderRadius:"3px 3px 0 0",minHeight:2}}/>}</div><span style={{fontSize:8,color:"#707A8A",whiteSpace:"nowrap"}}>{d.l}</span></div>)}</div>;}
+function DonutChart({data,size=140}){const total=data.reduce((s,d)=>s+d.v,0);let cum=0;const r=size/2,ir=r*0.6;const segs=data.map(d=>{const pct=d.v/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;return{...d,pct,start,end};});return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{segs.map((s,i)=>{const x1=r+r*0.95*Math.cos(s.start),y1=r+r*0.95*Math.sin(s.start),x2=r+r*0.95*Math.cos(s.end),y2=r+r*0.95*Math.sin(s.end);const ix1=r+ir*Math.cos(s.start),iy1=r+ir*Math.sin(s.start),ix2=r+ir*Math.cos(s.end),iy2=r+ir*Math.sin(s.end);const lg=s.pct>0.5?1:0;return <path key={i} d={`M${x1},${y1}A${r*0.95},${r*0.95},0,${lg},1,${x2},${y2}L${ix2},${iy2}A${ir},${ir},0,${lg},0,${ix1},${iy1}Z`} fill={s.c} opacity={0.85}/>})}<text x={r} y={r-6} textAnchor="middle" fill="#E8EBF0" fontSize="18" fontWeight="800">${fm(total)}</text><text x={r} y={r+12} textAnchor="middle" fill="#707A8A" fontSize="9">TOTAL</text></svg>;}
+function MiniLine({data,w=200,h=50,color="#00B4D8"}){if(!data.length)return null;const mx=Math.max(...data),mn=Math.min(...data);const range=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/range)*(h-10)-5}`).join(" ");return <svg width={w} height={h}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={h-((v-mn)/range)*(h-10)-5} r="3" fill={color}/>)}</svg>;}
 function App({onLogout}){
 const[vw,setVw]=useState("dashboard");
 const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useState(DC);
@@ -45,19 +49,20 @@ const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
 const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
-const[sE,setSE]=useState("");const[wk,setWk]=useState("25-02 a 01-03");const[pM,setPM]=useState("Fevereiro");const[pI,setPI]=useState([]);
+const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState("2026-02-24");const[wkTo,setWkTo]=useState("2026-03-01");const[pM,setPM]=useState("Fevereiro");const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("1148");const[iD,setID]=useState("2026-02-25");const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
 const[nEmpN,setNEmpN]=useState("");const[eIdx,setEIdx]=useState(null);const[eD,setED]=useState({});
 const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState("Fevereiro");const[fWk,setFWk]=useState("");
-const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:"2026-02-25",week:""});
-const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);
-const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Limpeza",u:"un",q:"",m:"",cost:""});
+const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:"2026-02-25",dateFrom:"",dateTo:""});
+const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito"});
+const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Limpeza",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Limpeza","Suprimentos","Cozinha","Lavanderia"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Bom"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
-const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:""});
+const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
 const[showSSN,setShowSSN]=useState({});
+const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(null);const[invTab,setInvTab]=useState("rascunho");
 
 useEffect(()=>{(async()=>{
 try{const r=await FB.get("sp3");if(r?.value)setSP(JSON.parse(r.value));}catch{}
@@ -69,6 +74,9 @@ try{const r=await FB.get("pr3");if(r?.value)setProd(JSON.parse(r.value));}catch{
 try{const r=await FB.get("ln3");if(r?.value)setLin(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("lb3");if(r?.value)setLbp(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ep3");if(r?.value)setEmpProfiles(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ls3");if(r?.value)setLosses(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("cc3");if(r?.value)setCustomCats(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("cu3");if(r?.value)setCustomUnits(JSON.parse(r.value));}catch{}
 })();},[]);
 const sv=async(k,d)=>{try{await FB.set(k,JSON.stringify(d));}catch{}};
 const _dbt={};const dsv=(k,d,ms=1500)=>{clearTimeout(_dbt[k]);_dbt[k]=setTimeout(()=>sv(k,d),ms);};
@@ -79,20 +87,28 @@ const clP=useMemo(()=>db.filter(p=>p.c===iC),[db,iC]);
 const addPi=()=>setPI([...pI,{id:Date.now(),c:"",n:"",a:"",date:"",ep:0,ip:0}]);
 const updPi=(id,f,v)=>{setPI(pI.map(i=>{if(i.id!==id)return i;const u={...i,[f]:v};if(f==="n"){const p=db.find(x=>x.n===v&&x.c===i.c);if(p){u.ep=p.ep;u.ip=p.ip;u.a=p.a;}}if(f==="c"){u.n="";u.a="";u.ep=0;u.ip=0;}return u;}));};
 const pTot=pI.reduce((s,i)=>s+(i.ep||0),0);const pInv=pI.reduce((s,i)=>s+(i.ip||0),0);
-const savP=async()=>{const e={id:Date.now(),emp:sE,week:wk,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length};const u=[e,...sP];setSP(u);await sv("sp3",u);
-const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionário",desc:`${sE} - ${wk}`,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id},{id:Date.now()+.4,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Ref. ${sE} - ${wk}`,amt:pInv,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"pi-"+e.id}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);setPI([]);setSE("");fl("✅ Folha salva!");setVw("history");};
+const fmtPeriod=(f,t)=>{if(!f||!t)return"";const d1=new Date(f+"T12:00"),d2=new Date(t+"T12:00");const mo=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];return `${d1.getDate()} ${mo[d1.getMonth()]} - ${d2.getDate()} ${mo[d2.getMonth()]} ${d2.getFullYear()}`;};
+const wk=fmtPeriod(wkFrom,wkTo);
+const savP=async()=>{const e={id:Date.now(),emp:sE,week:wk,wkFrom,wkTo,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length};const u=[e,...sP];setSP(u);await sv("sp3",u);
+const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionário",desc:`${sE} - ${wk}`,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);setPI([]);setSE("");fl("✅ Folha salva!");setVw("history");};
 
 const addIi=()=>setII([...iI,{id:Date.now(),desc:"Cleaning Service",n:"",a:"",date:"",amt:0}]);
 const updIi=(id,f,v)=>{setII(iI.map(i=>{if(i.id!==id)return i;const u={...i,[f]:v};if(f==="n"){const p=db.find(x=>x.n===v&&x.c===iC);if(p){u.amt=p.ip;u.a=p.a;}}return u;}));};
 const iTot=iI.reduce((s,i)=>s+(parseFloat(i.amt)||0),0);
-const savI=async()=>{const e={id:Date.now(),no:iN,date:iD,client:iC,items:iI,total:iTot,at:new Date().toISOString()};const u=[e,...sI];setSI(u);await sv("si3",u);
-const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+e.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);fl("✅ Invoice salva!");};
+const savI=async(status)=>{const st=status||"rascunho";
+if(editInvId){const u=sI.map(i=>i.id===editInvId?{...i,no:iN,date:iD,client:iC,items:iI,total:iTot,status:st,at:new Date().toISOString()}:i);setSI(u);await sv("si3",u);
+if(st==="emitida"){const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+editInvId};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);}setEditInvId(null);fl(st==="rascunho"?"📝 Rascunho atualizado!":"✅ Invoice emitida!");return;}
+const e={id:Date.now(),no:iN,date:iD,client:iC,items:iI,total:iTot,at:new Date().toISOString(),status:st};const u=[e,...sI];setSI(u);await sv("si3",u);
+if(st==="emitida"){const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+e.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);}fl(st==="rascunho"?"📝 Rascunho salvo!":"✅ Invoice emitida!");};
+const emitirInv=async(id)=>{const inv=sI.find(i=>i.id===id);if(!inv)return;const u=sI.map(i=>i.id===id?{...i,status:"emitida",emitidaAt:new Date().toISOString()}:i);setSI(u);await sv("si3",u);const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${inv.no} - ${inv.client}`,amt:inv.total,date:inv.date,month:inv.date?MO[new Date(inv.date).getMonth()]:"",week:"",ref:"si-"+inv.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);fl("✅ Invoice #"+inv.no+" emitida!");};
+const pagarInv=async(id)=>{const u=sI.map(i=>i.id===id?{...i,status:"paga",pagaAt:new Date().toISOString()}:i);setSI(u);await sv("si3",u);fl("💰 Invoice marcada como paga!");};
+const editInv=(inv)=>{setIN(inv.no);setID(inv.date);setIC(inv.client);setII(inv.items||[]);setEditInvId(inv.id);setVw("invoice");};
 
-const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id&&e.ref!=="pi-"+id);setFin(uf);await sv("fn3",uf);};
+const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id);setFin(uf);await sv("fn3",uf);};
 const delI=async id=>{const u=sI.filter(i=>i.id!==id);setSI(u);await sv("si3",u);const uf=fin.filter(e=>e.ref!=="si-"+id);setFin(uf);await sv("fn3",uf);};
 const uDB=async n=>{setDb(n);dsv("db3",n);};const uEM=async n=>{setEm(n);dsv("em3",n);};
 
-const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date).getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,week:fF.week});fl("✅ Lançamento salvo!");};
+const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date).getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,dateFrom:fF.dateFrom,dateTo:fF.dateTo});fl("✅ Lançamento salvo!");};
 const delFin=async id=>{const u=fin.filter(e=>e.id!==id);setFin(u);await sv("fn3",u);};
 const syncFin=async()=>{const nw=[];sP.forEach(p=>{if(!fin.find(e=>e.ref==="po-"+p.id))nw.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionário",desc:`${p.emp} - ${p.week}`,amt:p.total,date:p.at?.split("T")[0]||"",month:p.month,week:p.week,ref:"po-"+p.id});if(!fin.find(e=>e.ref==="pi-"+p.id))nw.push({id:Date.now()+Math.random()+.1,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Ref. ${p.emp} - ${p.week}`,amt:p.invTot,date:p.at?.split("T")[0]||"",month:p.month,week:p.week,ref:"pi-"+p.id});});sI.forEach(i=>{if(!fin.find(e=>e.ref==="si-"+i.id))nw.push({id:Date.now()+Math.random()+.2,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${i.no} - ${i.client}`,amt:i.total,date:i.date||"",month:i.date?MO[new Date(i.date).getMonth()]:"",week:"",ref:"si-"+i.id});});if(nw.length){const u=[...nw,...fin];setFin(u);await sv("fn3",u);fl(`✅ ${nw.length} importados!`);}else fl("ℹ️ Tudo sincronizado!");};
 
@@ -101,11 +117,11 @@ const fIn=fFil.filter(e=>e.type==="entrada"),fOut=fFil.filter(e=>e.type==="saida
 const fTI=fIn.reduce((s,e)=>s+e.amt,0),fTO=fOut.reduce((s,e)=>s+e.amt,0),fLu=fTI-fTO;
 const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut.forEach(e=>{fBCO[e.cat]=(fBCO[e.cat]||0)+e.amt;});
 
-const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};
+const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
 if(!em.includes(empForm.name)){const ne=[...em,empForm.name];uEM(ne);}
-setEmpForm({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:""});fl("✅ Funcionário cadastrado!");};
+setEmpForm({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});fl("✅ Funcionário cadastrado!");};
 const delEmpProfile=async id=>{await uEP(empProfiles.filter(e=>e.id!==id));};
 const lowP=prod.filter(p=>p.q<=p.m),lowL=lin.filter(l=>l.q<=l.m);
 
@@ -129,7 +145,7 @@ if(vw==="payslip"){const d=vP||{emp:sE,week:wk,items:pI,total:pTot};return(
 <div style={{display:"flex",gap:8}}><button onClick={()=>dlImg(d.emp,d.week,d.items,d.total)} style={bt(T.pu,"#fff")}>📥</button><button onClick={()=>window.print()} style={bt(T.ac,T.bg)}>🖨️ PDF</button></div></div>
 <div style={{maxWidth:680,margin:"20px auto",padding:"35px 45px"}}>
 <div style={{background:T.bg,borderRadius:10,padding:"20px 26px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:10}}><SunnyLogo h={38}/><div><div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{co.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>{co.address} | {co.phone}</div></div></div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)",textTransform:"uppercase"}}>Comprovante</div></div>
-<div style={{background:"#F0FDF9",border:"2px solid #00B4D833",borderRadius:8,padding:"14px 20px",marginBottom:20,display:"flex",justifyContent:"space-between"}}><div><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Funcionário</div><div style={{fontSize:18,fontWeight:800,color:"#111"}}>{d.emp}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Período</div><div style={{fontSize:14,fontWeight:700,color:"#111"}}>{d.week}</div></div></div>
+<div style={{background:"#F0FDF9",border:"2px solid #00B4D833",borderRadius:8,padding:"14px 20px",marginBottom:20,display:"flex",justifyContent:"space-between"}}><div><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Funcionário</div><div style={{fontSize:18,fontWeight:800,color:"#111"}}>{d.emp}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Período</div><div style={{fontSize:14,fontWeight:700,color:"#111"}}>{d.week||d.wkFrom&&d.wkTo&&fmtPeriod(d.wkFrom,d.wkTo)||"—"}</div></div></div>
 <div style={{borderRadius:8,overflow:"hidden",border:"1px solid #eee",marginBottom:20}}>
 <div style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",background:T.bg,padding:"8px 14px",fontSize:9,fontWeight:700,color:"#fff",textTransform:"uppercase"}}><span>#</span><span>Propriedade</span><span>Data</span><span style={{textAlign:"right"}}>Valor</span></div>
 {d.items.map((it,i)=><div key={it.id||i} style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",padding:"8px 14px",fontSize:12,borderBottom:"1px solid #eee",background:i%2===0?"#FAFBFC":"#fff"}}><span style={{color:"#bbb",fontSize:10}}>{i+1}</span><span style={{fontWeight:500}}>{it.n||it.propName||"—"}</span><span style={{color:"#888"}}>{it.date||"—"}</span><span style={{textAlign:"right",fontWeight:700,color:"#0094B0"}}>${it.ep?.toFixed(2)||it.employeePay?.toFixed(2)}</span></div>)}</div>
@@ -175,6 +191,27 @@ return(
 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
 {[{i:"💵",l:"RECEITA",v:`$${fTI.toLocaleString()}`,s:fIn.length+" entradas",cl:T.ac},{i:"📤",l:"DESPESAS",v:`$${fTO.toLocaleString()}`,s:fOut.length+" saídas",cl:T.rd},{i:"📈",l:fLu>=0?"LUCRO":"PREJUÍZO",v:`$${Math.abs(fLu).toLocaleString()}`,s:fTI?(fLu/fTI*100).toFixed(0)+"% margem":"—",cl:T.gr},{i:"🏠",l:"PROPRIEDADES",v:String(db.length),s:cls.length+" clientes",cl:T.bl}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:12,padding:"16px 18px",border:"1px solid "+T.bd}}><div style={{fontSize:16,marginBottom:6}}>{s.i}</div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>{s.l}</div><div style={{fontSize:22,fontWeight:800}}>{s.v}</div><div style={{fontSize:10,color:s.cl,marginTop:2,fontWeight:500}}>{s.s}</div></div>)}
 </div>
+{(()=>{const rascunhos=sI.filter(i=>(i.status||"emitida")==="rascunho");const emitidas=sI.filter(i=>(i.status||"emitida")==="emitida");const pagas=sI.filter(i=>(i.status||"emitida")==="paga");const prevTotal=rascunhos.reduce((s,i)=>s+i.total,0);const emitTotal=emitidas.reduce((s,i)=>s+i.total,0);return (prevTotal>0||emitTotal>0)?<div style={{display:"grid",gridTemplateColumns:prevTotal>0&&emitTotal>0?"1fr 1fr":"1fr",gap:10}}>
+{prevTotal>0&&<div style={{background:T.or+"10",borderRadius:12,padding:16,border:"1px solid "+T.or+"33"}}><div style={{fontSize:10,fontWeight:700,color:T.or,marginBottom:4}}>📊 PREVISÃO DE GANHOS</div><div style={{fontSize:24,fontWeight:800,color:T.or}}>${fm(prevTotal)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{rascunhos.length} invoice(s) em rascunho</div></div>}
+{emitTotal>0&&<div style={{background:T.ac+"10",borderRadius:12,padding:16,border:"1px solid "+T.ac+"33"}}><div style={{fontSize:10,fontWeight:700,color:T.ac,marginBottom:4}}>📨 A RECEBER (EMITIDAS)</div><div style={{fontSize:24,fontWeight:800,color:T.ac}}>${fm(emitTotal)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{emitidas.length} invoice(s) aguardando pagamento</div></div>}
+</div>:null;})()}
+{/* CHARTS */}
+<div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:10}}>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📊 Receita vs Despesa (por mês)</div>
+{(()=>{const last6=MO.slice(0,Math.max(MO.indexOf(fMo)+1,3));const data=last6.map(m=>{const mFin=fin.filter(e=>e.month===m);return{l:m.slice(0,3),v1:mFin.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0),v2:mFin.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0)};});return <div><BarChart data={data} colors={[T.ac,T.rd]}/><div style={{display:"flex",gap:12,justifyContent:"center",marginTop:8}}><span style={{fontSize:9,display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:2,background:T.ac,display:"inline-block"}}/> Receita</span><span style={{fontSize:9,display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:2,background:T.rd,display:"inline-block"}}/> Despesa</span></div></div>;})()}
+</Card>
+<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>💰 Despesas por Categoria</div>
+{(()=>{const cats=Object.entries(fBCO).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);const colors=[T.rd,T.or,T.pu,T.bl,T.ac,T.gr,"#FF8A80","#EA80FC"];if(cats.length===0)return <div style={{textAlign:"center",color:T.dm,fontSize:11,padding:20}}>Sem dados</div>;return <div style={{display:"flex",alignItems:"center",gap:12}}><DonutChart data={cats.map(([k,v],i)=>({l:k,v,c:colors[i%colors.length]}))} size={130}/><div style={{display:"flex",flexDirection:"column",gap:3}}>{cats.map(([k,v],i)=><div key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:9}}><span style={{width:8,height:8,borderRadius:2,background:colors[i%colors.length],display:"inline-block"}}/><span style={{color:T.dm}}>{k.slice(0,20)}</span><strong>${fm(v)}</strong></div>)}</div></div>;})()}
+</Card>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>📈 LUCRO MENSAL</div>
+{(()=>{const months=MO.slice(0,Math.max(MO.indexOf(fMo)+1,3));const data=months.map(m=>{const mf=fin.filter(e=>e.month===m);return mf.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0)-mf.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0);});return <MiniLine data={data} w={280} h={50} color={T.gr}/>;})()}</Card>
+<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>🏆 TOP CLIENTE</div>
+{(()=>{const clientTotals={};sI.filter(i=>i.status==="emitida"||i.status==="paga").forEach(i=>{clientTotals[i.client]=(clientTotals[i.client]||0)+i.total;});const top=Object.entries(clientTotals).sort((a,b)=>b[1]-a[1])[0];return top?<div><div style={{fontSize:16,fontWeight:800}}>{top[0]}</div><div style={{fontSize:11,color:T.ac,fontWeight:600}}>${fm(top[1])}</div></div>:<div style={{color:T.dm,fontSize:11}}>—</div>;})()}</Card>
+<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>👷 MAIS ATIVO</div>
+{(()=>{const empTotals={};sP.forEach(p=>{empTotals[p.emp]=(empTotals[p.emp]||0)+p.casas;});const top=Object.entries(empTotals).sort((a,b)=>b[1]-a[1])[0];return top?<div><div style={{fontSize:16,fontWeight:800}}>{top[0]}</div><div style={{fontSize:11,color:T.bl,fontWeight:600}}>{top[1]} casas</div></div>:<div style={{color:T.dm,fontSize:11}}>—</div>;})()}</Card>
+</div>
 {(lowP.length>0||lowL.length>0)&&<div style={{background:T.rd+"12",borderRadius:12,padding:14,border:"1px solid "+T.rd+"33"}}><div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:6}}>⚠️ Estoque Baixo</div><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{lowP.map(p=><span key={p.id} style={{padding:"3px 8px",borderRadius:5,background:T.rd+"22",color:T.rd,fontSize:9,fontWeight:600}}>🧴 {p.n}: {p.q}</span>)}{lowL.map(l=><span key={l.id} style={{padding:"3px 8px",borderRadius:5,background:T.or+"22",color:T.or,fontSize:9,fontWeight:600}}>🛏️ {l.t} {l.s}: {l.q}</span>)}</div></div>}
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
 <Card><div style={{fontSize:12,fontWeight:600,marginBottom:10}}>Últimas Folhas</div>{sP.length===0?<div style={{color:T.dm,fontSize:11,padding:"16px 0",textAlign:"center"}}>—</div>:sP.slice(0,5).map((p,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",padding:"5px 0",borderBottom:i<4?"1px solid "+T.bd:"none",fontSize:11}}><div style={{width:6,height:6,borderRadius:"50%",background:T.ac}}/><span><strong>{p.emp}</strong> ${p.total} · {p.week}</span></div>)}</Card>
@@ -187,9 +224,9 @@ return(
 {/* PAYROLL */}
 {vw==="payroll"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:12}}>💰 Folha de Pagamento</div>
-<div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10}}>
+<div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10}}>
 <div><label style={lb}>Funcionário</label><select value={sE} onChange={e=>{setSE(e.target.value);setPI([]);}} style={{...sel,fontWeight:600,background:sE?T.aD:T.cd}}><option value="">—</option>{em.map(e=><option key={e}>{e}</option>)}</select></div>
-<div><label style={lb}>Período</label><TI value={wk} onChange={e=>setWk(e.target.value)} style={inp}/></div>
+<div><label style={lb}>De</label><input type="date" value={wkFrom} onChange={e=>setWkFrom(e.target.value)} style={inp}/></div><div><label style={lb}>Até</label><input type="date" value={wkTo} onChange={e=>setWkTo(e.target.value)} style={inp}/></div>
 <div><label style={lb}>Mês</label><select value={pM} onChange={e=>setPM(e.target.value)} style={sel}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
 </div></Card>
 {sE&&<Card>
@@ -240,7 +277,8 @@ return(
 {iI.length>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,paddingTop:10,borderTop:"2px solid "+T.ac+"44"}}><span style={{fontSize:13,fontWeight:800}}>TOTAL</span><span style={{fontSize:20,fontWeight:800,color:T.ac}}>${fm(iTot)}</span></div>}
 </Card>}
 {iC&&iI.length>0&&<div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<button onClick={async()=>{await savI();setVw("history");}} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>💾 Salvar</button>
+<button onClick={async()=>{await savI("rascunho");}} style={bt(T.or,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>📝 Salvar Rascunho</button>
+<button onClick={async()=>{await savI("emitida");setVw("history");}} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>✅ Emitir Invoice</button>
 <button onClick={()=>setVw("preview")} style={bt(T.ac,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>👁 Preview</button>
 </div>}
 </div>}
@@ -265,7 +303,7 @@ return(
 <div><label style={lb}>Descrição</label><TI value={fF.desc} onChange={e=>setFF({...fF,desc:e.target.value})} style={{...inp,fontSize:10}} placeholder="Opcional"/></div>
 <div><label style={lb}>Valor $</label><NI value={fF.amt} onChange={e=>setFF({...fF,amt:e.target.value})} style={{...inp,fontSize:11,fontWeight:700}}/></div>
 <div><label style={lb}>Data</label><input type="date" value={fF.date} onChange={e=>setFF({...fF,date:e.target.value})} style={{...inp,fontSize:10}}/></div>
-<div><label style={lb}>Semana</label><TI value={fF.week} onChange={e=>setFF({...fF,week:e.target.value})} style={{...inp,fontSize:10}} placeholder="25-02 a 01-03"/></div>
+<div><label style={lb}>De</label><input type="date" value={fF.dateFrom||""} onChange={e=>setFF({...fF,dateFrom:e.target.value})} style={{...inp,fontSize:10}}/></div><div><label style={lb}>Até</label><input type="date" value={fF.dateTo||""} onChange={e=>setFF({...fF,dateTo:e.target.value})} style={{...inp,fontSize:10}}/></div>
 <button onClick={addFin} style={bt(fF.type==="entrada"?T.gr:T.rd,T.bg)}>+</button>
 </div></Card>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -285,15 +323,15 @@ return(
 {vw==="inventory"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 {(lowP.length>0||lowL.length>0)&&<div style={{background:T.rd+"12",borderRadius:12,padding:14,border:"1px solid "+T.rd+"33"}}><div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:6}}>⚠️ Estoque Baixo</div><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{lowP.map(p=><span key={p.id} style={{padding:"3px 8px",borderRadius:5,background:T.rd+"22",color:T.rd,fontSize:9,fontWeight:600}}>🧴 {p.n}: {p.q} (mín:{p.m})</span>)}{lowL.map(l=><span key={l.id} style={{padding:"3px 8px",borderRadius:5,background:T.or+"22",color:T.or,fontSize:9,fontWeight:600}}>🛏️ {l.t} {l.s}: {l.q} (mín:{l.m})</span>)}</div></div>}
 <div style={{display:"flex",gap:3,background:T.cd,borderRadius:10,padding:4,border:"1px solid "+T.bd}}>
-{[{id:"prod",l:"🧴 Produtos"},{id:"linen",l:"🛏️ Rouparia Depósito"},{id:"lprop",l:"🏠 Rouparia/Casa"}].map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={{flex:1,padding:"8px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:10,fontWeight:iTab===t.id?600:400,fontFamily:"inherit",color:iTab===t.id?T.bg:T.dm,background:iTab===t.id?T.ac:"transparent"}}>{t.l}</button>)}
+{[{id:"prod",l:"🧴 Produtos"},{id:"linen",l:"🛏️ Rouparia Depósito"},{id:"lprop",l:"🏠 Rouparia/Casa"},{id:"losses",l:"📉 Perdas"}].map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={{flex:1,padding:"8px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:10,fontWeight:iTab===t.id?600:400,fontFamily:"inherit",color:iTab===t.id?T.bg:T.dm,background:iTab===t.id?T.ac:"transparent"}}>{t.l}</button>)}
 </div>
 
 {iTab==="prod"&&<>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>➕ Produto</div>
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr .7fr .7fr .7fr .8fr auto",gap:5,alignItems:"end"}}>
 <div><label style={lb}>Nome</label><TI value={pF.n} onChange={e=>setPF({...pF,n:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Cat.</label><select value={pF.cat} onChange={e=>setPF({...pF,cat:e.target.value})} style={sel}>{["Limpeza","Suprimentos","Cozinha","Lavanderia","Outro"].map(c=><option key={c}>{c}</option>)}</select></div>
-<div><label style={lb}>Und.</label><select value={pF.u} onChange={e=>setPF({...pF,u:e.target.value})} style={sel}>{["un","pack","roll","box","gal"].map(u=><option key={u}>{u}</option>)}</select></div>
+<div><label style={lb}>Cat.</label><select value={pF.cat} onChange={e=>{if(e.target.value==="__newcat__"){const nc=prompt("Nova categoria:");if(nc){uCC([...customCats,nc]);setPF({...pF,cat:nc});}}else setPF({...pF,cat:e.target.value});}} style={sel}>{customCats.map(c=><option key={c}>{c}</option>)}<option value="__newcat__">+ Nova Cat...</option></select></div>
+<div><label style={lb}>Und.</label><select value={pF.u} onChange={e=>{if(e.target.value==="__newunit__"){const nu=prompt("Nova unidade:");if(nu){uCU([...customUnits,nu]);setPF({...pF,u:nu});}}else setPF({...pF,u:e.target.value});}} style={sel}>{customUnits.map(u=><option key={u}>{u}</option>)}<option value="__newunit__">+ Nova...</option></select></div>
 <div><label style={lb}>Qtd</label><NI value={pF.q} onChange={e=>setPF({...pF,q:e.target.value})} style={inp}/></div>
 <div><label style={lb}>Mín</label><NI value={pF.m} onChange={e=>setPF({...pF,m:e.target.value})} style={inp}/></div>
 <div><label style={lb}>$</label><NI value={pF.cost} onChange={e=>setPF({...pF,cost:e.target.value})} style={inp}/></div>
@@ -359,6 +397,31 @@ return(
 </div>)}</div></Card>);})}
 {lbp.length===0&&<Card style={{textAlign:"center",color:T.dm,fontSize:12}}>Nenhuma rouparia atribuída.</Card>}
 </>}
+
+{iTab==="losses"&&<>
+<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📉 Registrar Perda</div>
+<div style={{display:"grid",gridTemplateColumns:"2fr 1fr .8fr 2fr auto",gap:5,alignItems:"end"}}>
+<div><label style={lb}>Tipo</label><select value={lossForm.type} onChange={e=>setLossForm({...lossForm,type:e.target.value})} style={sel}><option value="">—</option>{LT.map(t=><option key={t.c}>{t.c}</option>)}</select></div>
+<div><label style={lb}>Tam.</label><select value={lossForm.size} onChange={e=>setLossForm({...lossForm,size:e.target.value})} style={sel}><option value="">—</option>{(LT.find(t=>t.c===lossForm.type)?.s||[]).map(s=><option key={s}>{s}</option>)}</select></div>
+<div><label style={lb}>Qtd</label><NI value={lossForm.qty} onChange={e=>setLossForm({...lossForm,qty:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Motivo</label><select value={lossForm.reason} onChange={e=>setLossForm({...lossForm,reason:e.target.value})} style={sel}><option value="">—</option>{["Manchada","Rasgada","Sumiu","Desgaste","Encolheu","Descoloriu","Cliente danificou","Outro"].map(r=><option key={r}>{r}</option>)}</select></div>
+<button onClick={async()=>{if(!lossForm.type||!lossForm.qty||!lossForm.reason)return;const l={...lossForm,id:Date.now(),qty:parseInt(lossForm.qty),date:new Date().toISOString().split("T")[0]};await uLoss([l,...losses]);const li=lin.find(x=>x.t===lossForm.type&&x.s===lossForm.size);if(li){uLn(lin.map(x=>x.id===li.id?{...x,q:Math.max(0,x.q-parseInt(lossForm.qty))}:x));}setLossForm({type:"",size:"",qty:"",reason:"",loc:"deposito"});fl("📉 Perda registrada!");}} style={bt(T.rd,T.bg)}>+ Registrar</button>
+</div></Card>
+
+{(()=>{const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const monthStart=today.slice(0,8)+"01";const todayLoss=losses.filter(l=>l.date===today);const weekLoss=losses.filter(l=>l.date>=weekAgo);const monthLoss=losses.filter(l=>l.date>=monthStart);return <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+{[{l:"HOJE",d:todayLoss,c:T.or},{l:"SEMANA",d:weekLoss,c:T.pu},{l:"MÊS",d:monthLoss,c:T.rd}].map(p=><Card key={p.l}><div style={{fontSize:9,fontWeight:700,color:p.c,textTransform:"uppercase",marginBottom:4}}>{p.l}</div><div style={{fontSize:22,fontWeight:800}}>{p.d.reduce((s,l)=>s+l.qty,0)}</div><div style={{fontSize:9,color:T.dm}}>{p.d.length} registros</div></Card>)}
+</div>;})()}
+
+<Card><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📊 Motivos de Perda (Mês)</div>
+{(()=>{const monthStart=new Date().toISOString().split("T")[0].slice(0,8)+"01";const ml=losses.filter(l=>l.date>=monthStart);const reasons={};ml.forEach(l=>{reasons[l.reason]=(reasons[l.reason]||0)+l.qty;});const sorted=Object.entries(reasons).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Nenhuma perda registrada este mês.</div>:sorted.map(([r,q],i)=><div key={r} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:11}}><span>{r}</span><span style={{fontWeight:700,color:T.rd}}>{q} peças</span></div>);})()}
+</Card>
+
+<Card><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📋 Histórico de Perdas</div>
+{losses.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Nenhuma perda registrada.</div>:losses.slice(0,30).map(l=><div key={l.id} style={{display:"grid",gridTemplateColumns:"1fr .6fr .4fr 1.2fr .7fr 24px",gap:4,padding:"4px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:10}}>
+<span style={{fontWeight:600}}>{l.type}</span><span style={{color:T.dm}}>{l.size}</span><span style={{fontWeight:700,color:T.rd}}>{l.qty}</span><span style={{color:T.or}}>{l.reason}</span><span style={{color:T.dm,fontSize:9}}>{l.date}</span>
+<button onClick={async()=>{await uLoss(losses.filter(x=>x.id!==l.id));}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button>
+</div>)}</Card>
+</>}
 </div>}
 
 {/* TEAM */}
@@ -383,6 +446,7 @@ return(
 <div><label style={lb}>Data de Início</label><input type="date" value={empForm.startDate} onChange={e=>setEmpForm({...empForm,startDate:e.target.value})} style={inp}/></div>
 <button onClick={addEmpProfile} style={bt(T.ac,T.bg,{padding:"8px 24px"})}>+ Cadastrar</button>
 </div>
+<div style={{marginTop:8}}><label style={lb}>Observações</label><TI value={empForm.notes} onChange={e=>setEmpForm({...empForm,notes:e.target.value})} style={{...inp,minHeight:40}} placeholder="Anotações sobre o funcionário..."/></div>
 </Card>
 
 {empProfiles.length===0?<Card style={{textAlign:"center",color:T.dm,fontSize:12,padding:"30px 0"}}>Nenhum funcionário cadastrado ainda.</Card>:
@@ -405,7 +469,8 @@ if(isEdit){const d=editEmpData;return(
 <div><label style={lb}>Início</label><input type="date" value={d.startDate||""} onChange={e=>setEditEmpData({...d,startDate:e.target.value})} style={inp}/></div>
 <button onClick={async()=>{const u=empProfiles.map(x=>x.id===ep.id?{...x,...editEmpData}:x);await uEP(u);if(editEmpData.name!==ep.name){const ne=em.map(e=>e===ep.name?editEmpData.name:e);await uEM(ne);}setEditEmpIdx(null);fl("✅ Atualizado!");}} style={bt(T.gr,T.bg,{padding:"8px 18px"})}>✓ Salvar</button>
 <button onClick={()=>setEditEmpIdx(null)} style={bt(T.rd+"15",T.rd,{padding:"8px 18px"})}>Cancelar</button>
-</div></Card>);}
+</div>
+<div style={{marginTop:8}}><label style={lb}>Observações</label><TI value={d.notes||""} onChange={e=>setEditEmpData({...d,notes:e.target.value})} style={{...inp,minHeight:40}} placeholder="Anotações..."/></div></Card>);}
 
 return(
 <Card key={ep.id}>
@@ -436,6 +501,7 @@ return(
 <div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase",marginBottom:2}}>Aniversário</div><div style={{fontSize:12,fontWeight:500}}>{ep.bday||"—"}</div></div>
 <div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase",marginBottom:2}}>Início</div><div style={{fontSize:12,fontWeight:500}}>{ep.startDate||"—"}</div></div>
 </div>
+{ep.notes&&<div style={{marginTop:10,padding:"8px 12px",background:T.or+"08",borderRadius:6,border:"1px solid "+T.or+"22"}}><div style={{fontSize:8,color:T.or,textTransform:"uppercase",marginBottom:2,fontWeight:600}}>Observações</div><div style={{fontSize:11,color:T.tx}}>{ep.notes}</div></div>}
 </Card>);})}
 </div>}
 
@@ -454,17 +520,26 @@ return(
 <button onClick={()=>delP(p.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button></div></div></div>)}</Card>
 
 <Card><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:15,fontWeight:700}}>📄 Invoices</div>{sI.length>0&&<span style={{fontSize:11,color:T.dm}}>Total: <strong style={{color:T.ac}}>${fm(sI.reduce((s,i)=>s+i.total,0))}</strong></span>}</div>
+<div style={{display:"flex",gap:6,marginBottom:10}}>
+{[{k:"rascunho",l:"📝 Rascunhos",c:T.or},{k:"emitida",l:"📨 Emitidas",c:T.ac},{k:"paga",l:"💰 Pagas",c:T.gr}].map(t=>{const cnt=sI.filter(i=>(i.status||"emitida")===t.k).length;return <button key={t.k} onClick={()=>setInvTab(t.k)} style={{padding:"6px 14px",borderRadius:7,border:invTab===t.k?"2px solid "+t.c:"1px solid "+T.bd,background:invTab===t.k?t.c+"18":T.cd,color:invTab===t.k?t.c:T.dm,fontSize:10,fontWeight:invTab===t.k?700:500,cursor:"pointer",fontFamily:"inherit"}}>{t.l} ({cnt})</button>;})}
+</div>
+{invTab==="rascunho"&&sI.filter(i=>(i.status||"emitida")==="rascunho").length>0&&<div style={{background:T.or+"12",borderRadius:8,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><span style={{fontSize:11,fontWeight:700,color:T.or}}>📊 Previsão de Ganhos</span><span style={{fontSize:9,color:T.dm,marginLeft:8}}>(se emitir todos os rascunhos)</span></div><span style={{fontSize:18,fontWeight:800,color:T.or}}>${fm(sI.filter(i=>(i.status||"emitida")==="rascunho").reduce((s,i)=>s+i.total,0))}</span></div>}
 <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
 <select value={fIC} onChange={e=>setFIC(e.target.value)} style={{...sel,width:"auto",minWidth:150}}><option value="">Todos</option>{cls.map(c=><option key={c}>{c}</option>)}</select>
 <select value={fIM} onChange={e=>setFIM(e.target.value)} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
 {(fIC||fIM)&&<button onClick={()=>{setFIC("");setFIM("");}} style={bt(T.rd+"15",T.rd)}>✕</button>}</div>
-{fIC&&filtI.length>0&&<div style={{background:T.aD,borderRadius:8,padding:"8px 14px",marginBottom:10,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.ac,fontWeight:600}}>{fIC} — {filtI.length}</span><span style={{fontSize:13,fontWeight:800,color:T.ac}}>${fm(filtI.reduce((s,i)=>s+i.total,0))}</span></div>}
-{filtI.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>{sI.length===0?"Nenhuma invoice.":"Sem resultados."}</div>:filtI.map(inv=><div key={inv.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
-<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:7,background:T.or+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:T.or}}>#{inv.no}</div><div><div style={{fontSize:12,fontWeight:700}}>{inv.client}</div><div style={{fontSize:9,color:T.dm}}>#{inv.no} · {inv.date} · {inv.items.length}i</div></div></div>
-<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:14,fontWeight:800,color:T.ac}}>${fm(inv.total)}</div><div style={{display:"flex",gap:3}}>
+{(()=>{const tabInvs=filtI.filter(i=>(i.status||"emitida")===invTab);
+if(fIC&&tabInvs.length>0)return <div style={{background:T.aD,borderRadius:8,padding:"8px 14px",marginBottom:10,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.ac,fontWeight:600}}>{fIC} — {tabInvs.length}</span><span style={{fontSize:13,fontWeight:800,color:T.ac}}>${fm(tabInvs.reduce((s,i)=>s+i.total,0))}</span></div>;return null;})()}
+{(()=>{const tabInvs=filtI.filter(i=>(i.status||"emitida")===invTab);
+return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma invoice {invTab==="rascunho"?"em rascunho":invTab==="emitida"?"emitida":"paga"}.</div>:tabInvs.map(inv=><div key={inv.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+(invTab==="rascunho"?T.or+"44":invTab==="paga"?T.gr+"44":T.bd),marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:7,background:invTab==="rascunho"?T.or+"15":invTab==="paga"?T.gr+"15":T.ac+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:invTab==="rascunho"?T.or:invTab==="paga"?T.gr:T.ac}}>#{inv.no}</div><div><div style={{fontSize:12,fontWeight:700}}>{inv.client}</div><div style={{fontSize:9,color:T.dm}}>#{inv.no} · {inv.date} · {(inv.items||[]).length}i</div></div></div>
+<div style={{display:"flex",alignItems:"center",gap:8}}><div style={{fontSize:14,fontWeight:800,color:invTab==="paga"?T.gr:T.ac}}>${fm(inv.total)}</div><div style={{display:"flex",gap:3}}>
+{invTab==="rascunho"&&<button onClick={()=>editInv(inv)} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})} title="Editar">✏️</button>}
+{invTab==="rascunho"&&<button onClick={()=>emitirInv(inv.id)} style={bt(T.gr+"15",T.gr,{padding:"5px 8px"})} title="Emitir">📨</button>}
+{invTab==="emitida"&&<button onClick={()=>pagarInv(inv.id)} style={bt(T.gr+"15",T.gr,{padding:"5px 8px"})} title="Marcar Pago">💰</button>}
 <button onClick={()=>{setVI(inv);setVw("preview");}} style={bt(T.ac+"15",T.ac,{padding:"5px 8px"})}>👁</button>
-<button onClick={()=>{setIN(inv.no);setID(inv.date);setIC(inv.client);setII(inv.items.map(i=>({...i,id:Date.now()+Math.random()})));setVw("invoice");}} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})}>📋</button>
-<button onClick={()=>delI(inv.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button></div></div></div>)}</Card>
+{invTab!=="paga"&&<button onClick={()=>delI(inv.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button>}
+</div></div></div>);})()}</Card>
 </div>}
 
 {/* DATABASE */}
@@ -488,7 +563,7 @@ return(
 
 {cls.map(cl=>{const ps=db.filter(p=>p.c===cl&&p.n!=="(nova)");if(!ps.length)return null;return(
 <Card key={cl} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{cl} ({ps.length})</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
+<div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{editCl===cl?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><input defaultValue={cl} id={"ecl-"+cl.replace(/\s/g,"")} style={{...inp,fontSize:12,fontWeight:700,width:200,padding:"4px 8px"}}/><button onClick={()=>{const v=document.getElementById("ecl-"+cl.replace(/\s/g,"")).value;if(v&&v!==cl){const n=db.map(p=>p.c===cl?{...p,c:v}:p);uDB(n);setEditCl(null);fl("✅ Cliente renomeado!");}else setEditCl(null);}} style={bt(T.gr,T.bg,{padding:"3px 8px",fontSize:8})}>✓</button><button onClick={()=>setEditCl(null)} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button></span>:<span>{cl} ({ps.length}) <button onClick={()=>setEditCl(cl)} style={{background:"none",border:"none",cursor:"pointer",fontSize:9,color:T.dm,padding:0}}>✏️</button></span>}</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
 <div style={{padding:"0 16px"}}>{ps.map((p,i)=>{const gI=db.findIndex(x=>x.c===p.c&&x.n===p.n);const isE=eIdx===gI;
 if(isE)return(<div key={i} id={"ed-row-"+gI} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:T.aD}}>
 <input defaultValue={eD.n||""} data-field="n" style={{...inp,fontSize:10}}/>
@@ -507,5 +582,5 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 </div></div>);}
 const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
 </script>
-<script>(function(){try{var j=document.getElementById('app-jsx').textContent;var c=Babel.transform(j,{presets:['react']}).code;new Function(c)();}catch(e){console.error(e);document.getElementById('root').innerHTML='<div style="color:red;padding:40px"><pre>'+e.message+'</pre></div>';}})();</script>
+<script>(function(){try{var j=document.getElementById('app-jsx').textContent;var c=Babel.transform(j,{presets:['react']}).code;new Function(c)();}catch(e){console.error(e);document.getElementById('root').innerHTML='<div style="color:red;padding:40px;font-size:14px"><h2>Erro ao carregar</h2><pre style="white-space:pre-wrap">'+e.message+'</pre></div>';}})();</script>
 </body></html>
