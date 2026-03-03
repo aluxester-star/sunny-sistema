@@ -831,6 +831,7 @@ return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}
 <span style={{padding:"2px 6px",borderRadius:4,fontSize:7,fontWeight:700,background:(p.status||"paga")==="rascunho"?T.or+"18":(p.status||"paga")==="emitida"?T.ac+"18":T.gr+"18",color:(p.status||"paga")==="rascunho"?T.or:(p.status||"paga")==="emitida"?T.ac:T.gr}}>{(p.status||"paga")==="rascunho"?"RASCUNHO":(p.status||"paga")==="emitida"?"EMITIDA":"PAGA"}</span>
 {(p.status||"paga")==="rascunho"&&<button onClick={()=>updatePStatus(p.id,"emitida")} style={bt(T.ac+"15",T.ac,{padding:"5px 8px",fontSize:8})}>Emitir</button>}
 {((p.status||"paga")==="rascunho"||(p.status||"paga")==="emitida")&&<button onClick={()=>updatePStatus(p.id,"paga")} style={bt(T.gr+"15",T.gr,{padding:"5px 8px",fontSize:8})}>Pagar</button>}
+{(p.status||"paga")!=="paga"&&<button onClick={()=>{setSE(p.emp);setPI(p.items||[]);setWkFrom(p.wkFrom||"");setWkTo(p.wkTo||"");setPM(p.month||MO[new Date().getMonth()]);const nu=sP.filter(x=>x.id!==p.id);setSP(nu);sv("sp3",nu);fl("Editando folha...");setVw("payroll");}} style={bt(T.or+"15",T.or,{padding:"5px 8px",fontSize:8})}>Editar</button>}
 <button onClick={()=>{setVP(p);setVw("payslip");}} style={bt(T.pu+"15",T.pu,{padding:"5px 8px"})}>📄</button>
 <button onClick={()=>dlImg(p.emp,p.week,p.items,p.total)} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})}>📥</button>
 <button onClick={()=>delP(p.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button></div></div></div>)}</Card>
