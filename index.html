@@ -115,7 +115,7 @@ const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useStat
 const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
-const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
+const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);const[dataLoaded,setDataLoaded]=useState(false);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
 const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(new Date().toISOString().split("T")[0]);const[wkTo,setWkTo]=useState(new Date(Date.now()+7*86400000).toISOString().split("T")[0]);const[pM,setPM]=useState(MO[new Date().getMonth()]);const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("1148");const[iD,setID]=useState("2026-02-25");const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
@@ -149,8 +149,8 @@ try{const r=await FB.get("insp3");if(r?.value)setInspections(JSON.parse(r.value)
 try{const r=await FB.get("ls3");if(r?.value)setLosses(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cc3");if(r?.value)setCustomCats(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cu3");if(r?.value)setCustomUnits(JSON.parse(r.value));}catch{}
-})();},[]);
-useEffect(()=>{if(sP.length===0||fin.length===0)return;let added=0;const refs=fin.map(e=>e.ref);const nf=[];sP.forEach(p=>{if((p.status||"paga")==="paga"&&!refs.includes("po-"+p.id)){nf.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionario",desc:p.emp+" - "+p.week,amt:p.total,date:p.paidDate||(p.at?p.at.split("T")[0]:"")||new Date().toISOString().split("T")[0],month:p.month||MO[new Date().getMonth()],week:p.week,ref:"po-"+p.id,centro:"Equipe"});added++;}});if(added>0){const uf=[...fin,...nf];setFin(uf);sv("fn3",uf);}},[sP.length,fin.length]);
+setDataLoaded(true);})();},[]);
+useEffect(()=>{if(!dataLoaded||sP.length===0)return;let added=0;const refs=fin.map(e=>e.ref);const nf=[];sP.forEach(p=>{if((p.status||"paga")==="paga"&&!refs.includes("po-"+p.id)){nf.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionario",desc:p.emp+" - "+p.week,amt:p.total,date:p.paidDate||(p.at?p.at.split("T")[0]:"")||new Date().toISOString().split("T")[0],month:p.month||MO[new Date().getMonth()],week:p.week,ref:"po-"+p.id,centro:"Equipe"});added++;}});if(added>0){const uf=[...fin,...nf];setFin(uf);sv("fn3",uf);}},[dataLoaded]);
 const sv=async(k,d)=>{try{await FB.set(k,JSON.stringify(d));}catch{}};
 const _dbt={};const dsv=(k,d,ms=1500)=>{clearTimeout(_dbt[k]);_dbt[k]=setTimeout(()=>sv(k,d),ms);};
 const fl=m=>{setToast(m);setTimeout(()=>setToast(""),3e3);};
