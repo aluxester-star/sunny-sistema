@@ -879,7 +879,8 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 <button onClick={()=>{if(nCl&&nNm){uDB([...db,{c:nCl,n:nNm,a:nAd,ip:parseFloat(nIp)||0,ep:parseFloat(nEp)||0}]);setNNm("");setNAd("");setNIp("");setNEp("");fl("✅!");}}} style={bt(T.ac,T.bg)}>Add</button>
 </div></Card>
 
-{cls.map(cl=>{const ps=db.filter(p=>p.c===cl&&p.n!=="(nova)");if(!ps.length)return null;return(
+<>
+if(!ps.length)return null;return(
 <Card key={cl} style={{padding:0,overflow:"hidden"}}>
 <div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{editCl===cl?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><input defaultValue={cl} id={"ecl-"+cl.replace(/\s/g,"")} style={{...inp,fontSize:12,fontWeight:700,width:200,padding:"4px 8px"}}/><button onClick={()=>{const v=document.getElementById("ecl-"+cl.replace(/\s/g,"")).value;if(v&&v!==cl){const n=db.map(p=>p.c===cl?{...p,c:v}:p);uDB(n);setEditCl(null);fl("✅ Cliente renomeado!");}else setEditCl(null);}} style={bt(T.gr,T.bg,{padding:"3px 8px",fontSize:8})}>✓</button><button onClick={()=>setEditCl(null)} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button></span>:<span>{cl} ({ps.length}) <button onClick={()=>setEditCl(cl)} style={{background:"none",border:"none",cursor:"pointer",fontSize:9,color:T.dm,padding:0}}>✏️</button></span>}</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
 <div style={{padding:"0 16px"}}>{ps.map((p,i)=>{const gI=db.findIndex(x=>x.c===p.c&&x.n===p.n);const isE=eIdx===gI;
@@ -896,6 +897,7 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 <span style={{textAlign:"center",color:T.gr,fontWeight:600}}>${p.ip-p.ep}</span>
 <button onClick={()=>{const n=[...db];n.splice(gI,1);uDB(n);}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);})}</div></Card>);})}
 <Card style={{fontSize:10,color:T.dm}}>💡 Clique duas vezes em qualquer propriedade para editar</Card>
+</> 
 </div>}
 </div></div>);}
 }
