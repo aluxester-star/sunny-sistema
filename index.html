@@ -115,7 +115,7 @@ const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useStat
 const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
-const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
+const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("rascunho");const[editPId,setEditPId]=useState(null);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
 const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(new Date().toISOString().split("T")[0]);const[wkTo,setWkTo]=useState(new Date(Date.now()+7*86400000).toISOString().split("T")[0]);const[pM,setPM]=useState(MO[new Date().getMonth()]);const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("1148");const[iD,setID]=useState("2026-02-25");const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
@@ -162,7 +162,7 @@ const updPi=(id,f,v)=>{setPI(pI.map(i=>{if(i.id!==id)return i;const u={...i,[f]:
 const pTot=pI.reduce((s,i)=>s+(i.ep||0),0);const pInv=pI.reduce((s,i)=>s+(i.ip||0),0);
 const fmtPeriod=(f,t)=>{if(!f||!t)return"";const d1=new Date(f+"T12:00"),d2=new Date(t+"T12:00");const mo=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];return `${d1.getDate()} ${mo[d1.getMonth()]} - ${d2.getDate()} ${mo[d2.getMonth()]} ${d2.getFullYear()}`;};
 const wk=fmtPeriod(wkFrom,wkTo);
-const savP=async(status)=>{const st=status||"rascunho";if(editPId){const oldP=sP.find(x=>x.id===editPId);if(oldP&&(oldP.status||"paga")==="paga"){const nf=fin.filter(e=>e.ref!=="po-"+editPId);setFin(nf);await sv("fn3",nf);}const rmv=sP.filter(x=>x.id!==editPId);setSP(rmv);await sv("sp3",rmv);setEditPId(null);}const e={id:Date.now(),emp:sE,week:wk,wkFrom,wkTo,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length,status:st};const u=[e,...sP.filter(x=>x.id!==editPId)];setSP(u);await sv("sp3",u);if(st==="paga"){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:`${sE} - ${wk}`,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}setPI([]);setSE("");setEditPId(null);fl(st==="rascunho"?"Rascunho salvo!":st==="emitida"?"Folha emitida!":"Folha paga!");setVw("history");};
+const savP=async()=>{if(editPId){const oldP=sP.find(x=>x.id===editPId);if(oldP&&(oldP.status||"paga")==="paga"){const nf=fin.filter(e=>e.ref!=="po-"+editPId);setFin(nf);await sv("fn3",nf);}const rmv=sP.filter(x=>x.id!==editPId);setSP(rmv);await sv("sp3",rmv);setEditPId(null);}const e={id:Date.now(),emp:sE,week:wk,wkFrom,wkTo,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length,status:"rascunho"};const u=[e,...sP.filter(x=>x.id!==editPId)];setSP(u);await sv("sp3",u);setPI([]);setSE("");setEditPId(null);fl("Rascunho salvo!");setVw("history");};
 const updatePStatus=async(id,newSt)=>{const p=sP.find(x=>x.id===id);if(!p)return;const today=new Date().toISOString().split("T")[0];const u=sP.map(x=>x.id===id?{...x,status:newSt,paidDate:newSt==="paga"?today:x.paidDate}:x);setSP(u);await sv("sp3",u);if(newSt==="paga"&&!fin.find(e=>e.ref==="po-"+id)){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:`${p.emp} - ${p.week}`,amt:p.total,date:today,month:MO[new Date().getMonth()],week:p.week,ref:"po-"+id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}fl(newSt==="paga"?"Folha paga!":"Status atualizado!");};
 
 
@@ -203,7 +203,7 @@ setEmpForm({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",star
 const delEmpProfile=async id=>{await uEP(empProfiles.filter(e=>e.id!==id));};
 const lowP=prod.filter(p=>p.q<=p.m),lowL=lin.filter(l=>l.q<=l.m);
 
-const filtP=sP.filter(p=>{if(fPS!=="todos"&&(p.status||"paga")!==fPS)return false;if(fE&&p.emp!==fE)return false;if(fM&&p.month!==fM)return false;return true;});
+const filtP=sP.filter(p=>{if((p.status||"paga")!==fPS)return false;if(fE&&p.emp!==fE)return false;if(fM&&p.month!==fM)return false;return true;});
 const filtI=sI.filter(i=>{if(fIC&&i.client!==fIC)return false;if(fIM&&i.date){if(MO[new Date(i.date).getMonth()]!==fIM)return false;}return true;});
 const dlImg=useCallback((a,b,c,d)=>{gImg(a||sE,b||wk,c||pI,d||pTot,co);fl("📥 Baixado!");},[sE,wk,pI,pTot,co]);
 
@@ -341,12 +341,9 @@ return(
 {pI.length>0&&<div style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"10px 0 0",marginTop:4,borderTop:"2px solid "+T.ac+"44"}}><span style={{fontSize:12,fontWeight:800,gridColumn:"1/4"}}>TOTAL — {pI.length}</span><div style={{fontSize:11,fontWeight:700,textAlign:"center"}}>${pInv}</div><div style={{fontSize:13,fontWeight:800,textAlign:"center",color:T.ac}}>${pTot}</div><div style={{fontSize:11,fontWeight:700,textAlign:"center",color:pInv-pTot>0?T.gr:T.rd}}>${pInv-pTot}</div></div>}
 </Card>}
 {sE&&pI.length>0&&<div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-<button onClick={()=>savP("rascunho")} style={bt(T.or+"18",T.or,{padding:"12px 24px",borderRadius:10,fontSize:12})}>📝 Rascunho</button>
-<button onClick={()=>savP("emitida")} style={bt(T.ac,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>✅ Emitir</button>
-<button onClick={()=>savP("paga")} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>💰 Pagar</button>
-<button onClick={()=>setVw("payslip")} style={bt(T.pu,"#fff",{padding:"12px 24px",borderRadius:10,fontSize:12})}>📄 Comprovante</button>
-<button onClick={()=>dlImg()} style={bt(T.pu+"18",T.pu,{padding:"12px 24px",borderRadius:10,fontSize:12,border:"1.5px solid "+T.pu+"44"})}>📥 WhatsApp</button>
-</div>}
+<button onClick={savP} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>Salvar Rascunho</button>
+<button onClick={()=>setVw("payslip")} style={bt(T.pu,"#fff",{padding:"12px 24px",borderRadius:10,fontSize:12})}>Comprovante</button>
+<button onClick={()=>dlImg()} style={bt(T.pu+"18",T.pu,{padding:"12px 24px",borderRadius:10,fontSize:12,border:"1.5px solid "+T.pu+"44"})}>WhatsApp</button>
 </div>}
 
 {/* INVOICE */}
@@ -822,7 +819,7 @@ return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}
 {/* HISTORY */}
 {vw==="history"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:15,fontWeight:700,marginBottom:12}}>💰 Folhas</div>
-<div style={{display:"flex",gap:4,marginBottom:10}}>{[["todos","Todas"],["rascunho","Rascunhos"],["emitida","Emitidas"],["paga","Pagas"]].map(([k,l])=>{const cnt=sP.filter(p=>k==="todos"?true:(p.status||"paga")===k).length;return <button key={k} onClick={()=>setFPS(k)} style={{flex:1,padding:"8px 4px",borderRadius:8,border:fPS===k?"2px solid "+(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):"1.5px solid "+T.bd,background:fPS===k?(k==="rascunho"?T.or+"15":k==="emitida"?T.ac+"15":k==="paga"?T.gr+"15":T.bl+"15"):T.c2,color:fPS===k?(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>{k==="rascunho"?"\ud83d\udcdd":k==="emitida"?"\u2705":k==="paga"?"\ud83d\udcb0":"\ud83d\udcc1"} {l} ({cnt})</button>})}</div>
+<div style={{display:"flex",gap:4,marginBottom:10}}>{[["rascunho","Rascunhos"],["emitida","Emitidas"],["paga","Pagas"]].map(([k,l])=>{const cnt=sP.filter(p=>(p.status||"paga")===k).length;return <button key={k} onClick={()=>setFPS(k)} style={{flex:1,padding:"8px 4px",borderRadius:8,border:fPS===k?"2px solid "+(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):"1.5px solid "+T.bd,background:fPS===k?(k==="rascunho"?T.or+"15":k==="emitida"?T.ac+"15":k==="paga"?T.gr+"15":T.bl+"15"):T.c2,color:fPS===k?(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>{k==="rascunho"?"\ud83d\udcdd":k==="emitida"?"\u2705":k==="paga"?"\ud83d\udcb0":"\ud83d\udcc1"} {l} ({cnt})</button>})}</div>
 <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
 <select value={fE} onChange={e=>setFE(e.target.value)} style={{...sel,width:"auto",minWidth:150}}><option value="">Todos</option>{em.map(e=><option key={e}>{e}</option>)}</select>
 <select value={fM} onChange={e=>setFM(e.target.value)} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
@@ -899,7 +896,7 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 <Card style={{fontSize:10,color:T.dm}}>💡 Clique duas vezes em qualquer propriedade para editar</Card>
 </div>}
 </div></div>);}
-
+}
 
 const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
 
