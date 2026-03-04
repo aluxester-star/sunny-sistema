@@ -150,7 +150,7 @@ try{const r=await FB.get("ls3");if(r?.value)setLosses(JSON.parse(r.value));}catc
 try{const r=await FB.get("cc3");if(r?.value)setCustomCats(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cu3");if(r?.value)setCustomUnits(JSON.parse(r.value));}catch{}
 })();},[]);
-useEffect(()=>{if(sP.length===0||fin===null)return;let added=0;const nf=[...fin];sP.forEach(p=>{if((p.status||"paga")==="paga"&&!nf.find(e=>e.ref==="po-"+p.id)){nf.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionario",desc:`${p.emp} - ${p.week}`,amt:p.total,date:p.paidDate||(p.at?p.at.split("T")[0]:"")||new Date().toISOString().split("T")[0],month:p.month||MO[new Date().getMonth()],week:p.week,ref:"po-"+p.id,centro:"Equipe"});added++;}});if(added>0){setFin(nf);sv("fn3",nf);}},[sP]);
+useEffect(()=>{if(sP.length===0||fin.length===0)return;let added=0;const refs=fin.map(e=>e.ref);const nf=[];sP.forEach(p=>{if((p.status||"paga")==="paga"&&!refs.includes("po-"+p.id)){nf.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionario",desc:p.emp+" - "+p.week,amt:p.total,date:p.paidDate||(p.at?p.at.split("T")[0]:"")||new Date().toISOString().split("T")[0],month:p.month||MO[new Date().getMonth()],week:p.week,ref:"po-"+p.id,centro:"Equipe"});added++;}});if(added>0){const uf=[...fin,...nf];setFin(uf);sv("fn3",uf);}},[sP.length,fin.length]);
 const sv=async(k,d)=>{try{await FB.set(k,JSON.stringify(d));}catch{}};
 const _dbt={};const dsv=(k,d,ms=1500)=>{clearTimeout(_dbt[k]);_dbt[k]=setTimeout(()=>sv(k,d),ms);};
 const fl=m=>{setToast(m);setTimeout(()=>setToast(""),3e3);};
