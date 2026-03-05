@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0A0F1E"><title>Sunny Cleaning</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0A0F1E;font-family:'DM Sans',sans-serif;overflow-x:hidden}#root{min-height:100vh;overflow-x:hidden}#loading{display:flex;align-items:center;justify-content:center;height:100vh;color:#00B4D8;font-size:18px;flex-direction:column;gap:12px}#loading .sp{width:40px;height:40px;border:4px solid #1A2545;border-top:4px solid #00B4D8;border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}input,select,textarea{font-size:16px!important}@media(min-width:600px){input,select,textarea{font-size:inherit!important}}@media(max-width:600px){svg{max-width:100%!important}}@media print{.np{display:none!important}}</style><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head><body>
-<div id="root"><div id="loading"><div class="sp"></div>Carregando...</div></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script>firebase.initializeApp({apiKey:"AIzaSyDnMDfF3_k2r9ooDGzn_FN75a8nPNQRWbA",authDomain:"sunny-cleaning.firebaseapp.com",projectId:"sunny-cleaning",storageBucket:"sunny-cleaning.firebasestorage.app",messagingSenderId:"644489166887",appId:"1:644489166887:web:1a39e38137861567cb8e02"});const fs=firebase.firestore();const auth=firebase.auth();</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script type="text/plain" id="app-jsx">
-const{useState,useMemo,useCallback,useEffect}=React;
-const FB={get:async(k)=>{try{const doc=await fs.collection("sunny").doc(k).get();if(doc.exists)return{key:k,value:doc.data().value};return null;}catch(e){return null;}},set:async(k,v)=>{try{const val=typeof v==="string"?v:JSON.stringify(v);await fs.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});return{key:k,value:val};}catch(e){return null;}},del:async(k)=>{try{await fs.collection("sunny").doc(k).delete();return{key:k,deleted:true};}catch(e){return null;}}};
-function LoginScreen({onLogin}){const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);const handleLogin=async(e)=>{e.preventDefault();setErr("");setLoading(true);try{await auth.signInWithEmailAndPassword(email,pass);onLogin();}catch(error){if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");else if(error.code==="auth/user-not-found")setErr("Usu\u00e1rio n\u00e3o encontrado");else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas.");else setErr("Erro ao entrar.");}setLoading(false);};return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 50%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:16,padding:"40px 36px",maxWidth:400,width:"100%",textAlign:"center"}}><div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gest\u00e3o</div></div><div><div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div><div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter")handleLogin(e);}}/></div>{err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}<button onClick={handleLogin} disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button></div><div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito</div></div></div>;}
-function AppWrapper(){const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);const[role,setRole]=useState("admin");useEffect(()=>{const unsub=auth.onAuthStateChanged(async u=>{setUser(u);if(u){try{const r=await FB.get("users");if(r?.value){const users=JSON.parse(r.value);const key=u.email.replace(/\./g,"_");if(users[key])setRole(users[key]);else setRole("admin");}}catch{setRole("admin");}}setChecking(false);});return()=>unsub();},[]);if(checking)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16}}>Verificando acesso...</div>;if(!user)return <LoginScreen onLogin={()=>{}}/>;return <App onLogout={()=>auth.signOut()} userRole={role}/>;}
+import{useState,useMemo,useCallback,useEffect}from"react";
 const D=[{c:"Josh Green",n:"Endless Summer",a:"14137 Thacher Ave, Largo",ip:210,ep:110},{c:"Josh Green",n:"Insta-Worth",a:"1468 Marjohn Ave, Clearwater",ip:210,ep:100},{c:"Josh Green",n:"Jungle Villa",a:"700 25th St SW, Largo",ip:250,ep:110},{c:"Josh Green",n:"Tranquil Top Floor (Madeira)",a:"155 Medallion Blvd #G, Madeira Beach",ip:110,ep:45},{c:"Josh Green",n:"St Pete 3bd Heated Pool (Yellow)",a:"2580 57th Ave N, St. Petersburg",ip:300,ep:90},{c:"Josh Green",n:"Boho (Orange)",a:"3406 Keene Park Dr, Largo",ip:190,ep:90},{c:"Josh Green",n:"Heated Pool Home (Belleair)",a:"1774 Belleair Rd, Clearwater",ip:285,ep:110},{c:"Josh Green",n:"ClearWater Heated pool (Oasis)",a:"1678 Wildwood Road, Clearwater",ip:245,ep:100},{c:"Josh Green",n:"The Palm Haven",a:"12311 Julia St, Seminole",ip:280,ep:110},{c:"Josh Green",n:"Pink Waves Pool",a:"11221 Sol Vista Dr, Largo",ip:250,ep:110},{c:"Josh Green",n:"Putter Course",a:"10047 Nassau Ct, Seminole",ip:250,ep:100},{c:"Josh Green",n:"ClearWater Pickleball",a:"2237 Lawton Drive, Clearwater",ip:320,ep:110},{c:"Josh Green",n:"Iconic",a:"1484 Bugle Lane, Clearwater",ip:240,ep:100},{c:"Josh Green",n:"7bd Jungle Villa",a:"2217 Lawton Drive, Clearwater",ip:475,ep:125},{c:"Josh Green",n:"5bd Heated Pool Home",a:"14465 86th Ave N, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Waterfront Heated Pool Home",a:"835 Seacrest Dr, Largo",ip:380,ep:140},{c:"Josh Green",n:"Paradise Oasis",a:"1085 Hickory Drive, Largo",ip:280,ep:100},{c:"Josh Green",n:"Clearwater Aqua!",a:"1475 Viewtop Drive, Clearwater",ip:250,ep:110},{c:"Josh Green",n:"Surfs Up",a:"11088, 112th Street North, Largo",ip:260,ep:110},{c:"Josh Green",n:"Luxe Palms",a:"1078 Damrosch St, Largo",ip:320,ep:110},{c:"Josh Green",n:"St Pete Sun",a:"7289 61st Ave, St Pete",ip:210,ep:110},{c:"Josh Green",n:"Poinsettia",a:"13045 Poinsettia Ave, Seminole FL",ip:440,ep:170},{c:"Josh Green",n:"Coastal Charm",a:"83rd Place North 14311, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Southview",a:"1758 Southview Rd, Largo",ip:250,ep:110},
 {c:"Travis Fieldman",n:"Unit A",a:"2610 North Highland Ave, Tampa FL #A",ip:180,ep:85},{c:"Travis Fieldman",n:"Unit B",a:"2610 North Highland Ave, Tampa FL #B",ip:180,ep:85},
 {c:"PMI",n:"Cupecoy Circle",a:"Cupecoy Circle 1775, Lutz",ip:120,ep:60},{c:"PMI",n:"Barkfield Street",a:"112 Barkfield Street, Brandon",ip:240,ep:100},{c:"PMI",n:"Coastal Haven",a:"509 1st St, Indian Rocks Beach",ip:310,ep:140},
@@ -17,142 +7,54 @@ const D=[{c:"Josh Green",n:"Endless Summer",a:"14137 Thacher Ave, Largo",ip:210,
 {c:"Estaga",n:"Bugle Lane",a:"Bugle Lane, Clearwater",ip:160,ep:80},{c:"Estaga",n:"1778 Taylor",a:"1778 Taylor",ip:180,ep:90},{c:"Estaga",n:"4405",a:"4405",ip:170,ep:85},
 {c:"Michael Hur",n:"Laura Anne Drive",a:"9435 Laura Anne Dr, Seminole FL 33776",ip:240,ep:120},{c:"Danielle Pompa",n:"Danielle",a:"Danielle Pompa",ip:200,ep:100},{c:"Nicole",n:"200 Crystal Beach",a:"200 Crystal Beach",ip:170,ep:85},{c:"Marina",n:"Studio (Marina)",a:"Studio Marina",ip:60,ep:30}];
 const IE=["Jeferson e Rhaima","Odi e Gipsy","Veronica","Cris","Altair","Loide e Eduardo","Eduardo","Mariane","Nestor Jose"];
-const DC={name:"SUNNY CLEANING SERVICES",address:"3272 N Arlington Ave. - FL 33603",phone:"813-546-2577",bank:"Bank of America",account:"8981 5100 1911",routing:"063100277",zelle:"info@sunnycleaningtampa.com",venmo:"@loidealuxe",site:"www.sunnycleaningofficial.com",instagram:"Sunnycleaningofficial",facebook:"Sunnycleaningofficial"};
+const DC={name:"SUNNY CLEANING SERVICES",address:"3272 N Arlington Ave. - FL 33603",phone:"813-546-2577",bank:"Bank of America",account:"8981 5100 1911",routing:"063100277",zelle:"info@sunnycleaningtampa.com",venmo:"@loidealuxe"};
 const T={bg:"#0A0F1E",cd:"#111833",c2:"#182040",ac:"#00B4D8",aD:"rgba(0,180,216,0.12)",tx:"#E8EBF0",dm:"#707A8A",bd:"#1A2545",rd:"#FF6B6B",gr:"#4ADE80",or:"#FFB547",pu:"#A78BFA",bl:"#60A5FA"};
 const MO=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const fm=v=>parseFloat(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const DSC=["Cleaning Service","Extra Cleaning Service","Deep Cleaning Service","Restocking Items","Touch Up","Refresh Cleaning + Inventory","Outdoor Area","Cancel Stay Full Clean","Propane Tank Exchange","AC Filter","Postage (Cost)","Postage (Postal)","Cleaning + Inventory","Airbnb Setup","Extra - Pet Hair","Laundry"];
 const LOGO="";
-function DI({value,onChange,style}){const[v,setV]=useState(value||"");const vR=React.useRef(value);useEffect(()=>{if(vR.current!==value){vR.current=value;setV(value||"");}},[value]);return <input type="date" value={v} onChange={e=>{setV(e.target.value);vR.current=e.target.value;}} onBlur={()=>{if(vR.current!==value&&onChange)onChange({target:{value:vR.current}});}} style={style}/>;}
 const SunnyLogo=({h=34})=><svg width={h*2.2} height={h} viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg"><text x="5" y="82" fontFamily="Georgia,serif" fontWeight="800" fontSize="68" fill="#1B2A4A" letterSpacing="-2">Sunny</text><path d="M130 8 Q170 2 195 30" stroke="#00E5FF" strokeWidth="7" fill="none" strokeLinecap="round"/><path d="M125 22 Q160 14 188 42" stroke="#00C4D8" strokeWidth="6.5" fill="none" strokeLinecap="round"/><path d="M122 36 Q154 28 180 54" stroke="#0094B0" strokeWidth="6" fill="none" strokeLinecap="round"/><polygon points="118,28 121,18 124,28 134,31 124,34 121,44 118,34 108,31" fill="#1B8A9A"/><polygon points="119.5,26 121,22 122.5,26 126.5,27.5 122.5,29 121,33 119.5,29 115.5,27.5" fill="#00C4D8"/></svg>;
 const EC=["Pagamento Cliente (Invoice)","Plataforma (Turno/Airbnb)","Gorjeta/Extra","Deep Cleaning Avulso","Outro Serviço","Outra Entrada"];
-const ESC=["Pagamento Funcionário","Produtos Limpeza","Gasolina/Transporte","Tel/Internet/Software","Lavanderia","Seguro/Impostos","Manutenção","Reposição Casa","Café/Filtro/Sabão","Material Escritório","Aluguel","Uniforme/EPI","Treinamento","Alimentação Equipe","Estacionamento","Ferramentas","Contador/Jurídico","Plataforma/App","Outra Despesa"];
-const CCTR=["Cliente","Operacional","Administrativo","Equipe","Equipamento","Marketing"];
-const LT=[{c:"Fitted Sheet",s:["Twin","Full","Queen","King"]},{c:"Flat Sheet",s:["Twin","Full","Queen","King"]},{c:"Standard Pillowcase",s:["Standard"]},{c:"King Pillowcase",s:["King"]},{c:"Bath Towel",s:["Standard"]},{c:"Hand Towel",s:["Standard"]},{c:"Washcloth",s:["Standard"]},{c:"Makeup Towel",s:["Standard"]},{c:"Pool Towel",s:["Standard"]}];
-const ILINEN=[{id:1,t:"Fitted Sheet",s:"Queen",q:20,m:8},{id:2,t:"Fitted Sheet",s:"King",q:12,m:6},{id:3,t:"Fitted Sheet",s:"Twin",q:8,m:4},{id:4,t:"Fitted Sheet",s:"Full",q:6,m:4},{id:5,t:"Flat Sheet",s:"Queen",q:18,m:8},{id:6,t:"Flat Sheet",s:"King",q:10,m:6},{id:7,t:"Flat Sheet",s:"Twin",q:8,m:4},{id:8,t:"Flat Sheet",s:"Full",q:6,m:4},{id:9,t:"Standard Pillowcase",s:"Standard",q:30,m:12},{id:10,t:"King Pillowcase",s:"King",q:16,m:8},{id:11,t:"Bath Towel",s:"Standard",q:25,m:10},{id:12,t:"Hand Towel",s:"Standard",q:20,m:8},{id:13,t:"Washcloth",s:"Standard",q:30,m:10},{id:14,t:"Makeup Towel",s:"Standard",q:15,m:6},{id:15,t:"Pool Towel",s:"Standard",q:10,m:4}];
-const IPROD=[{id:1,n:"Clorox",cat:"Cleaning",u:"un",q:12,m:5,cost:4.99},{id:2,n:"Fabuloso",cat:"Cleaning",u:"un",q:8,m:4,cost:3.49},{id:3,n:"Windex",cat:"Cleaning",u:"un",q:6,m:3,cost:3.99},{id:4,n:"Pine-Sol",cat:"Cleaning",u:"un",q:5,m:3,cost:4.29},{id:5,n:"Mr. Clean",cat:"Cleaning",u:"un",q:4,m:3,cost:5.49},{id:6,n:"Trash Bags 13gal",cat:"Supplies",u:"roll",q:10,m:4,cost:6.99},{id:7,n:"Paper Towels",cat:"Supplies",u:"roll",q:15,m:6,cost:1.29},{id:8,n:"Toilet Paper",cat:"Supplies",u:"roll",q:24,m:10,cost:0.89},{id:9,n:"Dish Soap",cat:"Kitchen",u:"un",q:6,m:3,cost:2.99},{id:10,n:"Laundry Detergent",cat:"Laundry",u:"un",q:4,m:2,cost:11.99},{id:11,n:"Dryer Sheets",cat:"Laundry",u:"box",q:3,m:2,cost:5.99}];
+const SC=["Pagamento Funcionário","Produtos Limpeza","Gasolina/Transporte","Tel/Internet/Software","Lavanderia","Seguro/Impostos","Manutenção","Outra Despesa"];
+const LT=[{c:"Lençol Fitted",s:["Twin","Full","Queen","King"]},{c:"Lençol Flat",s:["Twin","Full","Queen","King"]},{c:"Fronha Standard",s:["Standard"]},{c:"Fronha King",s:["King"]},{c:"Toalha Banho",s:["Standard"]},{c:"Toalha Rosto",s:["Standard"]},{c:"Washcloth",s:["Standard"]},{c:"Toalha Makeup",s:["Standard"]},{c:"Toalha Piscina",s:["Standard"]}];
+const ILINEN=[{id:1,t:"Lençol Fitted",s:"Queen",q:20,m:8},{id:2,t:"Lençol Fitted",s:"King",q:12,m:6},{id:3,t:"Lençol Fitted",s:"Twin",q:8,m:4},{id:4,t:"Lençol Fitted",s:"Full",q:6,m:4},{id:5,t:"Lençol Flat",s:"Queen",q:18,m:8},{id:6,t:"Lençol Flat",s:"King",q:10,m:6},{id:7,t:"Lençol Flat",s:"Twin",q:8,m:4},{id:8,t:"Lençol Flat",s:"Full",q:6,m:4},{id:9,t:"Fronha Standard",s:"Standard",q:30,m:12},{id:10,t:"Fronha King",s:"King",q:16,m:8},{id:11,t:"Toalha Banho",s:"Standard",q:25,m:10},{id:12,t:"Toalha Rosto",s:"Standard",q:20,m:8},{id:13,t:"Washcloth",s:"Standard",q:30,m:10},{id:14,t:"Toalha Makeup",s:"Standard",q:15,m:6},{id:15,t:"Toalha Piscina",s:"Standard",q:10,m:4}];
+const IPROD=[{id:1,n:"Clorox",cat:"Limpeza",u:"un",q:12,m:5,cost:4.99},{id:2,n:"Fabuloso",cat:"Limpeza",u:"un",q:8,m:4,cost:3.49},{id:3,n:"Windex",cat:"Limpeza",u:"un",q:6,m:3,cost:3.99},{id:4,n:"Pine-Sol",cat:"Limpeza",u:"un",q:5,m:3,cost:4.29},{id:5,n:"Mr. Clean",cat:"Limpeza",u:"un",q:4,m:3,cost:5.49},{id:6,n:"Trash Bags 13gal",cat:"Suprimentos",u:"roll",q:10,m:4,cost:6.99},{id:7,n:"Paper Towels",cat:"Suprimentos",u:"roll",q:15,m:6,cost:1.29},{id:8,n:"Toilet Paper",cat:"Suprimentos",u:"roll",q:24,m:10,cost:0.89},{id:9,n:"Dish Soap",cat:"Cozinha",u:"un",q:6,m:3,cost:2.99},{id:10,n:"Laundry Detergent",cat:"Lavanderia",u:"un",q:4,m:2,cost:11.99},{id:11,n:"Dryer Sheets",cat:"Lavanderia",u:"box",q:3,m:2,cost:5.99}];
 
-function gImg(emp,wk,items,total,co){const cv=document.createElement("canvas"),W=1190,H=1684;cv.width=W;cv.height=H;const c=cv.getContext("2d"),s=2;c.fillStyle="#FFF";c.fillRect(0,0,W,H);c.fillStyle="#0B0E14";c.fillRect(0,0,W,200);c.fillStyle="#00B4D8";c.beginPath();c.arc(90,52,32,0,Math.PI*2);c.fill();c.fillStyle="#0B0E14";c.font="bold 26px Arial";c.fillText("S",80,62);c.fillStyle="#FFF";c.font="bold 24px Arial";c.fillText(co.name,140,48);c.font="15px Arial";c.fillStyle="rgba(255,255,255,0.5)";c.fillText(co.address+" | "+co.phone,140,76);c.fillStyle="#FFF";c.font="bold 18px Arial";c.textAlign="right";c.fillText("PAYMENT RECEIPT",W-60,48);c.textAlign="left";let y=136;c.fillStyle="#F0FDF9";c.fillRect(50,y,W-100,92);c.strokeStyle="#00B4D8";c.lineWidth=1;c.strokeRect(50,y,W-100,92);c.fillStyle="#888";c.font="14px Arial";c.fillText("EMPLOYEE",68,y+24);c.fillStyle="#111";c.font="bold 26px Arial";c.fillText(emp,68,y+60);c.fillStyle="#888";c.font="14px Arial";c.textAlign="right";c.fillText("PERIOD",W-68,y+24);c.fillStyle="#111";c.font="bold 22px Arial";c.fillText(wk,W-68,y+60);c.textAlign="left";y=256;c.fillStyle="#0B0E14";c.fillRect(50,y,W-100,40);c.fillStyle="#FFF";c.font="bold 14px Arial";c.fillText("#",66,y+26);c.fillText("PROPERTY",100,y+26);c.fillText("DATE",580,y+26);c.textAlign="right";c.fillText("AMOUNT",W-68,y+26);c.textAlign="left";y+=40;items.forEach((it,i)=>{const rh=36;if(i%2===0){c.fillStyle="#F9FAFB";c.fillRect(50,y,W-100,rh);}c.fillStyle="#888";c.font="15px Arial";c.fillText(String(i+1),66,y+24);c.fillStyle="#333";c.fillText((it.n||it.propName||it.property||"").slice(0,45),100,y+24);c.fillStyle="#888";c.fillText(it.date||"—",580,y+24);c.fillStyle="#0094B0";c.font="bold 16px Arial";c.textAlign="right";c.fillText(`$ ${(it.ep||it.employeePay||0).toFixed(2)}`,W-68,y+24);c.textAlign="left";y+=rh;});y+=6;c.fillStyle="#0B0E14";c.fillRect(50,y,W-100,2);y+=12;c.fillStyle="#111";c.font="bold 20px Arial";c.fillText(`TOTAL: ${items.length} properties`,66,y+24);c.fillStyle="#0094B0";c.font="bold 30px Arial";c.textAlign="right";c.fillText(`$ ${(total||0).toFixed(2)}`,W-68,y+28);c.textAlign="left";y+=60;c.strokeStyle="#E5E7EB";c.strokeRect(50,y,W-100,80);c.fillStyle="#888";c.font="bold 14px Arial";c.fillText("COMPANY INFO",68,y+24);c.font="15px Arial";c.fillStyle="#444";c.fillText(co.name+" | "+co.address,68,y+50);c.fillText("Tel: "+co.phone+" | "+co.zelle,68,y+70);y+=110;c.fillStyle="#ccc";c.font="13px Arial";c.textAlign="center";c.fillText("Generated by Sunny Cleaning | "+new Date().toLocaleDateString("en-US"),W/2,y);const lk=document.createElement("a");lk.download=`Payment_${emp.replace(/\s/g,"_")}_${wk.replace(/\s/g,"_")}.png`;lk.href=cv.toDataURL("image/png",1.0);lk.click();}
+function gImg(emp,wk,items,total,co){const cv=document.createElement("canvas"),W=1190,H=1684;cv.width=W;cv.height=H;const c=cv.getContext("2d"),s=2;c.fillStyle="#FFF";c.fillRect(0,0,W,H);c.fillStyle="#0B0E14";c.fillRect(0,0,W,200);c.fillStyle="#00B4D8";c.beginPath();c.arc(90,52,32,0,Math.PI*2);c.fill();c.fillStyle="#0B0E14";c.font="bold 26px Arial";c.fillText("S",80,62);c.fillStyle="#FFF";c.font="bold 24px Arial";c.fillText(co.name,140,48);c.font="15px Arial";c.fillStyle="rgba(255,255,255,0.5)";c.fillText(co.address+" | "+co.phone,140,76);c.fillStyle="#FFF";c.font="bold 18px Arial";c.textAlign="right";c.fillText("COMPROVANTE DE PAGAMENTO",W-60,48);c.textAlign="left";let y=136;c.fillStyle="#F0FDF9";c.fillRect(50,y,W-100,92);c.strokeStyle="#00B4D8";c.lineWidth=1;c.strokeRect(50,y,W-100,92);c.fillStyle="#888";c.font="14px Arial";c.fillText("FUNCIONÁRIO",68,y+24);c.fillStyle="#111";c.font="bold 26px Arial";c.fillText(emp,68,y+60);c.fillStyle="#888";c.font="14px Arial";c.textAlign="right";c.fillText("PERÍODO",W-68,y+24);c.fillStyle="#111";c.font="bold 22px Arial";c.fillText(wk,W-68,y+60);c.textAlign="left";y=256;c.fillStyle="#0B0E14";c.fillRect(50,y,W-100,40);c.fillStyle="#FFF";c.font="bold 14px Arial";c.fillText("#",66,y+26);c.fillText("PROPRIEDADE",100,y+26);c.fillText("DATA",580,y+26);c.textAlign="right";c.fillText("VALOR",W-68,y+26);c.textAlign="left";y+=40;items.forEach((it,i)=>{const rh=36;if(i%2===0){c.fillStyle="#F9FAFB";c.fillRect(50,y,W-100,rh);}c.fillStyle="#888";c.font="15px Arial";c.fillText(String(i+1),66,y+24);c.fillStyle="#333";c.fillText((it.propName||it.property||"").slice(0,45),100,y+24);c.fillStyle="#888";c.fillText(it.date||"—",580,y+24);c.fillStyle="#0094B0";c.font="bold 16px Arial";c.textAlign="right";c.fillText(`$ ${it.employeePay.toFixed(2)}`,W-68,y+24);c.textAlign="left";y+=rh;});y+=6;c.fillStyle="#0B0E14";c.fillRect(50,y,W-100,2);y+=12;c.fillStyle="#111";c.font="bold 20px Arial";c.fillText(`TOTAL: ${items.length} casas`,66,y+24);c.fillStyle="#0094B0";c.font="bold 30px Arial";c.textAlign="right";c.fillText(`$ ${total.toFixed(2)}`,W-68,y+28);c.textAlign="left";y+=60;c.strokeStyle="#E5E7EB";c.strokeRect(50,y,W-100,80);c.fillStyle="#888";c.font="bold 14px Arial";c.fillText("INFORMAÇÕES DA EMPRESA",68,y+24);c.font="15px Arial";c.fillStyle="#444";c.fillText(co.name+" | "+co.address,68,y+50);c.fillText("Tel: "+co.phone+" | "+co.zelle,68,y+70);y+=110;c.fillStyle="#ccc";c.font="13px Arial";c.textAlign="center";c.fillText("Comprovante gerado por Sunny Cleaning | "+new Date().toLocaleDateString("pt-BR"),W/2,y);const lk=document.createElement("a");lk.download=`Pgto_${emp.replace(/\s/g,"_")}_${wk.replace(/\s/g,"_")}.png`;lk.href=cv.toDataURL("image/png",1.0);lk.click();}
 
-function TI({value,onChange,style,placeholder,type}){const[v,setV]=useState(value);useEffect(()=>{setV(value);},[value]);return <input type={type||"text"} value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v!==value)onChange({target:{value:v}});}} onKeyDown={e=>{if(e.key==="Enter"){e.target.blur();}}} style={style} placeholder={placeholder}/>;}
-function NI({value,onChange,style}){const[v,setV]=useState(value);useEffect(()=>{setV(value);},[value]);return <input type="number" value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v!==value)onChange({target:{value:v}});}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={style}/>;}
-
-function BarChart({data,h=180,colors}){const mx=Math.max(...data.map(d=>Math.max(d.v1||0,d.v2||0)),1);return <div style={{display:"flex",alignItems:"flex-end",gap:6,height:h,padding:"0 4px"}}>{data.map((d,i)=><div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><div style={{display:"flex",gap:2,alignItems:"flex-end",width:"100%",justifyContent:"center",height:h-24}}>{d.v1!=null&&<div style={{width:"40%",height:Math.max(2,(d.v1/mx)*(h-30)),background:colors?.[0]||"#00B4D8",borderRadius:"3px 3px 0 0",minHeight:2}}/>}{d.v2!=null&&<div style={{width:"40%",height:Math.max(2,(d.v2/mx)*(h-30)),background:colors?.[1]||"#FF6B6B",borderRadius:"3px 3px 0 0",minHeight:2}}/>}</div><span style={{fontSize:8,color:"#707A8A",whiteSpace:"nowrap"}}>{d.l}</span></div>)}</div>;}
-function DonutChart({data,size=140}){const total=data.reduce((s,d)=>s+d.v,0);if(!total)return null;let cum=0;const r=size/2,ir=r*0.55,or=r*0.95;const segs=data.map(d=>{const pct=d.v/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;return{...d,pct,start,end};});return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{segs.length===1?<><circle cx={r} cy={r} r={or} fill="none" stroke={segs[0].c} strokeWidth={or-ir} opacity={0.85}/><circle cx={r} cy={r} r={ir} fill="none"/></>:segs.map((s,i)=>{const x1=r+or*Math.cos(s.start),y1=r+or*Math.sin(s.start),x2=r+or*Math.cos(s.end),y2=r+or*Math.sin(s.end);const ix1=r+ir*Math.cos(s.start),iy1=r+ir*Math.sin(s.start),ix2=r+ir*Math.cos(s.end),iy2=r+ir*Math.sin(s.end);const lg=s.pct>0.5?1:0;return <path key={i} d={`M${x1},${y1}A${or},${or},0,${lg},1,${x2},${y2}L${ix2},${iy2}A${ir},${ir},0,${lg},0,${ix1},${iy1}Z`} fill={s.c} opacity={0.85} stroke="#0A0F1E" strokeWidth={1}/>})}<text x={r} y={r-6} textAnchor="middle" fill="#E8EBF0" fontSize="18" fontWeight="800">${fm(total)}</text><text x={r} y={r+12} textAnchor="middle" fill="#707A8A" fontSize="9">TOTAL</text></svg>;}
-function MiniLine({data,w=200,h=50,color="#00B4D8"}){if(!data.length)return null;const mx=Math.max(...data),mn=Math.min(...data);const range=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/range)*(h-10)-5}`).join(" ");return <svg width={w} height={h}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={h-((v-mn)/range)*(h-10)-5} r="3" fill={color}/>)}</svg>;}
-const INSP_CHECKLIST={
-"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"}],
-"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true}],
-"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"}],
-"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"}],
-"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"}],
-"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true}]};
-const ALL_INSP_ITEMS=Object.values(INSP_CHECKLIST).flat();
-const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v&&v!=="na"&&v!=="");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
-const getScoreColor=(s)=>s>=95?"#4ADE80":s>=90?"#00B4D8":s>=80?"#FFB547":"#FF6B6B";
-const getScoreLabel=(s)=>s>=95?"Excelente":s>=90?"Padrão Sunny":s>=80?"Atenção":"Reprovado";
-
-function InspForm({init,cls2,db2,em2,onSave,onCancel}){
-const[f,setF]=useState(init);
-const uf=(k,v)=>setF(p=>({...p,[k]:v}));
-const score=calcInspScore(f.checks);
-const crits=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");
-const lb2={fontSize:10,color:"#707A8A",marginBottom:3,display:"block"};
-const inp2={width:"100%",padding:"8px 10px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:6,color:"#E8EBF0",fontSize:12,outline:"none",fontFamily:"inherit"};
-const sel2={...inp2,cursor:"pointer"};
-const bd2="#1A2545";const cd2="#111833";
-return <div style={{display:"flex",flexDirection:"column",gap:12}}>
-<div style={{display:"flex",gap:8,marginBottom:4}}><button onClick={onCancel} style={{padding:"6px 14px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontFamily:"inherit",background:"#182040",color:"#707A8A"}}>← Voltar</button><span style={{fontSize:14,fontWeight:700,display:"flex",alignItems:"center"}}>Nova Inspeção</span></div>
-<div style={{background:cd2,borderRadius:12,padding:16,border:"1px solid "+bd2}}>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8,marginBottom:12}}>
-<div><label style={lb2}>Cliente</label><select value={f.client} onChange={e=>{setF(p=>({...p,client:e.target.value,house:"",houseName:""}));}} style={sel2}><option value="">—</option>{cls2.map(c=><option key={c}>{c}</option>)}</select></div>
-<div><label style={lb2}>Casa</label><select value={f.house} onChange={e=>setF(p=>({...p,house:e.target.value,houseName:e.target.value}))} style={sel2}><option value="">—</option>{f.client&&db2.filter(p=>p.c===f.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
-<div><label style={lb2}>Data</label><DI value={f.date} onChange={e=>uf("date",e.target.value)} style={inp2}/></div>
-<div><label style={lb2}>Tipo</label><select value={f.type} onChange={e=>uf("type",e.target.value)} style={sel2}>{["Turnover","Deep Clean","Pós Manutenção","Surpresa","Auditoria Mensal"].map(t=><option key={t}>{t}</option>)}</select></div>
-</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-<div><label style={lb2}>Funcionários</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em2.map(e=><button type="button" key={e} onClick={()=>{setF(p=>{const emps=p.employees||[];return{...p,employees:emps.includes(e)?emps.filter(x=>x!==e):[...emps,e]};});}} style={{padding:"4px 10px",borderRadius:5,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(f.employees||[]).includes(e)?"rgba(0,180,216,0.15)":"#182040",color:(f.employees||[]).includes(e)?"#00B4D8":"#707A8A"}}>{e}</button>)}</div></div>
-<div><label style={lb2}>Inspetor</label><input value={f.inspector||""} onChange={e=>uf("inspector",e.target.value)} style={inp2} placeholder="Nome do inspetor"/></div>
-</div></div>
-
-{Object.entries(INSP_CHECKLIST).map(([area,items])=>{
-const ac=items.map(i=>f.checks[i.id]).filter(v=>v&&v!=="na"&&v!=="");
-const as2=ac.length?Math.round((ac.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0)/(ac.length*2))*100):null;
-return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid "+bd2,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:"rgba(0,180,216,0.06)",fontSize:12,fontWeight:700,color:"#00B4D8",display:"flex",justifyContent:"space-between"}}><span>{area}</span>{as2!==null&&<span style={{color:getScoreColor(as2)}}>{as2}%</span>}</div>
-<div style={{padding:"0 12px"}}>{items.map(item=>{const v=f.checks[item.id];return <div key={item.id} style={{borderBottom:"1px solid "+bd2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 4px",gap:8}}>
-<span style={{fontSize:11,flex:1,color:"#E8EBF0"}}>{item.t}{item.crit&&<span style={{color:"#FF6B6B",fontSize:7,marginLeft:4,fontWeight:700}}> CRITICO</span>}</span>
-<div style={{display:"flex",gap:3,flexShrink:0}}>
-{[["ok","OK","#4ADE80"],["adjust","Ajuste","#FFB547"],["fail","Repr.","#FF6B6B"],["na","N/A","#707A8A"]].map(([k,l,c])=><button type="button" key={k} onClick={()=>setF(p=>({...p,checks:{...p.checks,[item.id]:k}}))} style={{padding:"4px 9px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",border:v===k?"2px solid "+c:"1px solid "+bd2,background:v===k?c+"22":cd2,color:c,fontFamily:"inherit",minWidth:36,textAlign:"center"}}>{l}</button>)}
-</div></div>
-{(v==="adjust"||v==="fail")&&<div style={{padding:"0 4px 6px"}}>
-<div style={{display:"flex",gap:4,alignItems:"center"}}>
-<input placeholder={"Obs: "+item.t.toLowerCase()} value={(f.notes||{})[item.id]||""} onChange={e=>setF(p=>({...p,notes:{...(p.notes||{}),[item.id]:e.target.value}}))} style={{...inp2,fontSize:9,padding:"6px 8px",flex:1,background:v==="fail"?"rgba(255,107,107,0.05)":"rgba(255,181,71,0.05)"}}/>
-<label style={{padding:"4px 8px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",background:"rgba(0,180,216,0.12)",color:"#00B4D8",border:"1px solid rgba(0,180,216,0.3)",whiteSpace:"nowrap"}}>📷 Foto<input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{const file=e.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{const img=new Image();img.onload=()=>{const cv=document.createElement("canvas");const MAX=400;let w=img.width,h=img.height;if(w>h){if(w>MAX){h=h*(MAX/w);w=MAX;}}else{if(h>MAX){w=w*(MAX/h);h=MAX;}}cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);const compressed=cv.toDataURL("image/jpeg",0.5);setF(p=>({...p,photos:{...(p.photos||{}),[item.id]:compressed}}));};img.src=ev.target.result;};reader.readAsDataURL(file);}}/></label>
-</div>
-{(f.photos||{})[item.id]&&<div style={{marginTop:4,position:"relative",display:"inline-block"}}><img src={(f.photos||{})[item.id]} style={{maxWidth:120,borderRadius:4,border:"1px solid rgba(0,180,216,0.3)"}}/><button type="button" onClick={()=>setF(p=>{const ph={...(p.photos||{})};delete ph[item.id];return{...p,photos:ph};})} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:8,border:"none",background:"#FF6B6B",color:"#fff",fontSize:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>X</button></div>}
-</div>}
-</div>})}</div></div>})}
-
-<div style={{background:cd2,borderRadius:12,padding:12,border:"1px solid "+bd2}}>
-<label style={lb2}>Observações Gerais</label><textarea value={f.generalNotes||""} onChange={e=>uf("generalNotes",e.target.value)} style={{...inp2,minHeight:50,resize:"vertical"}} placeholder="Notas gerais..."/>
-</div>
-
-<div style={{textAlign:"center",padding:"8px 0"}}>
-<div style={{fontSize:40,fontWeight:800,color:getScoreColor(score)}}>{score}</div>
-<div style={{fontSize:11,color:"#707A8A"}}>{getScoreLabel(score)}</div>
-{crits.length>0&&<div style={{marginTop:6,padding:"6px 14px",borderRadius:6,background:"rgba(255,107,107,0.12)",color:"#FF6B6B",fontSize:10,fontWeight:700,display:"inline-block"}}>CRITICO: {crits.length} falha(s) — Casa não liberada</div>}
-</div>
-<div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
-<button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
-</div></div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","inventory","team","inspect","history","database"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
-function App({onLogout,userRole="admin"}){
+export default function App(){
 const[vw,setVw]=useState("dashboard");
 const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useState(DC);
 const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
-const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
-const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(new Date().toISOString().split("T")[0]);const[wkTo,setWkTo]=useState(new Date(Date.now()+7*86400000).toISOString().split("T")[0]);const[pM,setPM]=useState(MO[new Date().getMonth()]);const[pI,setPI]=useState([]);
+const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
+const[sE,setSE]=useState("");const[wk,setWk]=useState("25-02 a 01-03");const[pM,setPM]=useState("Fevereiro");const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("1148");const[iD,setID]=useState("2026-02-25");const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
 const[nEmpN,setNEmpN]=useState("");const[eIdx,setEIdx]=useState(null);const[eD,setED]=useState({});
-const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");
-const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:new Date().toISOString().split("T")[0],dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
-const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");
-const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
-const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Laundry"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
-const[customFinCats,setCustomFinCats]=useState([]);
-const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
+const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState("Fevereiro");const[fWk,setFWk]=useState("");
+const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:"2026-02-25",week:""});
+const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);
+const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Limpeza",u:"un",q:"",m:"",cost:""});
+const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Bom"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
-const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});
+const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:""});
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
 const[showSSN,setShowSSN]=useState({});
-const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(null);const[invTab,setInvTab]=useState("todos");
 
 useEffect(()=>{(async()=>{
-try{const r=await FB.get("sp3");if(r?.value)setSP(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("si3");if(r?.value)setSI(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("db3");if(r?.value)setDb(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("em3");if(r?.value)setEm(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("fn3");if(r?.value)setFin(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("pr3");if(r?.value)setProd(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("ln3");if(r?.value)setLin(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("lb3");if(r?.value)setLbp(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("ep3");if(r?.value)setEmpProfiles(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("cfc3");if(r?.value)setCustomFinCats(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("co3");if(r?.value)setCo({...DC,...JSON.parse(r.value)});}catch{}
-try{const r=await FB.get("insp3");if(r?.value)setInspections(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("ls3");if(r?.value)setLosses(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("cc3");if(r?.value)setCustomCats(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("cu3");if(r?.value)setCustomUnits(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("sp3");if(r?.value)setSP(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("si3");if(r?.value)setSI(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("db3");if(r?.value)setDb(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("em3");if(r?.value)setEm(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("fn3");if(r?.value)setFin(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("pr3");if(r?.value)setProd(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("ln3");if(r?.value)setLin(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("lb3");if(r?.value)setLbp(JSON.parse(r.value));}catch{}
+try{const r=await window.storage.get("ep3");if(r?.value)setEmpProfiles(JSON.parse(r.value));}catch{}
 })();},[]);
-
-const sv=async(k,d)=>{try{await FB.set(k,JSON.stringify(d));}catch{}};
-const _dbt={};const dsv=(k,d,ms=1500)=>{clearTimeout(_dbt[k]);_dbt[k]=setTimeout(()=>sv(k,d),ms);};
+const sv=async(k,d)=>{try{await window.storage.set(k,JSON.stringify(d));}catch{}};
 const fl=m=>{setToast(m);setTimeout(()=>setToast(""),3e3);};
 const cls=useMemo(()=>[...new Set(db.map(p=>p.c))].sort(),[db]);
 const clP=useMemo(()=>db.filter(p=>p.c===iC),[db,iC]);
@@ -160,50 +62,37 @@ const clP=useMemo(()=>db.filter(p=>p.c===iC),[db,iC]);
 const addPi=()=>setPI([...pI,{id:Date.now(),c:"",n:"",a:"",date:"",ep:0,ip:0}]);
 const updPi=(id,f,v)=>{setPI(pI.map(i=>{if(i.id!==id)return i;const u={...i,[f]:v};if(f==="n"){const p=db.find(x=>x.n===v&&x.c===i.c);if(p){u.ep=p.ep;u.ip=p.ip;u.a=p.a;}}if(f==="c"){u.n="";u.a="";u.ep=0;u.ip=0;}return u;}));};
 const pTot=pI.reduce((s,i)=>s+(i.ep||0),0);const pInv=pI.reduce((s,i)=>s+(i.ip||0),0);
-const fmtPeriod=(f,t)=>{if(!f||!t)return"";const d1=new Date(f+"T12:00"),d2=new Date(t+"T12:00");const mo=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];return `${d1.getDate()} ${mo[d1.getMonth()]} - ${d2.getDate()} ${mo[d2.getMonth()]} ${d2.getFullYear()}`;};
-const wk=fmtPeriod(wkFrom,wkTo);
-const savP=async(status)=>{const st=status||"rascunho";if(editPId){const oldP=sP.find(x=>x.id===editPId);if(oldP&&(oldP.status||"paga")==="paga"){const nf=fin.filter(e=>e.ref!=="po-"+editPId);setFin(nf);await sv("fn3",nf);}const rmv=sP.filter(x=>x.id!==editPId);setSP(rmv);await sv("sp3",rmv);setEditPId(null);}const e={id:Date.now(),emp:sE,week:wk,wkFrom,wkTo,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length,status:st};const u=[e,...sP.filter(x=>x.id!==editPId)];setSP(u);await sv("sp3",u);if(st==="paga"){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:sE+" - "+wk,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}setPI([]);setSE("");setEditPId(null);fl(st==="rascunho"?"Rascunho salvo!":st==="emitida"?"Folha emitida!":"Folha paga!");setVw("history");};
-const updatePStatus=async(id,newSt)=>{const p=sP.find(x=>x.id===id);if(!p)return;const today=new Date().toISOString().split("T")[0];const u=sP.map(x=>x.id===id?{...x,status:newSt,paidDate:newSt==="paga"?today:x.paidDate}:x);setSP(u);await sv("sp3",u);if(newSt==="paga"&&!fin.find(e=>e.ref==="po-"+id)){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:`${p.emp} - ${p.week}`,amt:p.total,date:today,month:MO[new Date().getMonth()],week:p.week,ref:"po-"+id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}fl(newSt==="paga"?"Folha paga!":"Status atualizado!");};
-
-
+const savP=async()=>{const e={id:Date.now(),emp:sE,week:wk,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length};const u=[e,...sP];setSP(u);await sv("sp3",u);
+const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionário",desc:`${sE} - ${wk}`,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id},{id:Date.now()+.4,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Ref. ${sE} - ${wk}`,amt:pInv,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"pi-"+e.id}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);setPI([]);setSE("");fl("✅ Folha salva!");setVw("history");};
 
 const addIi=()=>setII([...iI,{id:Date.now(),desc:"Cleaning Service",n:"",a:"",date:"",amt:0}]);
 const updIi=(id,f,v)=>{setII(iI.map(i=>{if(i.id!==id)return i;const u={...i,[f]:v};if(f==="n"){const p=db.find(x=>x.n===v&&x.c===iC);if(p){u.amt=p.ip;u.a=p.a;}}return u;}));};
 const iTot=iI.reduce((s,i)=>s+(parseFloat(i.amt)||0),0);
-const savI=async(status)=>{const st=status||"rascunho";
-if(editInvId){const u=sI.map(i=>i.id===editInvId?{...i,no:iN,date:iD,client:iC,items:iI,total:iTot,status:st,at:new Date().toISOString()}:i);setSI(u);await sv("si3",u);
-if(st==="emitida"){const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+editInvId};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);}setEditInvId(null);fl(st==="rascunho"?"📝 Rascunho atualizado!":"✅ Invoice emitida!");return;}
-const e={id:Date.now(),no:iN,date:iD,client:iC,items:iI,total:iTot,at:new Date().toISOString(),status:st};const u=[e,...sI];setSI(u);await sv("si3",u);
-if(st==="emitida"){const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+e.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);}fl(st==="rascunho"?"📝 Rascunho salvo!":"✅ Invoice emitida!");};
-const emitirInv=async(id)=>{const inv=sI.find(i=>i.id===id);if(!inv)return;const u=sI.map(i=>i.id===id?{...i,status:"emitida",emitidaAt:new Date().toISOString()}:i);setSI(u);await sv("si3",u);const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${inv.no} - ${inv.client}`,amt:inv.total,date:inv.date,month:inv.date?MO[new Date(inv.date).getMonth()]:"",week:"",ref:"si-"+inv.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);fl("✅ Invoice #"+inv.no+" emitida!");};
-const pagarInv=async(id)=>{const u=sI.map(i=>i.id===id?{...i,status:"paga",pagaAt:new Date().toISOString()}:i);setSI(u);await sv("si3",u);fl("💰 Invoice marcada como paga!");};
-const editInv=(inv)=>{setIN(inv.no);setID(inv.date);setIC(inv.client);setII(inv.items||[]);setEditInvId(inv.id);setVw("invoice");};
+const savI=async()=>{const e={id:Date.now(),no:iN,date:iD,client:iC,items:iI,total:iTot,at:new Date().toISOString()};const u=[e,...sI];setSI(u);await sv("si3",u);
+const nf={id:Date.now()+.5,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${iN} - ${iC}`,amt:iTot,date:iD,month:iD?MO[new Date(iD).getMonth()]:"",week:"",ref:"si-"+e.id};const uf=[nf,...fin];setFin(uf);await sv("fn3",uf);fl("✅ Invoice salva!");};
 
-const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id);setFin(uf);await sv("fn3",uf);};
+const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id&&e.ref!=="pi-"+id);setFin(uf);await sv("fn3",uf);};
 const delI=async id=>{const u=sI.filter(i=>i.id!==id);setSI(u);await sv("si3",u);const uf=fin.filter(e=>e.ref!=="si-"+id);setFin(uf);await sv("fn3",uf);};
-const uDB=async n=>{setDb(n);dsv("db3",n);};const uEM=async n=>{setEm(n);dsv("em3",n);};
+const uDB=async n=>{setDb(n);await sv("db3",n);};const uEM=async n=>{setEm(n);await sv("em3",n);};
 
-const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date+"T12:00").getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,dateFrom:fF.dateFrom,dateTo:fF.dateTo,centro:"",centroClient:"",centroHouse:""});fl("✅ Lançamento salvo!");};
+const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date).getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,week:fF.week});fl("✅ Lançamento salvo!");};
 const delFin=async id=>{const u=fin.filter(e=>e.id!==id);setFin(u);await sv("fn3",u);};
-const syncFin=async()=>{const nw=[];sP.forEach(p=>{if((p.status||"paga")!=="paga")return;if(!fin.find(e=>e.ref==="po-"+p.id))nw.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionário",desc:`${p.emp} - ${p.week}`,amt:p.total,date:(p.at?p.at.split("T")[0]:"")||"",month:p.month,week:p.week,ref:"po-"+p.id,centro:"Equipe"});});sI.forEach(i=>{if(!fin.find(e=>e.ref==="si-"+i.id))nw.push({id:Date.now()+Math.random()+.2,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${i.no} - ${i.client}`,amt:i.total,date:i.date||"",month:i.date?MO[new Date(i.date).getMonth()]:"",week:"",ref:"si-"+i.id});});if(nw.length){const u=[...nw,...fin];setFin(u);await sv("fn3",u);fl(`✅ ${nw.length} importados!`);}else fl("ℹ️ Tudo sincronizado!");};
+const syncFin=async()=>{const nw=[];sP.forEach(p=>{if(!fin.find(e=>e.ref==="po-"+p.id))nw.push({id:Date.now()+Math.random(),type:"saida",cat:"Pagamento Funcionário",desc:`${p.emp} - ${p.week}`,amt:p.total,date:p.at?.split("T")[0]||"",month:p.month,week:p.week,ref:"po-"+p.id});if(!fin.find(e=>e.ref==="pi-"+p.id))nw.push({id:Date.now()+Math.random()+.1,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Ref. ${p.emp} - ${p.week}`,amt:p.invTot,date:p.at?.split("T")[0]||"",month:p.month,week:p.week,ref:"pi-"+p.id});});sI.forEach(i=>{if(!fin.find(e=>e.ref==="si-"+i.id))nw.push({id:Date.now()+Math.random()+.2,type:"entrada",cat:"Pagamento Cliente (Invoice)",desc:`Invoice #${i.no} - ${i.client}`,amt:i.total,date:i.date||"",month:i.date?MO[new Date(i.date).getMonth()]:"",week:"",ref:"si-"+i.id});});if(nw.length){const u=[...nw,...fin];setFin(u);await sv("fn3",u);fl(`✅ ${nw.length} importados!`);}else fl("ℹ️ Tudo sincronizado!");};
 
 const fFil=fin.filter(e=>{if(fV==="month"&&fMo&&e.month!==fMo)return false;if(fV==="week"&&fWk&&e.week&&e.week!==fWk)return false;return true;});
 const fIn=fFil.filter(e=>e.type==="entrada"),fOut=fFil.filter(e=>e.type==="saida");
 const fTI=fIn.reduce((s,e)=>s+e.amt,0),fTO=fOut.reduce((s,e)=>s+e.amt,0),fLu=fTI-fTO;
 const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut.forEach(e=>{fBCO[e.cat]=(fBCO[e.cat]||0)+e.amt;});
 
-const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
-const uInsp=async n=>{setInspections(n);await sv("insp3",n);};
-
-const newInspection=()=>{const checks={};ALL_INSP_ITEMS.forEach(i=>{checks[i.id]="";});setInspForm({house:"",client:"",date:new Date().toISOString().split("T")[0],type:"Turnover",employees:[],inspector:"",checks,notes:{},status:"pending",generalNotes:""});setInspView("form");};
+const uPr=async n=>{setProd(n);await sv("pr3",n);};const uLn=async n=>{setLin(n);await sv("ln3",n);};const uLB=async n=>{setLbp(n);await sv("lb3",n);};
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
 if(!em.includes(empForm.name)){const ne=[...em,empForm.name];uEM(ne);}
-setEmpForm({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});fl("✅ Funcionário cadastrado!");};
+setEmpForm({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:""});fl("✅ Funcionário cadastrado!");};
 const delEmpProfile=async id=>{await uEP(empProfiles.filter(e=>e.id!==id));};
 const lowP=prod.filter(p=>p.q<=p.m),lowL=lin.filter(l=>l.q<=l.m);
 
-const filtP=sP.filter(p=>{if(fPS!=="todos"&&(p.status||"paga")!==fPS)return false;if(fE&&p.emp!==fE)return false;if(fM&&p.month!==fM)return false;return true;});
+const filtP=sP.filter(p=>{if(fE&&p.emp!==fE)return false;if(fM&&p.month!==fM)return false;return true;});
 const filtI=sI.filter(i=>{if(fIC&&i.client!==fIC)return false;if(fIM&&i.date){if(MO[new Date(i.date).getMonth()]!==fIM)return false;}return true;});
 const dlImg=useCallback((a,b,c,d)=>{gImg(a||sE,b||wk,c||pI,d||pTot,co);fl("📥 Baixado!");},[sE,wk,pI,pTot,co]);
 
@@ -211,10 +100,9 @@ const inp={padding:"8px 10px",borderRadius:7,border:`1.5px solid ${T.bd}`,fontSi
 const sel={...inp,cursor:"pointer",appearance:"auto"};
 const lb={fontSize:9,fontWeight:600,color:T.dm,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2,display:"block"};
 const bt=(bg,cl,ex)=>({padding:"8px 16px",borderRadius:7,border:"none",background:bg,color:cl,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",...ex});
-const Card=({children,...p})=><div style={{background:T.cd,borderRadius:12,padding:18,border:"1px solid "+T.bd,overflowX:"auto",...p.style}}>{children}</div>;
+const Card=({children,...p})=><div style={{background:T.cd,borderRadius:12,padding:18,border:"1px solid "+T.bd,...p.style}}>{children}</div>;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"database",l:"Base",i:"🗄️"}];
-const tabs=allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
+const tabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"history",l:"Histórico",i:"📁"},{id:"database",l:"Base",i:"🗄️"}];
 
 // === PAYSLIP ===
 if(vw==="payslip"){const d=vP||{emp:sE,week:wk,items:pI,total:pTot};return(
@@ -223,13 +111,13 @@ if(vw==="payslip"){const d=vP||{emp:sE,week:wk,items:pI,total:pTot};return(
 <button onClick={()=>{setVw(vP?"history":"payroll");setVP(null);}} style={bt("rgba(255,255,255,0.1)","#fff")}>← Voltar</button>
 <div style={{display:"flex",gap:8}}><button onClick={()=>dlImg(d.emp,d.week,d.items,d.total)} style={bt(T.pu,"#fff")}>📥</button><button onClick={()=>window.print()} style={bt(T.ac,T.bg)}>🖨️ PDF</button></div></div>
 <div style={{maxWidth:680,margin:"20px auto",padding:"35px 45px"}}>
-<div style={{background:T.bg,borderRadius:10,padding:"20px 26px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:10}}><SunnyLogo h={38}/><div><div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{co.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>{co.address} | {co.phone}</div></div></div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)",textTransform:"uppercase"}}>Payment Receipt</div></div>
-<div style={{background:"#F0FDF9",border:"2px solid #00B4D833",borderRadius:8,padding:"14px 20px",marginBottom:20,display:"flex",justifyContent:"space-between"}}><div><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Employee</div><div style={{fontSize:18,fontWeight:800,color:"#111"}}>{d.emp}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Period</div><div style={{fontSize:14,fontWeight:700,color:"#111"}}>{d.week||d.wkFrom&&d.wkTo&&fmtPeriod(d.wkFrom,d.wkTo)||"—"}</div></div></div>
+<div style={{background:T.bg,borderRadius:10,padding:"20px 26px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:10}}><SunnyLogo h={38}/><div><div style={{fontSize:14,fontWeight:700,color:"#fff"}}>{co.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>{co.address} | {co.phone}</div></div></div><div style={{fontSize:10,color:"rgba(255,255,255,0.5)",textTransform:"uppercase"}}>Comprovante</div></div>
+<div style={{background:"#F0FDF9",border:"2px solid #00B4D833",borderRadius:8,padding:"14px 20px",marginBottom:20,display:"flex",justifyContent:"space-between"}}><div><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Funcionário</div><div style={{fontSize:18,fontWeight:800,color:"#111"}}>{d.emp}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:9,color:"#888",textTransform:"uppercase"}}>Período</div><div style={{fontSize:14,fontWeight:700,color:"#111"}}>{d.week}</div></div></div>
 <div style={{borderRadius:8,overflow:"hidden",border:"1px solid #eee",marginBottom:20}}>
-<div style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",background:T.bg,padding:"8px 14px",fontSize:9,fontWeight:700,color:"#fff",textTransform:"uppercase"}}><span>No.</span><span>Property</span><span>Date</span><span style={{textAlign:"right"}}>Amount</span></div>
-{d.items.map((it,i)=><div key={it.id||i} style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",padding:"8px 14px",fontSize:12,borderBottom:"1px solid #eee",background:i%2===0?"#FAFBFC":"#fff"}}><span style={{color:"#bbb",fontSize:10}}>{i+1}</span><span style={{fontWeight:500}}>{it.n||it.propName||"—"}</span><span style={{color:"#888"}}>{it.date||"—"}</span><span style={{textAlign:"right",fontWeight:700,color:"#0094B0"}}>${(it.ep||it.employeePay||0).toFixed(2)}</span></div>)}</div>
-<div style={{display:"flex",justifyContent:"space-between",padding:"14px 18px",background:T.bg,borderRadius:8,marginBottom:20}}><div style={{color:"rgba(255,255,255,0.7)",fontSize:13}}><strong style={{color:"#fff"}}>TOTAL</strong> — {d.items.length} properties</div><div style={{fontSize:24,fontWeight:800,color:T.ac}}>$ {(d.total||0).toFixed(2)}</div></div>
-<div style={{border:"1px solid #eee",borderRadius:8,padding:"14px 18px",marginBottom:20}}><div style={{fontSize:10,fontWeight:700,marginBottom:8,color:"#333"}}>COMPANY</div><div style={{fontSize:11,color:"#555",lineHeight:1.8}}>{co.name} · {co.address} · Tel: {co.phone} · {co.zelle}</div></div>
+<div style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",background:T.bg,padding:"8px 14px",fontSize:9,fontWeight:700,color:"#fff",textTransform:"uppercase"}}><span>#</span><span>Propriedade</span><span>Data</span><span style={{textAlign:"right"}}>Valor</span></div>
+{d.items.map((it,i)=><div key={it.id||i} style={{display:"grid",gridTemplateColumns:"32px 2.5fr 1fr 0.8fr",padding:"8px 14px",fontSize:12,borderBottom:"1px solid #eee",background:i%2===0?"#FAFBFC":"#fff"}}><span style={{color:"#bbb",fontSize:10}}>{i+1}</span><span style={{fontWeight:500}}>{it.n||it.propName||"—"}</span><span style={{color:"#888"}}>{it.date||"—"}</span><span style={{textAlign:"right",fontWeight:700,color:"#0094B0"}}>${it.ep?.toFixed(2)||it.employeePay?.toFixed(2)}</span></div>)}</div>
+<div style={{display:"flex",justifyContent:"space-between",padding:"14px 18px",background:T.bg,borderRadius:8,marginBottom:20}}><div style={{color:"rgba(255,255,255,0.7)",fontSize:13}}><strong style={{color:"#fff"}}>TOTAL</strong> — {d.items.length} casas</div><div style={{fontSize:24,fontWeight:800,color:T.ac}}>$ {d.total.toFixed(2)}</div></div>
+<div style={{border:"1px solid #eee",borderRadius:8,padding:"14px 18px",marginBottom:20}}><div style={{fontSize:10,fontWeight:700,marginBottom:8,color:"#333"}}>EMPRESA</div><div style={{fontSize:11,color:"#555",lineHeight:1.8}}>{co.name} · {co.address} · Tel: {co.phone} · {co.zelle}</div></div>
 </div><style>{`@media print{.np{display:none!important;}}`}</style></div>);}
 
 // === INVOICE PREVIEW ===
@@ -258,52 +146,17 @@ return(
 {toast&&<div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",background:T.gr,color:T.bg,padding:"9px 28px",borderRadius:8,fontWeight:700,fontSize:12,zIndex:9999}}>{toast}</div>}
 <div style={{background:`linear-gradient(135deg,#111833,#0A0F1E)`,borderBottom:"1px solid "+T.bd,padding:"10px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}><SunnyLogo h={34}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8"}}>Sunny Cleaning Services</div></div>
-<div style={{display:"flex",gap:6}}><button onClick={()=>setSs(!ss)} style={bt(T.c2,T.dm)}>⚙️</button>{onLogout&&<button onClick={onLogout} style={bt(T.c2,T.dm)} title="Sair">🚪</button>}</div></div>
-{ss&&<div style={{background:T.cd,padding:"14px 18px",borderBottom:"1px solid "+T.bd}}>
-<div style={{fontSize:12,fontWeight:700,marginBottom:10}}>🏢 Informações da Empresa</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10,marginBottom:10}}>{Object.entries({name:"Nome",address:"Endereço",phone:"Telefone",bank:"Banco",account:"Conta",routing:"Routing"}).map(([k,l])=><div key={k}><label style={lb}>{l}</label><TI value={co[k]||""} onChange={e=>setCo({...co,[k]:e.target.value})} style={inp}/></div>)}</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>{Object.entries({zelle:"Zelle",venmo:"Venmo",site:"Site",instagram:"Instagram",facebook:"Facebook"}).map(([k,l])=><div key={k}><label style={lb}>{l}</label><TI value={co[k]||""} onChange={e=>setCo({...co,[k]:e.target.value})} style={inp}/></div>)}</div>
-<div style={{display:"flex",gap:8,marginTop:10,alignItems:"center"}}>
-<button onClick={async()=>{await sv("co3",co);fl("✅ Dados da empresa salvos!");}} style={{padding:"8px 20px",background:T.gr,border:"none",borderRadius:7,color:T.bg,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💾 Salvar Empresa</button>
-<span style={{fontSize:9,color:T.dm}}>Clique para salvar alterações</span>
-</div>
-{userRole==="admin"&&<div style={{marginTop:14,padding:"12px 14px",background:T.c2,borderRadius:8,border:"1px solid "+T.bd}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:11,fontWeight:700}}>👥 Gerenciar Acessos</span>
-<button onClick={async()=>{const email=prompt("Email do novo usuário:");if(!email)return;const role=prompt("Nível: admin, financeiro, estoque, operacional, visualizador");if(!role||!ROLES[role])return fl("❌ Nível inválido");const users=JSON.parse((await FB.get("users"))?.value||"{}");users[email.replace(/\./g,"_")]=role;await FB.set("users",JSON.stringify(users));fl("✅ "+email+" → "+role);}} style={bt(T.ac,T.bg,{padding:"4px 12px",fontSize:9})}>+ Convidar</button></div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(100px,1fr))",gap:4,marginBottom:8}}>{Object.entries(ROLES).map(([k,r])=><div key={k} style={{padding:"4px 8px",borderRadius:5,background:r.color+"12",textAlign:"center"}}><div style={{fontSize:9,fontWeight:700,color:r.color}}>{r.label}</div><div style={{fontSize:7,color:T.dm}}>{r.tabs.length} abas</div></div>)}</div>
-<div style={{fontSize:9,color:T.dm}}>Seu nível: <strong style={{color:(ROLES[userRole]||{}).color}}>{(ROLES[userRole]||{}).label}</strong></div>
-</div>}
-<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);sw("✅ Backup exportado!");}catch(e){sw("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);sw("✅ CSV exportado!");}catch(e){sw("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);sw("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){sw("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);sw("✅ Relatório exportado!");}catch(e){sw("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
+<button onClick={()=>setSs(!ss)} style={bt(T.c2,T.dm)}>⚙️</button></div>
+{ss&&<div style={{background:T.cd,padding:"14px 18px",borderBottom:"1px solid "+T.bd}}><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7}}>{Object.entries({name:"Nome",address:"End.",phone:"Tel",bank:"Banco",account:"Conta",routing:"Routing",zelle:"Zelle",venmo:"Venmo"}).map(([k,l])=><div key={k}><label style={lb}>{l}</label><input value={co[k]} onChange={e=>setCo({...co,[k]:e.target.value})} style={inp}/></div>)}</div></div>}
 <div style={{display:"flex",gap:2,padding:"8px 14px",borderBottom:"1px solid "+T.bd,overflowX:"auto"}}>
 {tabs.map(t=><button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"6px 10px",borderRadius:7,border:"none",cursor:"pointer",fontSize:10,fontWeight:vw===t.id?600:400,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?T.bg:T.dm,background:vw===t.id?T.ac:"transparent"}}>{t.i} {t.l}</button>)}
 </div>
-<div style={{maxWidth:1020,margin:"0 auto",padding:"16px 10px"}}>
+<div style={{maxWidth:1020,margin:"0 auto",padding:"16px 14px"}}>
 
 {/* DASHBOARD */}
 {vw==="dashboard"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
 {[{i:"💵",l:"RECEITA",v:`$${fTI.toLocaleString()}`,s:fIn.length+" entradas",cl:T.ac},{i:"📤",l:"DESPESAS",v:`$${fTO.toLocaleString()}`,s:fOut.length+" saídas",cl:T.rd},{i:"📈",l:fLu>=0?"LUCRO":"PREJUÍZO",v:`$${Math.abs(fLu).toLocaleString()}`,s:fTI?(fLu/fTI*100).toFixed(0)+"% margem":"—",cl:T.gr},{i:"🏠",l:"PROPRIEDADES",v:String(db.length),s:cls.length+" clientes",cl:T.bl}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:12,padding:"16px 18px",border:"1px solid "+T.bd}}><div style={{fontSize:16,marginBottom:6}}>{s.i}</div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>{s.l}</div><div style={{fontSize:22,fontWeight:800}}>{s.v}</div><div style={{fontSize:10,color:s.cl,marginTop:2,fontWeight:500}}>{s.s}</div></div>)}
-</div>
-{(()=>{const rascunhos=sI.filter(i=>(i.status||"emitida")==="rascunho");const emitidas=sI.filter(i=>(i.status||"emitida")==="emitida");const pagas=sI.filter(i=>(i.status||"emitida")==="paga");const prevTotal=rascunhos.reduce((s,i)=>s+i.total,0);const emitTotal=emitidas.reduce((s,i)=>s+i.total,0);return (prevTotal>0||emitTotal>0)?<div style={{display:"grid",gridTemplateColumns:prevTotal>0&&emitTotal>0?"1fr 1fr":"1fr",gap:10}}>
-{prevTotal>0&&<div style={{background:T.or+"10",borderRadius:12,padding:16,border:"1px solid "+T.or+"33"}}><div style={{fontSize:10,fontWeight:700,color:T.or,marginBottom:4}}>📊 PREVISÃO DE GANHOS</div><div style={{fontSize:24,fontWeight:800,color:T.or}}>${fm(prevTotal)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{rascunhos.length} invoice(s) em rascunho</div></div>}
-{emitTotal>0&&<div style={{background:T.ac+"10",borderRadius:12,padding:16,border:"1px solid "+T.ac+"33"}}><div style={{fontSize:10,fontWeight:700,color:T.ac,marginBottom:4}}>📨 A RECEBER (EMITIDAS)</div><div style={{fontSize:24,fontWeight:800,color:T.ac}}>${fm(emitTotal)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{emitidas.length} invoice(s) aguardando pagamento</div></div>}
-</div>:null;})()}
-{/* CHARTS */}
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📊 Receita vs Despesa (por mês)</div>
-{(()=>{const last6=MO.slice(0,Math.max(MO.indexOf(fMo)+1,3));const data=last6.map(m=>{const mFin=fin.filter(e=>e.month===m);return{l:m.slice(0,3),v1:mFin.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0),v2:mFin.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0)};});return <div><BarChart data={data} colors={[T.ac,T.rd]}/><div style={{display:"flex",gap:12,justifyContent:"center",marginTop:8}}><span style={{fontSize:9,display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:2,background:T.ac,display:"inline-block"}}/> Receita</span><span style={{fontSize:9,display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:2,background:T.rd,display:"inline-block"}}/> Despesa</span></div></div>;})()}
-</Card>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>💰 Despesas por Categoria</div>
-{(()=>{const cats=Object.entries(fBCO).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);const colors=[T.rd,T.or,T.pu,T.bl,T.ac,T.gr,"#FF8A80","#EA80FC"];if(cats.length===0)return <div style={{textAlign:"center",color:T.dm,fontSize:11,padding:20}}>Sem dados</div>;return <div style={{display:"flex",alignItems:"center",gap:12}}><DonutChart data={cats.map(([k,v],i)=>({l:k,v,c:colors[i%colors.length]}))} size={130}/><div style={{display:"flex",flexDirection:"column",gap:3}}>{cats.map(([k,v],i)=><div key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:9}}><span style={{width:8,height:8,borderRadius:2,background:colors[i%colors.length],display:"inline-block"}}/><span style={{color:T.dm}}>{k.slice(0,20)}</span><strong>${fm(v)}</strong></div>)}</div></div>;})()}
-</Card>
-</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>📈 LUCRO MENSAL</div>
-{(()=>{const months=MO.slice(0,Math.max(MO.indexOf(fMo)+1,3));const data=months.map(m=>{const mf=fin.filter(e=>e.month===m);return mf.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0)-mf.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0);});return <MiniLine data={data} w={280} h={50} color={T.gr}/>;})()}</Card>
-<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>🏆 TOP CLIENTE</div>
-{(()=>{const clientTotals={};sI.filter(i=>i.status==="emitida"||i.status==="paga").forEach(i=>{clientTotals[i.client]=(clientTotals[i.client]||0)+i.total;});const top=Object.entries(clientTotals).sort((a,b)=>b[1]-a[1])[0];return top?<div><div style={{fontSize:16,fontWeight:800}}>{top[0]}</div><div style={{fontSize:11,color:T.ac,fontWeight:600}}>${fm(top[1])}</div></div>:<div style={{color:T.dm,fontSize:11}}>—</div>;})()}</Card>
-<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:6}}>👷 MAIS ATIVO</div>
-{(()=>{const empTotals={};sP.forEach(p=>{empTotals[p.emp]=(empTotals[p.emp]||0)+p.casas;});const top=Object.entries(empTotals).sort((a,b)=>b[1]-a[1])[0];return top?<div><div style={{fontSize:16,fontWeight:800}}>{top[0]}</div><div style={{fontSize:11,color:T.bl,fontWeight:600}}>{top[1]} casas</div></div>:<div style={{color:T.dm,fontSize:11}}>—</div>;})()}</Card>
 </div>
 {(lowP.length>0||lowL.length>0)&&<div style={{background:T.rd+"12",borderRadius:12,padding:14,border:"1px solid "+T.rd+"33"}}><div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:6}}>⚠️ Estoque Baixo</div><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{lowP.map(p=><span key={p.id} style={{padding:"3px 8px",borderRadius:5,background:T.rd+"22",color:T.rd,fontSize:9,fontWeight:600}}>🧴 {p.n}: {p.q}</span>)}{lowL.map(l=><span key={l.id} style={{padding:"3px 8px",borderRadius:5,background:T.or+"22",color:T.or,fontSize:9,fontWeight:600}}>🛏️ {l.t} {l.s}: {l.q}</span>)}</div></div>}
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -317,63 +170,60 @@ return(
 {/* PAYROLL */}
 {vw==="payroll"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:12}}>💰 Folha de Pagamento</div>
-<div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10}}>
+<div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10}}>
 <div><label style={lb}>Funcionário</label><select value={sE} onChange={e=>{setSE(e.target.value);setPI([]);}} style={{...sel,fontWeight:600,background:sE?T.aD:T.cd}}><option value="">—</option>{em.map(e=><option key={e}>{e}</option>)}</select></div>
-<div><label style={lb}>De</label><DI value={wkFrom} onChange={e=>setWkFrom(e.target.value)} style={inp}/></div><div><label style={lb}>Até</label><DI value={wkTo} onChange={e=>setWkTo(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Período</label><input value={wk} onChange={e=>setWk(e.target.value)} style={inp}/></div>
 <div><label style={lb}>Mês</label><select value={pM} onChange={e=>setPM(e.target.value)} style={sel}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
 </div></Card>
 {sE&&<Card>
 <div style={{display:"flex",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:6}}><span style={{fontSize:13,fontWeight:700}}>🧹 {sE}</span>
 <div style={{display:"flex",gap:6}}>{pI.length>0&&pI[0].date&&<button onClick={()=>setPI(pI.map(i=>({...i,date:pI[0].date})))} style={bt(T.or+"15",T.or)}>📅</button>}<button onClick={addPi} style={bt(T.aD,T.ac)}>+ Casa</button></div></div>
-<div style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"0 0 4px",overflowX:"auto",borderBottom:"1px solid "+T.bd}}><span style={lb}>Cliente</span><span style={lb}>Propriedade</span><span style={lb}>Data</span><span style={lb}>Inv.</span><span style={lb}>Rep.</span><span style={lb}>Lucro</span><span/></div>
+<div style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"0 0 4px",borderBottom:"1px solid "+T.bd}}><span style={lb}>Cliente</span><span style={lb}>Propriedade</span><span style={lb}>Data</span><span style={lb}>Inv.</span><span style={lb}>Rep.</span><span style={lb}>Lucro</span><span/></div>
 {pI.map(item=>{const cp=db.filter(p=>p.c===item.c);const pr=(item.ip||0)-(item.ep||0);return(
 <div key={item.id} style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"4px 0",alignItems:"center",borderBottom:"1px solid "+T.bd}}>
-<div style={{display:"flex",alignItems:"center",gap:2}}><select value={item.c} onChange={e=>{if(e.target.value==="__new__"){const nm=prompt("Novo cliente:");if(nm){uDB([...db,{c:nm,n:"(nova)",a:"",ip:0,ep:0}]);updPi(item.id,"c",nm);fl("✅ "+nm);}}else updPi(item.id,"c",e.target.value);}} style={{...sel,fontSize:11}}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}<option value="__new__">＋ Novo...</option></select><button type="button" onClick={()=>{if(!item.c)return;if(confirm("Apagar "+item.c+" da lista?")){uDB(db.filter(p=>p.c!==item.c));updPi(item.id,"c","");}}} style={{width:20,height:20,border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10,padding:0,flexShrink:0}}>x</button></div>
-<select value={item.n} onChange={e=>{if(e.target.value==="__custom__"){const nm=prompt("Nome:");if(nm)updPi(item.id,"n",nm);}else updPi(item.id,"n",e.target.value);}} style={{...sel,fontSize:11,fontWeight:item.n?600:400,background:item.n?T.gr+"12":T.cd}}><option value="">—</option>{cp.map((p,i)=><option key={i} value={p.n}>{p.n} (${p.ep})</option>)}<option value="__custom__">Digitar...</option></select>
-<DI value={item.date} onChange={e=>updPi(item.id,"date",e.target.value)} style={{...inp,fontSize:10}}/>
-<div style={{textAlign:"center"}}><input type="number" value={item.ip||0} onChange={e=>updPi(item.id,"ip",parseFloat(e.target.value)||0)} style={{...inp,fontSize:10,width:"100%",textAlign:"center",padding:"2px 4px"}}/></div>
-<div style={{textAlign:"center"}}><input type="number" value={item.ep||0} onChange={e=>updPi(item.id,"ep",parseFloat(e.target.value)||0)} style={{...inp,fontSize:11,fontWeight:700,width:"100%",textAlign:"center",padding:"2px 4px",color:T.ac}}/></div>
+<select value={item.c} onChange={e=>{if(e.target.value==="__new__"){const nm=prompt("Novo cliente:");if(nm){uDB([...db,{c:nm,n:"(nova)",a:"",ip:0,ep:0}]);updPi(item.id,"c",nm);fl("✅ "+nm);}}else updPi(item.id,"c",e.target.value);}} style={{...sel,fontSize:11}}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}<option value="__new__">＋ Novo...</option></select>
+<select value={item.n} onChange={e=>updPi(item.id,"n",e.target.value)} style={{...sel,fontSize:11,fontWeight:item.n?600:400,background:item.n?T.gr+"12":T.cd}}><option value="">—</option>{cp.map((p,i)=><option key={i} value={p.n}>{p.n} (${p.ep})</option>)}</select>
+<input type="date" value={item.date} onChange={e=>updPi(item.id,"date",e.target.value)} style={{...inp,fontSize:10}}/>
+<div style={{fontSize:10,color:T.dm,textAlign:"center"}}>${item.ip||0}</div>
+<div style={{fontSize:11,fontWeight:700,textAlign:"center",color:T.ac}}>${item.ep||0}</div>
 <div style={{fontSize:10,fontWeight:600,textAlign:"center",color:pr>0?T.gr:T.rd}}>${pr}</div>
 <button onClick={()=>setPI(pI.filter(i=>i.id!==item.id))} style={{width:24,height:24,borderRadius:5,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:10,color:T.rd}}>✕</button>
 </div>);})}
 {pI.length===0&&<div style={{padding:"24px 0",textAlign:"center",color:T.dm,fontSize:11}}>Clique "+ Casa"</div>}
-<div style={{display:"flex",gap:6,marginTop:6}}><button onClick={addPi} style={bt(T.aD,T.ac,{fontSize:10})}>+ Casa</button><button onClick={()=>{const cn=prompt("Cliente:");if(!cn)return;const hn=prompt("Casa/servi\u00E7o:");if(!hn)return;const vl=prompt("Valor pagamento:");setPI([...pI,{id:Date.now(),c:cn,n:hn,a:"Extra",date:pI[0]?.date||"",ep:parseFloat(vl)||0,ip:0,extra:true}]);}} style={bt(T.or+"18",T.or,{fontSize:10})}>+ Extra</button></div>
 {pI.length>0&&<div style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"10px 0 0",marginTop:4,borderTop:"2px solid "+T.ac+"44"}}><span style={{fontSize:12,fontWeight:800,gridColumn:"1/4"}}>TOTAL — {pI.length}</span><div style={{fontSize:11,fontWeight:700,textAlign:"center"}}>${pInv}</div><div style={{fontSize:13,fontWeight:800,textAlign:"center",color:T.ac}}>${pTot}</div><div style={{fontSize:11,fontWeight:700,textAlign:"center",color:pInv-pTot>0?T.gr:T.rd}}>${pInv-pTot}</div></div>}
 </Card>}
 {sE&&pI.length>0&&<div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
-<button onClick={()=>savP("rascunho")} style={bt(T.or+"18",T.or,{padding:"12px 24px",borderRadius:10,fontSize:12})}>Rascunho</button>
-<button onClick={()=>savP("emitida")} style={bt(T.ac,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>Emitir</button>
-<button onClick={()=>savP("paga")} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>Pagar</button>
-<button onClick={()=>setVw("payslip")} style={bt(T.pu,"#fff",{padding:"12px 24px",borderRadius:10,fontSize:12})}>Comprovante</button>
-<button onClick={()=>dlImg()} style={bt(T.pu+"18",T.pu,{padding:"12px 24px",borderRadius:10,fontSize:12,border:"1.5px solid "+T.pu+"44"})}>WhatsApp</button>
+<button onClick={savP} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>💾 Salvar</button>
+<button onClick={()=>setVw("payslip")} style={bt(T.pu,"#fff",{padding:"12px 24px",borderRadius:10,fontSize:12})}>📄 Comprovante</button>
+<button onClick={()=>dlImg()} style={bt(T.pu+"18",T.pu,{padding:"12px 24px",borderRadius:10,fontSize:12,border:"1.5px solid "+T.pu+"44"})}>📥 WhatsApp</button>
+</div>}
 </div>}
 
 {/* INVOICE */}
 {vw==="invoice"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:12}}>📄 Invoice</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10}}>
-<div><label style={lb}>Nº</label><TI value={iN} onChange={e=>setIN(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Data</label><DI value={iD} onChange={e=>setID(e.target.value)} style={inp}/></div>
+<div style={{display:"grid",gridTemplateColumns:".8fr 1fr 2fr",gap:10}}>
+<div><label style={lb}>Nº</label><input value={iN} onChange={e=>setIN(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Data</label><input type="date" value={iD} onChange={e=>setID(e.target.value)} style={inp}/></div>
 <div><label style={lb}>👤 Cliente</label><select value={iC} onChange={e=>{if(e.target.value==="__new__"){const nm=prompt("Novo cliente:");if(nm){uDB([...db,{c:nm,n:"(nova)",a:"",ip:0,ep:0}]);setIC(nm);setII([]);fl("✅ "+nm);}}else{setIC(e.target.value);setII([]);}}} style={{...sel,fontWeight:600,background:iC?T.aD:T.cd}}><option value="">—</option>{cls.map(c=><option key={c} value={c}>{c} ({db.filter(p=>p.c===c).length})</option>)}<option value="__new__">＋ Novo Cliente...</option></select></div>
 </div></Card>
 {iC&&<Card>
 <div style={{display:"flex",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:6}}><span style={{fontSize:13,fontWeight:700}}>🧹 {iC}</span>
 <div style={{display:"flex",gap:6}}>{iI.length>0&&iI[0].date&&<button onClick={()=>setII(iI.map(i=>({...i,date:iI[0].date})))} style={bt(T.or+"15",T.or)}>📅</button>}<button onClick={addIi} style={bt(T.aD,T.ac)}>+ Add</button></div></div>
-<div style={{display:"grid",gridTemplateColumns:"1.6fr 2fr 1.8fr .9fr .8fr 28px",gap:4,padding:"0 0 4px",overflowX:"auto",borderBottom:"1px solid "+T.bd}}><span style={lb}>Tipo</span><span style={lb}>Propriedade</span><span style={lb}>Endereço</span><span style={lb}>Data</span><span style={lb}>Valor</span><span/></div>
+<div style={{display:"grid",gridTemplateColumns:"1.6fr 2fr 1.8fr .9fr .8fr 28px",gap:4,padding:"0 0 4px",borderBottom:"1px solid "+T.bd}}><span style={lb}>Tipo</span><span style={lb}>Propriedade</span><span style={lb}>Endereço</span><span style={lb}>Data</span><span style={lb}>Valor</span><span/></div>
 {iI.map(item=><div key={item.id} style={{display:"grid",gridTemplateColumns:"1.6fr 2fr 1.8fr .9fr .8fr 28px",gap:4,padding:"4px 0",alignItems:"center",borderBottom:"1px solid "+T.bd}}>
 <select value={item.desc} onChange={e=>updIi(item.id,"desc",e.target.value)} style={{...sel,fontSize:10}}>{DSC.map(o=><option key={o}>{o}</option>)}</select>
 <select value={item.n} onChange={e=>updIi(item.id,"n",e.target.value)} style={{...sel,fontSize:10,fontWeight:item.n?600:400,background:item.n?T.gr+"12":T.cd}}><option value="">—</option>{clP.map((p,i)=><option key={i} value={p.n}>{p.n} ${p.ip}</option>)}</select>
-<TI value={item.a||""} onChange={e=>updIi(item.id,"a",e.target.value)} style={{...inp,fontSize:10,color:T.ac}}/>
-<DI value={item.date} onChange={e=>updIi(item.id,"date",e.target.value)} style={{...inp,fontSize:9}}/>
-<NI value={item.amt} onChange={e=>updIi(item.id,"amt",e.target.value)} style={{...inp,fontWeight:700,textAlign:"right",fontSize:11}}/>
+<input value={item.a||""} onChange={e=>updIi(item.id,"a",e.target.value)} style={{...inp,fontSize:10,color:T.ac}}/>
+<input type="date" value={item.date} onChange={e=>updIi(item.id,"date",e.target.value)} style={{...inp,fontSize:9}}/>
+<input type="number" value={item.amt} onChange={e=>updIi(item.id,"amt",e.target.value)} style={{...inp,fontWeight:700,textAlign:"right",fontSize:11}}/>
 <button onClick={()=>setII(iI.filter(i=>i.id!==item.id))} style={{width:24,height:24,borderRadius:5,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:10,color:T.rd}}>✕</button>
 </div>)}
 {iI.length===0&&<div style={{padding:"24px 0",textAlign:"center",color:T.dm}}>Clique "+ Add"</div>}
 {iI.length>0&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,paddingTop:10,borderTop:"2px solid "+T.ac+"44"}}><span style={{fontSize:13,fontWeight:800}}>TOTAL</span><span style={{fontSize:20,fontWeight:800,color:T.ac}}>${fm(iTot)}</span></div>}
 </Card>}
 {iC&&iI.length>0&&<div style={{display:"flex",gap:8,justifyContent:"center"}}>
-<button onClick={async()=>{await savI("rascunho");}} style={bt(T.or,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>📝 Salvar Rascunho</button>
-<button onClick={async()=>{await savI("emitida");setVw("history");}} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>✅ Emitir Invoice</button>
+<button onClick={async()=>{await savI();setVw("history");}} style={bt(T.gr,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>💾 Salvar</button>
 <button onClick={()=>setVw("preview")} style={bt(T.ac,T.bg,{padding:"12px 24px",borderRadius:10,fontSize:12})}>👁 Preview</button>
 </div>}
 </div>}
@@ -392,49 +242,23 @@ return(
 <button onClick={syncFin} style={bt(T.pu+"15",T.pu,{marginLeft:"auto",padding:"6px 14px",fontSize:10})}>🔄 Sincronizar</button>
 </Card>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>➕ Novo Lançamento</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:6,marginBottom:6}}>
+<div style={{display:"grid",gridTemplateColumns:".7fr 1.5fr 2fr .8fr 1fr .8fr auto",gap:5,alignItems:"end"}}>
 <div><label style={lb}>Tipo</label><select value={fF.type} onChange={e=>setFF({...fF,type:e.target.value,cat:""})} style={{...sel,fontSize:10,background:fF.type==="entrada"?T.gr+"15":T.rd+"15",color:fF.type==="entrada"?T.gr:T.rd,fontWeight:600}}><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
-<div><label style={lb}>Categoria</label><select value={fF.cat} onChange={e=>{if(e.target.value==="__newcat__"){const nc=prompt("Nova categoria de despesa:");if(nc){const u=[...customFinCats,nc];setCustomFinCats(u);sv("cfc3",u);setFF({...fF,cat:nc});}}else setFF({...fF,cat:e.target.value});}} style={{...sel,fontSize:10}}><option value="">—</option>{(fF.type==="entrada"?EC:[...ESC,...customFinCats]).map(c=><option key={c}>{c}</option>)}{fF.type==="saida"&&<option value="__newcat__">+ Nova Categoria...</option>}</select></div>
-{fF.type==="saida"&&<div><label style={lb}>Centro de Custo</label><select value={fF.centro} onChange={e=>setFF({...fF,centro:e.target.value,centroClient:""})} style={{...sel,fontSize:10}}><option value="">—</option>{CCTR.map(c=><option key={c}>{c}</option>)}</select></div>}
-{fF.type==="saida"&&fF.centro==="Cliente"&&<div><label style={lb}>Cliente</label><select value={fF.centroClient} onChange={e=>setFF({...fF,centroClient:e.target.value,centroHouse:""})} style={{...sel,fontSize:10}}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>}
-{fF.type==="saida"&&fF.centro==="Cliente"&&fF.centroClient&&<div><label style={lb}>Casa</label><select value={fF.centroHouse||""} onChange={e=>setFF({...fF,centroHouse:e.target.value})} style={{...sel,fontSize:10}}><option value="">Todas</option>{db.filter(p=>p.c===fF.centroClient).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>}
-<div><label style={lb}>Descrição</label><TI value={fF.desc} onChange={e=>setFF({...fF,desc:e.target.value})} style={{...inp,fontSize:10}} placeholder="Ex: café, filtro, sabão..."/></div>
-<div><label style={lb}>Valor $</label><NI value={fF.amt} onChange={e=>setFF({...fF,amt:e.target.value})} style={{...inp,fontSize:11,fontWeight:700}}/></div>
-<div><label style={lb}>Data</label><DI value={fF.date} onChange={e=>setFF({...fF,date:e.target.value})} style={{...inp,fontSize:10}}/></div>
-</div>
-<div style={{display:"flex",gap:8,marginBottom:6}}>
-<button onClick={addFin} style={{padding:"10px 24px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,background:fF.type==="entrada"?"#4ADE80":"#FF6B6B",color:fF.type==="entrada"?"#0A0F1E":"#fff"}}>💾 Salvar Lançamento</button>
-</div>
-<div style={{display:"flex",gap:6,marginBottom:4,alignItems:"center"}}><span style={{fontSize:8,color:T.dm}}>Período:</span><DI value={fF.dateFrom||""} onChange={e=>setFF({...fF,dateFrom:e.target.value})} style={{...inp,fontSize:9,padding:"3px 6px",width:120}}/><DI value={fF.dateTo||""} onChange={e=>setFF({...fF,dateTo:e.target.value})} style={{...inp,fontSize:9,padding:"3px 6px",width:120}}/>{(fF.dateFrom||fF.dateTo)&&<button onClick={()=>setFF({...fF,dateFrom:"",dateTo:""})} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:9})}>Limpar</button>}</div>
-</Card>
+<div><label style={lb}>Categoria</label><select value={fF.cat} onChange={e=>setFF({...fF,cat:e.target.value})} style={{...sel,fontSize:10}}><option value="">—</option>{(fF.type==="entrada"?EC:SC).map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={lb}>Descrição</label><input value={fF.desc} onChange={e=>setFF({...fF,desc:e.target.value})} style={{...inp,fontSize:10}} placeholder="Opcional"/></div>
+<div><label style={lb}>Valor $</label><input type="number" value={fF.amt} onChange={e=>setFF({...fF,amt:e.target.value})} style={{...inp,fontSize:11,fontWeight:700}}/></div>
+<div><label style={lb}>Data</label><input type="date" value={fF.date} onChange={e=>setFF({...fF,date:e.target.value})} style={{...inp,fontSize:10}}/></div>
+<div><label style={lb}>Semana</label><input value={fF.week} onChange={e=>setFF({...fF,week:e.target.value})} style={{...inp,fontSize:10}} placeholder="25-02 a 01-03"/></div>
+<button onClick={addFin} style={bt(fF.type==="entrada"?T.gr:T.rd,T.bg)}>+</button>
+</div></Card>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
 <Card><div style={{fontSize:12,fontWeight:700,color:T.gr,marginBottom:10}}>📥 Entradas</div>{Object.entries(fBCI).sort((a,b)=>b[1]-a[1]).map(([c,v],i)=><div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3}}><span style={{color:T.dm}}>{c}</span><span style={{fontWeight:700,color:T.gr}}>${v.toLocaleString()}</span></div><div style={{height:5,background:T.bd,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:(fTI?(v/fTI*100):0)+"%",background:`linear-gradient(90deg,${T.gr},${T.ac})`,borderRadius:3}}/></div></div>)}{Object.keys(fBCI).length===0&&<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>—</div>}</Card>
 <Card><div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:10}}>📤 Saídas</div>{Object.entries(fBCO).sort((a,b)=>b[1]-a[1]).map(([c,v],i)=><div key={i} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3}}><span style={{color:T.dm}}>{c}</span><span style={{fontWeight:700,color:T.rd}}>${v.toLocaleString()}</span></div><div style={{height:5,background:T.bd,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:(fTO?(v/fTO*100):0)+"%",background:`linear-gradient(90deg,${T.rd},${T.or})`,borderRadius:3}}/></div></div>)}{Object.keys(fBCO).length===0&&<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>—</div>}</Card>
 </div>
-<Card><div style={{fontSize:12,fontWeight:700,color:T.pu,marginBottom:10}}>🏷️ Saídas por Centro de Custo</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
-{(()=>{const byCentro={};fOut.forEach(e=>{const c=e.centro||"Sem centro";byCentro[c]=(byCentro[c]||0)+e.amt;});return Object.entries(byCentro).sort((a,b)=>b[1]-a[1]).map(([c,v])=><div key={c} style={{padding:"10px 12px",borderRadius:8,background:T.c2,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,marginBottom:2}}>{c}</div><div style={{fontSize:14,fontWeight:800,color:T.pu}}>${v.toLocaleString()}</div><div style={{fontSize:8,color:T.dm}}>{fTO?(v/fTO*100).toFixed(0):0}%</div></div>);})()}
-</div>
-{(()=>{const byClient={};fOut.filter(e=>e.centro==="Cliente"&&e.centroClient).forEach(e=>{byClient[e.centroClient]=(byClient[e.centroClient]||0)+e.amt;});const clientEntries=Object.entries(byClient).sort((a,b)=>b[1]-a[1]);return clientEntries.length>0&&<div style={{marginTop:10}}><div style={{fontSize:10,fontWeight:700,color:T.or,marginBottom:6}}>Gastos por Cliente</div>{clientEntries.map(([c,v])=>{const cRev=fIn.filter(e=>e.desc&&e.desc.includes(c)).reduce((s,e)=>s+e.amt,0);return <div key={c} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{c}</span><div style={{display:"flex",gap:12}}><span style={{color:T.rd}}>Gasto: ${v.toLocaleString()}</span>{cRev>0&&<span style={{color:T.gr}}>Receita: ${cRev.toLocaleString()}</span>}{cRev>0&&<span style={{fontWeight:700,color:cRev-v>=0?T.gr:T.rd}}>Lucro: ${(cRev-v).toLocaleString()}</span>}</div></div>})}</div>;})()}
-</Card>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>💰 Entrada vs Saída</div>
-<div style={{display:"flex",alignItems:"center",gap:24,justifyContent:"center"}}>
-<DonutChart data={[{c:"#4ADE80",v:fTI,l:"Entradas"},{c:"#FF6B6B",v:fTO,l:"Saídas"}].filter(d=>d.v>0)} size={170}/>
-<div style={{display:"flex",flexDirection:"column",gap:10}}>
-<div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:14,height:14,borderRadius:3,background:"#4ADE80"}}/><div><div style={{fontSize:9,color:T.dm}}>ENTRADAS</div><div style={{fontSize:18,fontWeight:800,color:T.gr}}>${fTI.toLocaleString()}</div></div></div>
-<div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:14,height:14,borderRadius:3,background:"#FF6B6B"}}/><div><div style={{fontSize:9,color:T.dm}}>SAÍDAS</div><div style={{fontSize:18,fontWeight:800,color:T.rd}}>${fTO.toLocaleString()}</div></div></div>
-<div style={{borderTop:"1px solid "+T.bd,paddingTop:8}}><div style={{fontSize:9,color:T.dm}}>{fLu>=0?"LUCRO":"PREJUÍZO"}</div><div style={{fontSize:20,fontWeight:800,color:fLu>=0?T.gr:T.rd}}>${Math.abs(fLu).toLocaleString()}</div><div style={{fontSize:9,color:T.dm}}>{fTI?(Math.abs(fLu)/fTI*100).toFixed(0)+"% margem":"—"}</div></div>
-</div></div></Card>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-<Card><div style={{fontSize:11,fontWeight:700,color:T.gr,marginBottom:8}}>📊 Entradas por Categoria</div>
-{(()=>{const data=Object.entries(fBCI).sort((a,b)=>b[1]-a[1]).slice(0,6);const colors=["#4ADE80","#00B4D8","#A78BFA","#FFB547","#FF8A65","#60A5FA"];return data.length?<div style={{display:"flex",alignItems:"center",gap:16}}><DonutChart data={data.map(([c,v],i)=>({c:colors[i%6],v,l:c}))} size={150}/><div style={{flex:1}}>{data.map(([c,v],i)=><div key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",fontSize:10}}><div style={{width:10,height:10,borderRadius:2,background:colors[i%6],flexShrink:0}}/><span style={{flex:1,color:T.dm}}>{c}</span><span style={{fontWeight:700,color:T.gr}}>${v.toLocaleString()}</span><span style={{fontSize:8,color:T.dm}}>({fTI?(v/fTI*100).toFixed(0):0}%)</span></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>—</div>;})()}</Card>
-<Card><div style={{fontSize:11,fontWeight:700,color:T.rd,marginBottom:8}}>📊 Saídas por Categoria</div>
-{(()=>{const data=Object.entries(fBCO).sort((a,b)=>b[1]-a[1]).slice(0,8);const colors=["#FF6B6B","#FFB547","#FF8A65","#A78BFA","#60A5FA","#00B4D8","#4ADE80","#E879F9"];return data.length?<div style={{display:"flex",alignItems:"center",gap:16}}><DonutChart data={data.map(([c,v],i)=>({c:colors[i%8],v,l:c}))} size={150}/><div style={{flex:1}}>{data.map(([c,v],i)=><div key={c} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 0",fontSize:10}}><div style={{width:10,height:10,borderRadius:2,background:colors[i%8],flexShrink:0}}/><span style={{flex:1,color:T.dm}}>{c}</span><span style={{fontWeight:700,color:T.rd}}>${v.toLocaleString()}</span><span style={{fontSize:8,color:T.dm}}>({fTO?(v/fTO*100).toFixed(0):0}%)</span></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>—</div>;})()}</Card>
-</div>
-<Card><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontSize:13,fontWeight:700}}>📋 Lançamentos ({fFil.length})</span></div>
-{fFil.length===0?<div style={{padding:"24px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhum lançamento.</div>:fFil.slice(0,40).map(e=><div key={e.id} style={{display:"grid",gridTemplateColumns:"60px 1.5fr 2fr .8fr .8fr 24px",gap:4,padding:"5px 0",minWidth:500,alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11}}>
+<Card><div style={{fontSize:13,fontWeight:700,marginBottom:12}}>📋 Lançamentos ({fFil.length})</div>
+{fFil.length===0?<div style={{padding:"24px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhum lançamento.</div>:fFil.slice(0,40).map(e=><div key={e.id} style={{display:"grid",gridTemplateColumns:"60px 1.5fr 2fr .8fr .8fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11}}>
 <span style={{padding:"2px 6px",borderRadius:4,fontSize:8,fontWeight:700,textAlign:"center",background:e.type==="entrada"?T.gr+"18":T.rd+"18",color:e.type==="entrada"?T.gr:T.rd}}>{e.type==="entrada"?"IN":"OUT"}</span>
-<span style={{color:T.dm,fontSize:10}}>{e.cat}{e.centro&&<span style={{marginLeft:4,padding:"1px 4px",borderRadius:3,fontSize:7,background:T.pu+"15",color:T.pu}}>{e.centro}{e.centroClient?" · "+e.centroClient:""}{e.centroHouse?" · "+e.centroHouse:""}</span>}</span><span>{e.desc||"—"}</span><span style={{color:T.dm,fontSize:10}}>{e.date}</span>
+<span style={{color:T.dm,fontSize:10}}>{e.cat}</span><span>{e.desc||"—"}</span><span style={{color:T.dm,fontSize:10}}>{e.date}</span>
 <span style={{textAlign:"right",fontWeight:700,color:e.type==="entrada"?T.gr:T.rd}}>${e.amt?.toLocaleString()}</span>
 <button onClick={()=>delFin(e.id)} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button>
 </div>)}</Card>
@@ -444,25 +268,25 @@ return(
 {vw==="inventory"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 {(lowP.length>0||lowL.length>0)&&<div style={{background:T.rd+"12",borderRadius:12,padding:14,border:"1px solid "+T.rd+"33"}}><div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:6}}>⚠️ Estoque Baixo</div><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{lowP.map(p=><span key={p.id} style={{padding:"3px 8px",borderRadius:5,background:T.rd+"22",color:T.rd,fontSize:9,fontWeight:600}}>🧴 {p.n}: {p.q} (mín:{p.m})</span>)}{lowL.map(l=><span key={l.id} style={{padding:"3px 8px",borderRadius:5,background:T.or+"22",color:T.or,fontSize:9,fontWeight:600}}>🛏️ {l.t} {l.s}: {l.q} (mín:{l.m})</span>)}</div></div>}
 <div style={{display:"flex",gap:3,background:T.cd,borderRadius:10,padding:4,border:"1px solid "+T.bd}}>
-{[{id:"prod",l:"🧴 Produtos"},{id:"linen",l:"🛏️ Rouparia Depósito"},{id:"lprop",l:"🏠 Rouparia/Casa"},{id:"losses",l:"📉 Perdas"}].map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={{flex:1,padding:"8px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:10,fontWeight:iTab===t.id?600:400,fontFamily:"inherit",color:iTab===t.id?T.bg:T.dm,background:iTab===t.id?T.ac:"transparent"}}>{t.l}</button>)}
+{[{id:"prod",l:"🧴 Produtos"},{id:"linen",l:"🛏️ Rouparia Depósito"},{id:"lprop",l:"🏠 Rouparia/Casa"}].map(t=><button key={t.id} onClick={()=>setITab(t.id)} style={{flex:1,padding:"8px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:10,fontWeight:iTab===t.id?600:400,fontFamily:"inherit",color:iTab===t.id?T.bg:T.dm,background:iTab===t.id?T.ac:"transparent"}}>{t.l}</button>)}
 </div>
 
 {iTab==="prod"&&<>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>➕ Produto</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:5,alignItems:"end"}}>
-<div><label style={lb}>Nome</label><TI value={pF.n} onChange={e=>setPF({...pF,n:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Cat.</label><select value={pF.cat} onChange={e=>{if(e.target.value==="__newcat__"){const nc=prompt("Nova categoria:");if(nc){uCC([...customCats,nc]);setPF({...pF,cat:nc});}}else setPF({...pF,cat:e.target.value});}} style={sel}>{customCats.map(c=><option key={c}>{c}</option>)}<option value="__newcat__">+ Nova Cat...</option></select></div>
-<div><label style={lb}>Und.</label><select value={pF.u} onChange={e=>{if(e.target.value==="__newunit__"){const nu=prompt("Nova unidade:");if(nu){uCU([...customUnits,nu]);setPF({...pF,u:nu});}}else setPF({...pF,u:e.target.value});}} style={sel}>{customUnits.map(u=><option key={u}>{u}</option>)}<option value="__newunit__">+ Nova...</option></select></div>
-<div><label style={lb}>Qtd</label><NI value={pF.q} onChange={e=>setPF({...pF,q:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Mín</label><NI value={pF.m} onChange={e=>setPF({...pF,m:e.target.value})} style={inp}/></div>
-<div><label style={lb}>$</label><NI value={pF.cost} onChange={e=>setPF({...pF,cost:e.target.value})} style={inp}/></div>
-<button onClick={async()=>{if(!pF.n||!pF.q)return;await uPr([...prod,{id:Date.now(),...pF,q:parseInt(pF.q),m:parseInt(pF.m)||0,cost:parseFloat(pF.cost)||0}]);setPF({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});fl("✅!");}} style={bt(T.ac,T.bg)}>+</button>
+<div style={{display:"grid",gridTemplateColumns:"2fr 1fr .7fr .7fr .7fr .8fr auto",gap:5,alignItems:"end"}}>
+<div><label style={lb}>Nome</label><input value={pF.n} onChange={e=>setPF({...pF,n:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Cat.</label><select value={pF.cat} onChange={e=>setPF({...pF,cat:e.target.value})} style={sel}>{["Limpeza","Suprimentos","Cozinha","Lavanderia","Outro"].map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={lb}>Und.</label><select value={pF.u} onChange={e=>setPF({...pF,u:e.target.value})} style={sel}>{["un","pack","roll","box","gal"].map(u=><option key={u}>{u}</option>)}</select></div>
+<div><label style={lb}>Qtd</label><input type="number" value={pF.q} onChange={e=>setPF({...pF,q:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Mín</label><input type="number" value={pF.m} onChange={e=>setPF({...pF,m:e.target.value})} style={inp}/></div>
+<div><label style={lb}>$</label><input type="number" value={pF.cost} onChange={e=>setPF({...pF,cost:e.target.value})} style={inp}/></div>
+<button onClick={async()=>{if(!pF.n||!pF.q)return;await uPr([...prod,{id:Date.now(),...pF,q:parseInt(pF.q),m:parseInt(pF.m)||0,cost:parseFloat(pF.cost)||0}]);setPF({n:"",cat:"Limpeza",u:"un",q:"",m:"",cost:""});fl("✅!");}} style={bt(T.ac,T.bg)}>+</button>
 </div></Card>
 {[...new Set(prod.map(p=>p.cat))].map(cat=>{const items=prod.filter(p=>p.cat===cat);return(
 <Card key={cat} style={{padding:0,overflow:"hidden"}}>
 <div style={{padding:"10px 16px",background:T.aD,fontSize:12,fontWeight:700}}>{cat} ({items.length})</div>
 <div style={{padding:"0 16px"}}>{items.map(p=>{const lo=p.q<=p.m;return(
-<div key={p.id} style={{display:"grid",gridTemplateColumns:"2.5fr .6fr .8fr .6fr .8fr 1fr 24px",minWidth:500,gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11,background:lo?T.rd+"08":"transparent"}}>
+<div key={p.id} style={{display:"grid",gridTemplateColumns:"2.5fr .6fr .8fr .6fr .8fr 1fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11,background:lo?T.rd+"08":"transparent"}}>
 <span>{lo&&"⚠️ "}{p.n}</span><span style={{color:T.dm,fontSize:9}}>{p.u}</span>
 <span style={{textAlign:"center",fontWeight:700,color:lo?T.rd:T.ac}}>{p.q}</span>
 <span style={{textAlign:"center",color:T.dm,fontSize:9}}>m:{p.m}</span>
@@ -479,10 +303,10 @@ return(
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr .8fr .8fr 1fr auto",gap:5,alignItems:"end"}}>
 <div><label style={lb}>Tipo</label><select value={lF.t} onChange={e=>setLF({...lF,t:e.target.value,s:""})} style={sel}><option value="">—</option>{LT.map(t=><option key={t.c}>{t.c}</option>)}</select></div>
 <div><label style={lb}>Tam.</label><select value={lF.s} onChange={e=>setLF({...lF,s:e.target.value})} style={sel}><option value="">—</option>{(LT.find(t=>t.c===lF.t)?.s||[]).map(s=><option key={s}>{s}</option>)}</select></div>
-<div><label style={lb}>Qtd</label><NI value={lF.q} onChange={e=>setLF({...lF,q:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Mín</label><NI value={lF.m} onChange={e=>setLF({...lF,m:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Condição</label><select value={lF.cond} onChange={e=>setLF({...lF,cond:e.target.value})} style={sel}>{["Good","Used","Torn","Stained","Replace"].map(c=><option key={c}>{c}</option>)}</select></div>
-<button onClick={async()=>{if(!lF.t||!lF.q)return;await uLn([...lin,{id:Date.now(),t:lF.t,s:lF.s,q:parseInt(lF.q),m:parseInt(lF.m)||0,cond:lF.cond}]);setLF({t:"",s:"",q:"",m:"",cond:"Good"});fl("✅!");}} style={bt(T.ac,T.bg)}>+</button>
+<div><label style={lb}>Qtd</label><input type="number" value={lF.q} onChange={e=>setLF({...lF,q:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Mín</label><input type="number" value={lF.m} onChange={e=>setLF({...lF,m:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Condição</label><select value={lF.cond} onChange={e=>setLF({...lF,cond:e.target.value})} style={sel}>{["Bom","Usado","Rasgado","Manchado","Substituir"].map(c=><option key={c}>{c}</option>)}</select></div>
+<button onClick={async()=>{if(!lF.t||!lF.q)return;await uLn([...lin,{id:Date.now(),t:lF.t,s:lF.s,q:parseInt(lF.q),m:parseInt(lF.m)||0,cond:lF.cond}]);setLF({t:"",s:"",q:"",m:"",cond:"Bom"});fl("✅!");}} style={bt(T.ac,T.bg)}>+</button>
 </div></Card>
 {[...new Set(lin.map(l=>l.t))].map(type=>{const items=lin.filter(l=>l.t===type);return(
 <Card key={type} style={{padding:0,overflow:"hidden"}}>
@@ -492,21 +316,21 @@ return(
 <span>{lo&&"⚠️ "}{l.s}</span>
 <span style={{textAlign:"center",fontWeight:700,color:lo?T.rd:T.ac}}>{l.q}</span>
 <span style={{textAlign:"center",color:T.dm,fontSize:9}}>m:{l.m}</span>
-<span style={{fontSize:9,color:l.cond==="Good"?T.gr:l.cond==="Used"?T.or:l.cond==="Torn"?T.rd:l.cond==="Stained"?T.pu:T.rd,fontWeight:600}}>{l.cond}</span>
+<span style={{fontSize:9,color:l.cond==="Bom"?T.gr:l.cond==="Usado"?T.or:l.cond==="Rasgado"?T.rd:l.cond==="Manchado"?T.pu:T.rd,fontWeight:600}}>{l.cond}</span>
 <div style={{display:"flex",justifyContent:"center",gap:2}}>
 <button onClick={()=>uLn(lin.map(x=>x.id===l.id?{...x,q:Math.max(0,x.q-1)}:x))} style={bt(T.rd+"18",T.rd,{padding:"2px 7px",fontSize:9})}>−</button>
-<button onClick={()=>uLn(lin.map(x=>x.id===l.id?{...x,q:x.q+1}:x))} style={bt(T.gr+"18",T.gr,{padding:"2px 7px",fontSize:9})}>+</button>
-<button onClick={()=>uLn(lin.filter(x=>x.id!==l.id))} style={bt(T.rd+"08",T.rd,{padding:"2px 7px",fontSize:9})}>✕</button></div>
+<button onClick={()=>uLn(lin.map(x=>x.id===l.id?{...x,q:x.q+1}:x))} style={bt(T.gr+"18",T.gr,{padding:"2px 7px",fontSize:9})}>+</button></div>
+<button onClick={()=>uLn(lin.filter(x=>x.id!==l.id))} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button>
 </div>)})}</div></Card>);})}
 </>}
 
 {iTab==="lprop"&&<>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>🏠 Atribuir a Propriedade</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:5,alignItems:"end"}}>
+<div style={{display:"grid",gridTemplateColumns:"2.5fr 1.5fr 1fr .8fr auto",gap:5,alignItems:"end"}}>
 <div><label style={lb}>Casa</label><select value={lpP} onChange={e=>setLpP(e.target.value)} style={sel}><option value="">—</option>{db.filter(p=>p.n!=="(nova)").map((p,i)=><option key={i} value={p.c+": "+p.n}>{p.c} — {p.n}</option>)}</select></div>
 <div><label style={lb}>Tipo</label><select value={lpF.t} onChange={e=>setLpF({...lpF,t:e.target.value,s:""})} style={sel}><option value="">—</option>{LT.map(t=><option key={t.c}>{t.c}</option>)}</select></div>
 <div><label style={lb}>Tam.</label><select value={lpF.s} onChange={e=>setLpF({...lpF,s:e.target.value})} style={sel}><option value="">—</option>{(LT.find(t=>t.c===lpF.t)?.s||[]).map(s=><option key={s}>{s}</option>)}</select></div>
-<div><label style={lb}>Qtd</label><NI value={lpF.q} onChange={e=>setLpF({...lpF,q:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Qtd</label><input type="number" value={lpF.q} onChange={e=>setLpF({...lpF,q:e.target.value})} style={inp}/></div>
 <button onClick={async()=>{if(!lpP||!lpF.t||!lpF.q)return;await uLB([...lbp,{id:Date.now(),prop:lpP,t:lpF.t,s:lpF.s,q:parseInt(lpF.q)}]);setLpF({t:"",s:"",q:""});fl("✅!");}} style={bt(T.ac,T.bg)}>+</button>
 </div></Card>
 {[...new Set(lbp.map(l=>l.prop))].map(prop=>{const items=lbp.filter(l=>l.prop===prop);return(
@@ -518,43 +342,6 @@ return(
 </div>)}</div></Card>);})}
 {lbp.length===0&&<Card style={{textAlign:"center",color:T.dm,fontSize:12}}>Nenhuma rouparia atribuída.</Card>}
 </>}
-
-{iTab==="losses"&&<>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📉 Registrar Perda</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:5,alignItems:"end"}}>
-<div><label style={lb}>Cliente</label><select value={lossForm.loc} onChange={e=>setLossForm({...lossForm,loc:e.target.value,house:""})} style={{...sel,fontWeight:600,background:lossForm.loc==="deposito"?T.pu+"12":T.bl+"12"}}><option value="deposito">🏢 Depósito</option>{cls.map(c=><option key={c} value={c}>👤 {c}</option>)}</select></div>
-<div><label style={lb}>Casa</label><select value={lossForm.house||""} onChange={e=>setLossForm({...lossForm,house:e.target.value})} style={sel} disabled={lossForm.loc==="deposito"}><option value="">—</option>{lossForm.loc!=="deposito"&&db.filter(p=>p.c===lossForm.loc).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
-<div><label style={lb}>Tipo</label><select value={lossForm.type} onChange={e=>setLossForm({...lossForm,type:e.target.value})} style={sel}><option value="">—</option>{LT.map(t=><option key={t.c}>{t.c}</option>)}</select></div>
-<div><label style={lb}>Tam.</label><select value={lossForm.size} onChange={e=>setLossForm({...lossForm,size:e.target.value})} style={sel}><option value="">—</option>{(LT.find(t=>t.c===lossForm.type)?.s||[]).map(s=><option key={s}>{s}</option>)}</select></div>
-<div><label style={lb}>Qtd</label><NI value={lossForm.qty} onChange={e=>setLossForm({...lossForm,qty:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Motivo</label><select value={lossForm.reason} onChange={e=>setLossForm({...lossForm,reason:e.target.value})} style={sel}><option value="">—</option>{["Stained","Torn","Missing","Wear & Tear","Shrunk","Discolored","Client Damaged","Other"].map(r=><option key={r}>{r}</option>)}</select></div>
-<button onClick={async()=>{if(!lossForm.type||!lossForm.qty||!lossForm.reason)return;const l={...lossForm,id:Date.now(),qty:parseInt(lossForm.qty),date:new Date().toISOString().split("T")[0]};await uLoss([l,...losses]);const li=lin.find(x=>x.t===lossForm.type&&x.s===lossForm.size);if(li){uLn(lin.map(x=>x.id===li.id?{...x,q:Math.max(0,x.q-parseInt(lossForm.qty))}:x));}setLossForm({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});fl("📉 Perda registrada!");}} style={bt(T.rd,T.bg)}>+</button>
-</div></Card>
-
-{(()=>{const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const monthStart=today.slice(0,8)+"01";const todayLoss=losses.filter(l=>l.date===today);const weekLoss=losses.filter(l=>l.date>=weekAgo);const monthLoss=losses.filter(l=>l.date>=monthStart);return <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-{[{l:"HOJE",d:todayLoss,c:T.or},{l:"SEMANA",d:weekLoss,c:T.pu},{l:"MÊS",d:monthLoss,c:T.rd}].map(p=><Card key={p.l}><div style={{fontSize:9,fontWeight:700,color:p.c,textTransform:"uppercase",marginBottom:4}}>{p.l}</div><div style={{fontSize:22,fontWeight:800}}>{p.d.reduce((s,l)=>s+l.qty,0)}</div><div style={{fontSize:9,color:T.dm}}>{p.d.length} registros</div></Card>)}
-</div>;})()}
-
-<Card><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:12,fontWeight:700}}>📊 Perdas por Cliente (Mês)</div>
-<button onClick={()=>{const monthStart=new Date().toISOString().split("T")[0].slice(0,8)+"01";const ml=losses.filter(l=>l.date>=monthStart&&l.loc!=="deposito");const byClient={};ml.forEach(l=>{if(!byClient[l.loc])byClient[l.loc]=[];byClient[l.loc].push(l);});const w=window.open("","_blank");w.document.write(`<html><head><title>Perdas ${MO[new Date().getMonth()]}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'DM Sans',Arial,sans-serif;padding:40px;color:#333}h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;color:#0094B0;margin:24px 0 8px;border-bottom:2px solid #0094B0;padding-bottom:4px}h3{font-size:13px;color:#555;margin:12px 0 6px;padding-left:12px}table{width:100%;border-collapse:collapse;margin:4px 0 14px}th{background:#0A0F1E;color:#fff;padding:6px 10px;text-align:left;font-size:11px}td{padding:5px 10px;border-bottom:1px solid #eee;font-size:12px}.total{font-weight:700;color:#FF6B6B;font-size:14px}.sub{color:#888;font-size:11px}.house-sub{font-size:10px;color:#888;margin-left:4px}@media print{body{padding:20px}}</style></head><body><h1>${co.name}</h1><p class="sub">${co.address} | ${co.phone}</p><p style="margin:12px 0;font-size:14px;font-weight:700">📉 Linen Loss Report — ${MO[new Date().getMonth()]} ${new Date().getFullYear()}</p>`);Object.entries(byClient).sort().forEach(([client,items])=>{const totalQty=items.reduce((s,l)=>s+l.qty,0);w.document.write(`<h2>👤 ${client} — ${totalQty} pcs</h2>`);const byHouse={};items.forEach(l=>{const h=l.house||"(sem casa)";if(!byHouse[h])byHouse[h]=[];byHouse[h].push(l);});Object.entries(byHouse).forEach(([house,hItems])=>{const hQty=hItems.reduce((s,l)=>s+l.qty,0);w.document.write(`<h3>🏠 ${house} <span class="house-sub">(${hQty} pcs)</span></h3><table><tr><th>Date</th><th>Type</th><th>Size</th><th>Qty</th><th>Reason</th></tr>`);hItems.forEach(l=>w.document.write(`<tr><td>${l.date}</td><td>${l.type}</td><td>${l.size}</td><td class="total">${l.qty}</td><td>${l.reason}</td></tr>`));w.document.write("</table>");});});if(ml.length===0)w.document.write('<p style="color:#888;text-align:center;padding:30px">No client losses this month.</p>');const depItems=losses.filter(l=>l.date>=monthStart&&l.loc==="deposito");if(depItems.length>0){w.document.write(`<h2>🏢 Warehouse — ${depItems.reduce((s,l)=>s+l.qty,0)} pcs</h2><table><tr><th>Date</th><th>Type</th><th>Size</th><th>Qty</th><th>Reason</th></tr>`);depItems.forEach(l=>w.document.write(`<tr><td>${l.date}</td><td>${l.type}</td><td>${l.size}</td><td class="total">${l.qty}</td><td>${l.reason}</td></tr>`));w.document.write("</table>");}w.document.write(`<div style="margin-top:30px;padding-top:12px;border-top:2px solid #111;display:flex;justify-content:space-between"><span style="font-size:11px;color:#888">Generated on ${new Date().toLocaleDateString("en-US")}</span><span class="total">Total: ${losses.filter(l=>l.date>=monthStart).reduce((s,l)=>s+l.qty,0)} pcs</span></div></body></html>`);w.document.close();setTimeout(()=>w.print(),500);fl("📄 Relatório gerado!");}} style={bt(T.ac,T.bg,{padding:"6px 14px",fontSize:10})}>📄 Relatório PDF</button>
-</div>
-{(()=>{const monthStart=new Date().toISOString().split("T")[0].slice(0,8)+"01";const ml=losses.filter(l=>l.date>=monthStart);const byLoc={};ml.forEach(l=>{const k=l.loc||"deposito";byLoc[k]=(byLoc[k]||0)+l.qty;});const sorted=Object.entries(byLoc).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Nenhuma perda este mês.</div>:sorted.map(([loc,qty])=><div key={loc} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:11}}><span style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:12}}>{loc==="deposito"?"🏢":"👤"}</span><span style={{fontWeight:600}}>{loc==="deposito"?"Depósito":loc}</span></span><span style={{fontWeight:700,color:T.rd}}>{qty} peças</span></div>);})()}
-</Card>
-
-<Card><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📊 Motivos de Perda (Mês)</div>
-{(()=>{const monthStart=new Date().toISOString().split("T")[0].slice(0,8)+"01";const ml=losses.filter(l=>l.date>=monthStart);const reasons={};ml.forEach(l=>{reasons[l.reason]=(reasons[l.reason]||0)+l.qty;});const sorted=Object.entries(reasons).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Nenhuma perda registrada este mês.</div>:sorted.map(([r,q],i)=><div key={r} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:11}}><span>{r}</span><span style={{fontWeight:700,color:T.rd}}>{q} peças</span></div>);})()}
-</Card>
-
-<Card><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:12,fontWeight:700}}>📋 Histórico de Perdas</div>
-<div style={{display:"flex",gap:4}}>{[{k:"semana",l:"Semana"},{k:"mes",l:"Mês"},{k:"all",l:"Tudo"}].map(f=><button key={f.k} onClick={()=>setLossFilter(f.k)} style={{padding:"3px 10px",borderRadius:5,border:lossFilter===f.k?"1px solid "+T.ac:"1px solid "+T.bd,background:lossFilter===f.k?T.ac+"18":T.cd,color:lossFilter===f.k?T.ac:T.dm,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{f.l}</button>)}</div></div>
-{(()=>{const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const monthStart=today.slice(0,8)+"01";const fl2=lossFilter==="semana"?losses.filter(l=>l.date>=weekAgo):lossFilter==="mes"?losses.filter(l=>l.date>=monthStart):losses;
-return fl2.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Nenhuma perda neste período.</div>:fl2.slice(0,50).map(l=><div key={l.id} style={{display:"grid",gridTemplateColumns:".7fr .7fr .9fr .5fr .3fr 1fr .55fr 24px",minWidth:500,gap:3,padding:"4px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:10}}>
-<span style={{color:l.loc==="deposito"?T.pu:T.bl,fontWeight:600,fontSize:9}}>{l.loc==="deposito"?"🏢 Dep.":"👤 "+(l.loc||"").split(" ")[0]}</span>
-<span style={{color:T.dm,fontSize:9}}>{l.house||"—"}</span>
-<span style={{fontWeight:600}}>{l.type}</span><span style={{color:T.dm}}>{l.size}</span><span style={{fontWeight:700,color:T.rd}}>{l.qty}</span><span style={{color:T.or}}>{l.reason}</span><span style={{color:T.dm,fontSize:9}}>{l.date}</span>
-<button onClick={async()=>{await uLoss(losses.filter(x=>x.id!==l.id));}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button>
-</div>);})()}</Card>
-</>}
 </div>}
 
 {/* TEAM */}
@@ -565,12 +352,12 @@ return fl2.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",pad
 
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:12}}>➕ Cadastrar Funcionário</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-<div><label style={lb}>Nome Completo</label><TI value={empForm.name} onChange={e=>setEmpForm({...empForm,name:e.target.value})} style={inp} placeholder="Ex: Maria Silva"/></div>
-<div><label style={lb}>Telefone</label><TI value={empForm.phone} onChange={e=>setEmpForm({...empForm,phone:e.target.value})} style={inp} placeholder="(813) 000-0000"/></div>
-<div><label style={lb}>Email</label><TI value={empForm.email} onChange={e=>setEmpForm({...empForm,email:e.target.value})} style={inp} placeholder="email@email.com"/></div>
+<div><label style={lb}>Nome Completo</label><input value={empForm.name} onChange={e=>setEmpForm({...empForm,name:e.target.value})} style={inp} placeholder="Ex: Maria Silva"/></div>
+<div><label style={lb}>Telefone</label><input value={empForm.phone} onChange={e=>setEmpForm({...empForm,phone:e.target.value})} style={inp} placeholder="(813) 000-0000"/></div>
+<div><label style={lb}>Email</label><input value={empForm.email} onChange={e=>setEmpForm({...empForm,email:e.target.value})} style={inp} placeholder="email@email.com"/></div>
 </div>
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:8,marginBottom:8}}>
-<div><label style={lb}>Endereço</label><TI value={empForm.address} onChange={e=>setEmpForm({...empForm,address:e.target.value})} style={inp} placeholder="Rua, Cidade, Estado, ZIP"/></div>
+<div><label style={lb}>Endereço</label><input value={empForm.address} onChange={e=>setEmpForm({...empForm,address:e.target.value})} style={inp} placeholder="Rua, Cidade, Estado, ZIP"/></div>
 <div><label style={lb}>Tipo</label><select value={empForm.type} onChange={e=>setEmpForm({...empForm,type:e.target.value})} style={sel}><option>Fixo</option><option>Solo Cleaner</option><option>Prestador</option></select></div>
 <div><label style={lb}>SSN / ITIN</label><input type="text" autoComplete="off" value={empForm.ssn||""} onInput={e=>setEmpForm({...empForm,ssn:e.target.value})} onChange={e=>setEmpForm({...empForm,ssn:e.target.value})} style={{...inp,letterSpacing:"1px"}} placeholder="XXX-XX-XXXX"/></div>
 </div>
@@ -579,7 +366,6 @@ return fl2.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",pad
 <div><label style={lb}>Data de Início</label><input type="date" value={empForm.startDate} onChange={e=>setEmpForm({...empForm,startDate:e.target.value})} style={inp}/></div>
 <button onClick={addEmpProfile} style={bt(T.ac,T.bg,{padding:"8px 24px"})}>+ Cadastrar</button>
 </div>
-<div style={{marginTop:8}}><label style={lb}>Observações</label><TI value={empForm.notes} onChange={e=>setEmpForm({...empForm,notes:e.target.value})} style={{...inp,minHeight:40}} placeholder="Anotações sobre o funcionário..."/></div>
 </Card>
 
 {empProfiles.length===0?<Card style={{textAlign:"center",color:T.dm,fontSize:12,padding:"30px 0"}}>Nenhum funcionário cadastrado ainda.</Card>:
@@ -588,12 +374,12 @@ if(isEdit){const d=editEmpData;return(
 <Card key={ep.id} style={{border:"1px solid "+T.ac+"44"}}>
 <div style={{fontSize:12,fontWeight:700,color:T.ac,marginBottom:10}}>✏️ Editando: {ep.name}</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
-<div><label style={lb}>Nome</label><TI value={d.name||""} onChange={e=>setEditEmpData({...d,name:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Telefone</label><TI value={d.phone||""} onChange={e=>setEditEmpData({...d,phone:e.target.value})} style={inp}/></div>
-<div><label style={lb}>Email</label><TI value={d.email||""} onChange={e=>setEditEmpData({...d,email:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Nome</label><input value={d.name||""} onChange={e=>setEditEmpData({...d,name:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Telefone</label><input value={d.phone||""} onChange={e=>setEditEmpData({...d,phone:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Email</label><input value={d.email||""} onChange={e=>setEditEmpData({...d,email:e.target.value})} style={inp}/></div>
 </div>
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:8,marginBottom:8}}>
-<div><label style={lb}>Endereço</label><TI value={d.address||""} onChange={e=>setEditEmpData({...d,address:e.target.value})} style={inp}/></div>
+<div><label style={lb}>Endereço</label><input value={d.address||""} onChange={e=>setEditEmpData({...d,address:e.target.value})} style={inp}/></div>
 <div><label style={lb}>Tipo</label><select value={d.type||"Fixo"} onChange={e=>setEditEmpData({...d,type:e.target.value})} style={sel}><option>Fixo</option><option>Solo Cleaner</option><option>Prestador</option></select></div>
 <div><label style={lb}>SSN/ITIN</label><input type="text" autoComplete="off" value={d.ssn||""} onInput={e=>setEditEmpData({...d,ssn:e.target.value})} onChange={e=>setEditEmpData({...d,ssn:e.target.value})} style={{...inp,letterSpacing:"1px"}}/></div>
 </div>
@@ -602,8 +388,7 @@ if(isEdit){const d=editEmpData;return(
 <div><label style={lb}>Início</label><input type="date" value={d.startDate||""} onChange={e=>setEditEmpData({...d,startDate:e.target.value})} style={inp}/></div>
 <button onClick={async()=>{const u=empProfiles.map(x=>x.id===ep.id?{...x,...editEmpData}:x);await uEP(u);if(editEmpData.name!==ep.name){const ne=em.map(e=>e===ep.name?editEmpData.name:e);await uEM(ne);}setEditEmpIdx(null);fl("✅ Atualizado!");}} style={bt(T.gr,T.bg,{padding:"8px 18px"})}>✓ Salvar</button>
 <button onClick={()=>setEditEmpIdx(null)} style={bt(T.rd+"15",T.rd,{padding:"8px 18px"})}>Cancelar</button>
-</div>
-<div style={{marginTop:8}}><label style={lb}>Observações</label><TI value={d.notes||""} onChange={e=>setEditEmpData({...d,notes:e.target.value})} style={{...inp,minHeight:40}} placeholder="Anotações..."/></div></Card>);}
+</div></Card>);}
 
 return(
 <Card key={ep.id}>
@@ -634,194 +419,12 @@ return(
 <div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase",marginBottom:2}}>Aniversário</div><div style={{fontSize:12,fontWeight:500}}>{ep.bday||"—"}</div></div>
 <div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase",marginBottom:2}}>Início</div><div style={{fontSize:12,fontWeight:500}}>{ep.startDate||"—"}</div></div>
 </div>
-{ep.notes&&<div style={{marginTop:10,padding:"8px 12px",background:T.or+"08",borderRadius:6,border:"1px solid "+T.or+"22"}}><div style={{fontSize:8,color:T.or,textTransform:"uppercase",marginBottom:2,fontWeight:600}}>Observações</div><div style={{fontSize:11,color:T.tx}}>{ep.notes}</div></div>}
 </Card>);})}
 </div>}
-
-{/* INSPECT */}
-{vw==="inspect"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-
-{inspView==="list"&&<>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10}}>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);const avg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):0;const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const td=inspections.filter(i=>i.date===today).length;const wk=inspections.filter(i=>i.date>=weekAgo).length;return[{i:"🔍",l:"TOTAL",v:String(inspections.length),s:td+" hoje · "+wk+" semana",cl:T.ac},{i:"📅",l:mo.toUpperCase(),v:String(mi.length),s:"inspeções no mês",cl:T.bl},{i:"⭐",l:"MÉDIA MÊS",v:String(avg||"—"),s:avg?getScoreLabel(avg):"—",cl:avg?getScoreColor(avg):T.dm},{i:"🏆",l:"NOTA 100",v:String(mi.filter(i=>i.score===100).length),s:"perfeitas",cl:T.gr}];})().map((s,i)=><div key={i} style={{background:T.cd,borderRadius:12,padding:"14px 16px",border:"1px solid "+T.bd}}><div style={{fontSize:14,marginBottom:4}}>{s.i}</div><div style={{fontSize:8,color:T.dm,textTransform:"uppercase"}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:9,color:T.dm}}>{s.s}</div></div>)}
-</div>
-<div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-<button onClick={newInspection} style={bt(T.ac,T.bg,{padding:"10px 20px",borderRadius:8,fontSize:12})}>+ Nova Inspeção</button>
-<button onClick={()=>setInspView("ranking")} style={bt(T.pu+"18",T.pu,{padding:"10px 16px",borderRadius:8,fontSize:11})}>🏆 Ranking</button>
-<button onClick={()=>setInspView("reports")} style={bt(T.or+"18",T.or,{padding:"10px 16px",borderRadius:8,fontSize:11})}>📊 Relatórios</button>
-<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110}}>{MO.map(m=><option key={m}>{m}</option>)}</select>
-</div>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📋 Inspeções Recentes</div>
-<div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
-<select value={inspFilter.month} onChange={e=>setInspFilter({...inspFilter,month:e.target.value})} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
-<select value={inspFilter.emp} onChange={e=>setInspFilter({...inspFilter,emp:e.target.value})} style={{...sel,width:"auto",minWidth:140}}><option value="">Todos func.</option>{em.map(e=><option key={e}>{e}</option>)}</select>
-<select value={inspFilter.house||""} onChange={e=>setInspFilter({...inspFilter,house:e.target.value})} style={{...sel,width:"auto",minWidth:140}}><option value="">Todas casas</option>{[...new Set(db.map(p=>p.n))].map(h=><option key={h}>{h}</option>)}</select>
-{(inspFilter.emp||inspFilter.month||inspFilter.house)&&<button onClick={()=>setInspFilter({emp:"",house:"",month:""})} style={bt(T.rd+"15",T.rd,{padding:"6px 10px"})}>Limpar</button>}
-</div>
-{(()=>{let fi=inspections;if(inspFilter.month)fi=fi.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspFilter.month);if(inspFilter.emp)fi=fi.filter(i=>(i.employees||[]).includes(inspFilter.emp));if(inspFilter.house)fi=fi.filter(i=>(i.houseName||i.house)===inspFilter.house);return fi.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma inspeção encontrada.</div>:fi.slice(0,40).map(ins=><div key={ins.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:5,background:T.c2}}>
-<div style={{display:"flex",alignItems:"center",gap:10}}>
-<div style={{width:40,height:40,borderRadius:8,background:getScoreColor(ins.score)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:getScoreColor(ins.score)}}>{ins.score}</div>
-<div><div style={{fontSize:12,fontWeight:700}}>{ins.houseName||ins.house}{ins.status==="blocked"&&<span style={{color:T.rd,fontSize:8,marginLeft:6}}>BLOQUEADA</span>}{ins.status==="released"&&<span style={{color:T.gr,fontSize:8,marginLeft:6}}>LIBERADA</span>}</div><div style={{fontSize:9,color:T.dm}}>{ins.date} · {ins.type} · {(ins.employees||[]).join(", ")}{ins.inspector?" · Insp: "+ins.inspector:""}{ins.releasedAt?" · Liberada: "+ins.releasedAt.split("T")[0]:""}</div></div></div>
-<div style={{display:"flex",alignItems:"center",gap:6}}>
-{ins.status==="blocked"&&<button onClick={async()=>{const obs=prompt("Obs da liberação (o que foi corrigido):");if(obs===null)return;const updated=inspections.map(x=>x.id===ins.id?{...x,status:"released",releaseNote:obs,releasedAt:new Date().toISOString()}:x);await uInsp(updated);fl("Casa liberada!");}} style={bt(T.gr+"18",T.gr,{padding:"5px 10px",fontSize:9})}>Liberar</button>}
-<span style={{padding:"3px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:getScoreColor(ins.score)+"18",color:getScoreColor(ins.score)}}>{getScoreLabel(ins.score)}</span>
-<button onClick={()=>{setInspForm(ins);setInspView("detail");}} style={bt(T.ac+"15",T.ac,{padding:"5px 10px",fontSize:9})}>Ver</button>
-<button onClick={async()=>{if(confirm("Apagar inspeção?"))await uInsp(inspections.filter(x=>x.id!==ins.id));}} style={bt(T.rd+"08",T.rd,{padding:"5px 10px",fontSize:9})}>X</button>
-</div></div>);})()}</Card>
-</>}
-
-{inspView==="form"&&inspForm&&<InspForm key="inspform" init={inspForm} cls2={cls} db2={db} em2={em} onSave={async(ins)=>{await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(ins.status==="blocked"?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+ins.score);}} onCancel={()=>{setInspForm(null);setInspView("list");}}/>}
-
-{inspView==="detail"&&inspForm&&<>
-<div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:10}}>
-<Card><div style={{textAlign:"center"}}><div style={{fontSize:42,fontWeight:800,color:getScoreColor(inspForm.score)}}>{inspForm.score}</div><div style={{fontSize:10,color:T.dm}}>{getScoreLabel(inspForm.score)}</div>{inspForm.status==="blocked"&&<div style={{color:T.rd,fontSize:9,fontWeight:700,marginTop:4}}>BLOQUEADA</div>}{inspForm.status==="released"&&<div style={{color:T.gr,fontSize:9,fontWeight:700,marginTop:4}}>LIBERADA {inspForm.releasedAt?inspForm.releasedAt.split("T")[0]:""}</div>}{inspForm.releaseNote&&<div style={{fontSize:9,color:T.dm,marginTop:2}}>{inspForm.releaseNote}</div>}</div></Card>
-<Card><div style={{fontSize:9,color:T.dm}}>DATA</div><div style={{fontSize:13,fontWeight:700}}>{inspForm.date}</div><div style={{fontSize:9,color:T.dm,marginTop:6}}>TIPO</div><div style={{fontSize:11,fontWeight:600}}>{inspForm.type}</div></Card>
-<Card><div style={{fontSize:9,color:T.dm}}>EQUIPE</div><div style={{fontSize:11,fontWeight:600}}>{(inspForm.employees||[]).join(", ")||"—"}</div><div style={{fontSize:9,color:T.dm,marginTop:6}}>INSPETOR</div><div style={{fontSize:11,fontWeight:600}}>{inspForm.inspector||"—"}</div></Card>
-</div>
-{Object.entries(INSP_CHECKLIST).map(([area,items])=><Card key={area} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"8px 16px",background:T.ac+"10",fontSize:11,fontWeight:700,color:T.ac}}>{area}</div>
-<div style={{padding:"0 16px"}}>{items.map(item=>{const v=inspForm.checks?.[item.id];const note=(inspForm.notes||{})[item.id];return <div key={item.id}><div style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:note?"none":"1px solid "+T.bd,fontSize:11}}>
-<span>{item.t}</span>
-<span style={{fontWeight:700,color:v==="ok"?T.gr:v==="adjust"?T.or:v==="fail"?T.rd:T.dm}}>{v==="ok"?"OK":v==="adjust"?"Ajuste":v==="fail"?"Reprovado":"N/A"}</span>
-</div>{note&&<div style={{padding:"2px 0 4px 16px",borderBottom:"1px solid "+T.bd,fontSize:9,color:T.or,fontStyle:"italic"}}>{note}</div>}{(inspForm.photos||{})[item.id]&&<div style={{padding:"4px 0 6px 16px",borderBottom:"1px solid "+T.bd}}><img src={(inspForm.photos||{})[item.id]} style={{maxWidth:150,borderRadius:4,border:"1px solid "+T.bd}}/></div>}</div>;})}</div></Card>)}
-{inspForm.generalNotes&&<Card><div style={{fontSize:10,fontWeight:700,color:T.dm,marginBottom:4}}>OBSERVAÇÕES</div><div style={{fontSize:11}}>{inspForm.generalNotes}</div></Card>}
-{inspForm.status==="blocked"&&<button onClick={async()=>{const obs=prompt("Obs da liberação (o que foi corrigido):");if(obs===null)return;const updated=inspections.map(x=>x.id===inspForm.id?{...x,status:"released",releaseNote:obs,releasedAt:new Date().toISOString()}:x);await uInsp(updated);setInspForm({...inspForm,status:"released",releaseNote:obs,releasedAt:new Date().toISOString()});fl("Casa liberada!");}} style={bt(T.gr,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>Liberar Casa</button>}
-<button onClick={()=>{const w=window.open("","_blank");w.document.write(`<html><head><title>Inspection ${inspForm.houseName}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{font-size:20px}h2{font-size:14px;color:#0094B0;margin:16px 0 6px;border-bottom:1px solid #0094B0;padding-bottom:3px}.score{font-size:48px;font-weight:800;text-align:center;margin:16px 0}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;font-size:12px}.ok{color:#4ADE80;font-weight:700}.adj{color:#FFB547;font-weight:700}.fail{color:#FF6B6B;font-weight:700}.meta{color:#888;font-size:11px}.note{padding:2px 0 4px 20px;font-size:10px;color:#FFB547;font-style:italic;border-bottom:1px solid #eee}@media print{body{padding:20px}}</style></head><body><h1>${co.name} — Inspection Report</h1><p class="meta">${co.address} | ${co.phone}</p><div class="score" style="color:${getScoreColor(inspForm.score)}">${inspForm.score}/100</div><p style="text-align:center;margin-bottom:16px;font-size:13px">${getScoreLabel(inspForm.score)}${inspForm.status==="blocked"?" — BLOCKED":""}</p><div class="row"><span><strong>Property:</strong> ${inspForm.houseName||inspForm.house}</span><span><strong>Date:</strong> ${inspForm.date}</span></div><div class="row"><span><strong>Type:</strong> ${inspForm.type}</span><span><strong>Inspector:</strong> ${inspForm.inspector||"—"}</span></div><div class="row"><span><strong>Team:</strong> ${(inspForm.employees||[]).join(", ")||"—"}</span></div>`);Object.entries(INSP_CHECKLIST).forEach(([area,items])=>{w.document.write(`<h2>${area}</h2>`);items.forEach(item=>{const v=inspForm.checks?.[item.id];const cls=v==="ok"?"ok":v==="adjust"?"adj":v==="fail"?"fail":"meta";const lbl=v==="ok"?"OK":v==="adjust"?"Adjust":v==="fail"?"Failed":"N/A";w.document.write(`<div class="row"><span>${item.t}</span><span class="${cls}">${lbl}</span></div>`);const note=(inspForm.notes||{})[item.id];if(note)w.document.write(`<div class="note">${note}</div>`);const photo=(inspForm.photos||{})[item.id];if(photo)w.document.write(`<div style="padding:4px 0 6px 20px"><img src="${photo}" style="max-width:200px;border-radius:4px;border:1px solid #ddd"/></div>`);});});if(inspForm.generalNotes)w.document.write(`<h2>Notes</h2><p style="font-size:12px">${inspForm.generalNotes}</p>`);w.document.write(`<p class="meta" style="margin-top:24px;text-align:center">Generated on ${new Date().toLocaleDateString("en-US")}</p></body></html>`);w.document.close();setTimeout(()=>w.print(),500);}} style={bt(T.ac,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>📄 Imprimir Relatório</button>
-</>}
-
-{inspView==="ranking"&&<>
-<div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>🏆 Ranking</span>
-<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score por Funcionário — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const scores={};em.forEach(e=>{const all=inspections.filter(i=>(i.employees||[]).includes(e));const mi=all.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(all.length){const avg=Math.round(all.reduce((s,i)=>s+i.score,0)/all.length);const mAvg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):null;const rework=all.filter(i=>i.status==="failed"||i.status==="blocked").length;const today=new Date().toISOString().split("T")[0];const weekAgo=new Date(Date.now()-7*86400000).toISOString().split("T")[0];const monthStart=today.slice(0,8)+"01";scores[e]={avg,mAvg,total:all.length,mTotal:mi.length,perfect:mi.filter(i=>i.score===100).length,rework:Math.round(rework/all.length*100),diaHoje:all.filter(i=>i.date===today).length,semana:all.filter(i=>i.date>=weekAgo).length,mes:mi.length,bonus:mAvg>=95?"integral":mAvg>=92?"parcial":"sem"};}});const sorted=Object.entries(scores).sort((a,b)=>(b[1].mAvg||0)-(a[1].mAvg||0));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados.</div>:sorted.map(([name,d],i)=><div key={name} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{display:"flex",alignItems:"center",gap:10}}>
-<div style={{width:28,height:28,borderRadius:7,background:i===0?T.gr+"22":T.cd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:i===0?T.gr:T.dm}}>#{i+1}</div>
-<div><div style={{fontSize:13,fontWeight:700}}>{name}</div><div style={{fontSize:9,color:T.dm}}>{d.avg>=95?"Elite Sunny":d.avg>=90?"Profissional":d.avg>=85?"Em desenvolvimento":"Treinamento"}</div></div></div>
-<div style={{display:"flex",alignItems:"center",gap:6}}>
-{d.bonus!=="sem"&&<span style={{padding:"3px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:d.bonus==="integral"?T.gr+"22":T.or+"22",color:d.bonus==="integral"?T.gr:T.or}}>Bônus {d.bonus}</span>}
-<div style={{fontSize:22,fontWeight:800,color:d.mAvg?getScoreColor(d.mAvg):T.dm}}>{d.mAvg||"—"}</div>
-</div></div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:6}}>
-{[["Geral",d.avg,T.ac],["Mês",d.mAvg||"—",T.bl],["Insp. mês",d.mes,T.pu],["Perfeitas",d.perfect,T.gr],["Rework",d.rework+"%",T.rd],["Hoje",d.diaHoje,T.or]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:"4px",borderRadius:4,background:T.cd}}><div style={{fontSize:7,color:T.dm,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:12,fontWeight:700,color:c}}>{v}</div></div>)}
-</div></div>);})()}</Card>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>Sistema de Bônus ({inspRptMonth})</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-{[["INTEGRAL","Média >= 95",T.gr],["PARCIAL","Média 92-94",T.or],["SEM BÔNUS","Média < 92",T.rd]].map(([l,d,c])=><div key={l} style={{padding:"8px 12px",borderRadius:6,background:c+"10",border:"1px solid "+c+"33",textAlign:"center"}}><div style={{fontSize:9,color:c,fontWeight:700}}>{l}</div><div style={{fontSize:10,color:T.dm}}>{d}</div></div>)}
-</div></Card>
-</>}
-
-{inspView==="reports"&&<>
-<div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Voltar</button><span style={{fontSize:14,fontWeight:700}}>📊 Relatórios</span>
-<select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
-<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
-{[["resumo","Resumo"],["casa","Por Casa"],["cleaner","Por Cleaner"],["inspetor","Por Inspetor"],["cliente","Por Cliente"],["evolucao","Evolução"],["plano","Plano de Ação"]].map(([k,l])=><button key={k} onClick={()=>setInspRpt(k)} style={{padding:"6px 14px",borderRadius:6,border:inspRpt===k?"1px solid "+T.ac:"1px solid "+T.bd,background:inspRpt===k?T.ac+"18":T.cd,color:inspRpt===k?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
-<button onClick={()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return fl("Sem dados no mês");const w=window.open("","_blank");
-const avg=Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length);
-const approved=mi.filter(i=>i.status==="approved").length;
-const failed=mi.filter(i=>i.status==="failed"||i.status==="blocked").length;
-let html=`<html><head><title>Inspection Report - ${mo}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333;font-size:12px}h1{font-size:20px;margin-bottom:4px}h2{font-size:14px;color:#0094B0;margin:18px 0 8px;border-bottom:2px solid #0094B0;padding-bottom:4px}h3{font-size:12px;margin:10px 0 4px}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:11px}th{background:#f5f5f5;font-weight:700}.score{font-size:36px;font-weight:800;text-align:center;margin:12px 0}.ok{color:#4ADE80}.warn{color:#FFB547}.bad{color:#FF6B6B}.meta{color:#888;font-size:10px}.grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:10px 0}.box{padding:12px;border:1px solid #ddd;border-radius:6px;text-align:center}.box .n{font-size:24px;font-weight:800}.box .l{font-size:9px;color:#888;text-transform:uppercase}@media print{body{padding:20px}}</style></head><body>`;
-html+=`<h1>${co.name} — Inspection Report</h1><p class="meta">${co.address} | ${co.phone} | ${mo} 2026</p>`;
-html+=`<div class="grid"><div class="box"><div class="n">${mi.length}</div><div class="l">Inspections</div></div><div class="box"><div class="n ${avg>=90?"ok":avg>=80?"warn":"bad"}">${avg}</div><div class="l">Average Score</div></div><div class="box"><div class="n ok">${approved}</div><div class="l">Approved</div></div><div class="box"><div class="n bad">${failed}</div><div class="l">Failed/Blocked</div></div></div>`;
-html+=`<h2>By Property</h2><table><tr><th>Property</th><th>Client</th><th>Inspections</th><th>Avg Score</th><th>Top Issues</th></tr>`;
-const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]={ins:[],client:i.client||""};byH[h].ins.push(i);});
-Object.entries(byH).sort((a,b)=>{const aa=Math.round(a[1].ins.reduce((s,i)=>s+i.score,0)/a[1].ins.length);const bb=Math.round(b[1].ins.reduce((s,i)=>s+i.score,0)/b[1].ins.length);return aa-bb;}).forEach(([h,d])=>{const ha=Math.round(d.ins.reduce((s,i)=>s+i.score,0)/d.ins.length);const fails={};d.ins.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail")fails[item.t]=(fails[item.t]||0)+2;if(i.checks?.[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+1;});});const top=Object.entries(fails).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([t])=>t).join(", ");html+=`<tr><td>${h}</td><td>${d.client}</td><td>${d.ins.length}</td><td class="${ha>=90?"ok":ha>=80?"warn":"bad"}" style="font-weight:700">${ha}</td><td style="font-size:10px">${top||"—"}</td></tr>`;});
-html+=`</table>`;
-html+=`<h2>By Team Member</h2><table><tr><th>Employee</th><th>Inspections</th><th>Avg Score</th><th>Perfect</th><th>Classification</th></tr>`;
-const byE={};mi.forEach(i=>{(i.employees||[]).forEach(e=>{if(!byE[e])byE[e]=[];byE[e].push(i);});});
-Object.entries(byE).sort((a,b)=>{const aa=Math.round(a[1].reduce((s,i)=>s+i.score,0)/a[1].length);const bb=Math.round(b[1].reduce((s,i)=>s+i.score,0)/b[1].length);return bb-aa;}).forEach(([e,ins])=>{const ea=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const perf=ins.filter(i=>i.score===100).length;const cls2=ea>=95?"Elite Sunny":ea>=90?"Professional":ea>=85?"Developing":"Training Required";html+=`<tr><td>${e}</td><td>${ins.length}</td><td class="${ea>=90?"ok":ea>=80?"warn":"bad"}" style="font-weight:700">${ea}</td><td>${perf}</td><td>${cls2}</td></tr>`;});
-html+=`</table>`;
-html+=`<h2>Action Plan</h2><table><tr><th>Issue</th><th>Where</th><th>Frequency</th><th>Suggested Action</th></tr>`;
-const actions={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail"||i.checks?.[item.id]==="adjust"){const k=item.t;if(!actions[k])actions[k]={houses:new Set(),count:0};actions[k].houses.add(i.houseName||i.house);actions[k].count++;}});});
-const actionMap={"Cama bem esticada":"Standardize bed-making technique","Lençóis sem manchas":"Review linen quality control","Travesseiros corretos":"Create pillow checklist per property","Poeira removida":"Add dusting to final walkthrough","Piso limpo":"Double-check floors before leaving","Cheiro adequado":"Use air freshener protocol","Sem itens esquecidos":"Implement lost & found checklist","Vaso higienizado":"Reinforce bathroom sanitation training","Espelho sem manchas":"Add mirror check to routine","Box limpo":"Deep clean shower protocol","Ralo limpo":"Monthly drain maintenance schedule","Toalhas corretas":"Verify towel count per property","Bancadas limpas":"Final kitchen surface inspection","Fogão limpo":"Stove cleaning checklist","Micro-ondas limpo":"Microwave interior check","Geladeira organizada":"Fridge organization standard","Lixeira limpa":"Replace trash bag + wipe bin","Utensílios organizados":"Photo reference for each kitchen","Sofá alinhado":"Living room photo reference","Almofadas organizadas":"Cushion arrangement guide","TV funcionando":"Test all electronics before leaving","Móveis organizados":"Outdoor setup photo reference","Piscina visualmente limpa":"Pool check protocol","Travas funcionando":"Security checklist mandatory","Luzes funcionando":"Light test all rooms","AC funcionando":"HVAC test protocol","Wi-Fi funcionando":"Wi-Fi speed test before leaving"};
-Object.entries(actions).sort((a,b)=>b[1].count-a[1].count).forEach(([issue,d])=>{const houses=[...d.houses].slice(0,3).join(", ");const action=actionMap[issue]||"Review and train team";html+=`<tr><td>${issue}</td><td style="font-size:10px">${houses}${d.houses.size>3?" + "+(d.houses.size-3)+" more":""}</td><td style="font-weight:700;color:${d.count>=5?"#FF6B6B":d.count>=3?"#FFB547":"#888"}">${d.count}x</td><td style="font-size:10px">${action}</td></tr>`;});
-html+=`</table><p class="meta" style="margin-top:20px;text-align:center">Generated on ${new Date().toLocaleDateString("en-US")} by ${co.name}</p></body></html>`;
-w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄 Relatório exportado!");}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid "+T.gr,background:T.gr+"18",color:T.gr,fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginLeft:"auto"}}>📄 Exportar PDF</button>
-</div>
-
-{inspRpt==="resumo"&&<>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Nota Média por Casa — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]={sum:0,cnt:0};byH[h].sum+=i.score;byH[h].cnt++;});const sorted=Object.entries(byH).map(([h,d])=>({h,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>a.avg-b.avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(d=><div key={d.h} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d.h} <span style={{color:T.dm}}>({d.cnt}x)</span></span><span style={{fontWeight:700,color:getScoreColor(d.avg)}}>{d.avg}</span></div>);})()}</Card>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Itens com Mais Falhas — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const fails={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail"||i.checks?.[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+1;});});const sorted=Object.entries(fails).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,10).map(([t,c])=><div key={t} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{t}</span><span style={{fontWeight:700,color:T.rd}}>{c}x</span></div>);})()}</Card>
-</div>
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Volume de Inspeções — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byDay={};mi.forEach(i=>{byDay[i.date]=(byDay[i.date]||0)+1;});const sorted=Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0]));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(([d,c])=><div key={d} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d}</span><span style={{fontWeight:700,color:T.ac}}>{c} inspeções</span></div>);})()}</Card>
-</>}
-
-{inspRpt==="casa"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Casa — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return Object.keys(byH).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byH).sort((a,b)=>a[0].localeCompare(b[0])).map(([house,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const fails={};ins.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail")fails[item.t]=(fails[item.t]||0)+1;if(i.checks?.[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+0.5;});});const topFails=Object.entries(fails).sort((a,b)=>b[1]-a[1]).slice(0,5);return <div key={house} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:12,fontWeight:700}}>{house}</div>
-<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp.</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
-{topFails.length>0&&<div><div style={{fontSize:9,color:T.rd,fontWeight:700,marginBottom:3}}>Problemas recorrentes:</div>{topFails.map(([t,c])=><div key={t} style={{fontSize:10,padding:"2px 0",color:T.or}}>{t} ({Math.round(c)}x)</div>)}</div>}
-{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9,marginTop:3}}><span style={{color:T.dm}}>{i.date} · {i.type} · {(i.employees||[]).join(", ")}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
-</div>;});})()}</Card>}
-
-{inspRpt==="cleaner"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cleaner — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byE={};mi.forEach(i=>{(i.employees||[]).forEach(e=>{if(!byE[e])byE[e]=[];byE[e].push(i);});});return Object.keys(byE).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byE).sort((a,b)=>a[0].localeCompare(b[0])).map(([emp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={emp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-<div style={{fontSize:12,fontWeight:700}}>{emp}</div>
-<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {ins.filter(i=>i.score===100).length} perfeitas</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
-{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9}}><span style={{color:T.dm}}>{i.date} · {i.houseName||i.house} · {i.type}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
-</div>;});})()}</Card>}
-
-{inspRpt==="inspetor"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Inspetor — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byI={};mi.forEach(i=>{const k=i.inspector||"Sem inspetor";if(!byI[k])byI[k]=[];byI[k].push(i);});return Object.keys(byI).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byI).map(([insp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={insp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-<div style={{fontSize:12,fontWeight:700}}>{insp}</div>
-<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} inspeções</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
-{ins.map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderTop:"1px solid "+T.bd,fontSize:9}}><span style={{color:T.dm}}>{i.date} · {i.houseName||i.house} · {(i.employees||[]).join(", ")}</span><span style={{fontWeight:700,color:getScoreColor(i.score)}}>{i.score}</span></div>)}
-</div>;});})()}</Card>}
-
-{inspRpt==="cliente"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cliente — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byC={};mi.forEach(i=>{const c=i.client||"Sem cliente";if(!byC[c])byC[c]=[];byC[c].push(i);});return Object.keys(byC).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byC).sort((a,b)=>a[0].localeCompare(b[0])).map(([client,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const byH={};ins.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return <div key={client} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:13,fontWeight:700}}>{client}</div>
-<div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {Object.keys(byH).length} casas</span><span style={{fontSize:20,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
-{Object.entries(byH).map(([house,hIns])=>{const hAvg=Math.round(hIns.reduce((s,i)=>s+i.score,0)/hIns.length);return <div key={house} style={{marginLeft:12,padding:"4px 0",borderTop:"1px solid "+T.bd}}>
-<div style={{display:"flex",justifyContent:"space-between",fontSize:10}}><span style={{fontWeight:600}}>{house}</span><span style={{fontWeight:700,color:getScoreColor(hAvg)}}>{hAvg} ({hIns.length}x)</span></div>
-</div>;})}
-</div>;});})()}</Card>}
-
-{inspRpt==="evolucao"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Evolução Mensal</div>
-{(()=>{const byMonth={};inspections.forEach(i=>{if(i.date){const m=MO[new Date(i.date+"T12:00").getMonth()];if(!byMonth[m])byMonth[m]={sum:0,cnt:0};byMonth[m].sum+=i.score;byMonth[m].cnt++;}});const data=MO.filter(m=>byMonth[m]).map(m=>({l:m.slice(0,3),v1:Math.round(byMonth[m].sum/byMonth[m].cnt)}));return data.length>0?<div><BarChart data={data} colors={[T.ac]}/><div style={{display:"grid",gridTemplateColumns:"repeat("+data.length+",1fr)",gap:4,marginTop:8}}>{data.map(d=><div key={d.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:getScoreColor(d.v1)}}>{d.v1}</div><div style={{fontSize:8,color:T.dm}}>{d.l}</div></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>Sem dados suficientes.</div>;})()}</Card>}
-
-{inspRpt==="plano"&&<>
-<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>🎯 Plano de Ação — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return <div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados.</div>;
-const actions={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if(i.checks?.[item.id]==="fail"||i.checks?.[item.id]==="adjust"){const k=item.t;if(!actions[k])actions[k]={houses:new Set(),emps:new Set(),fails:0,adjusts:0};actions[k].houses.add(i.houseName||i.house);(i.employees||[]).forEach(e=>actions[k].emps.add(e));if(i.checks[item.id]==="fail")actions[k].fails++;else actions[k].adjusts++;}});});
-const sorted=Object.entries(actions).sort((a,b)=>(b[1].fails*2+b[1].adjusts)-(a[1].fails*2+a[1].adjusts));
-return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>Nenhum problema encontrado!</div>:sorted.map(([issue,d])=>{const sev=d.fails>=3?"alta":d.fails>=1||d.adjusts>=3?"média":"baixa";const sevC=sev==="alta"?T.rd:sev==="média"?T.or:T.dm;return <div key={issue} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:8,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div style={{fontSize:12,fontWeight:700}}>{issue}</div>
-<span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:700,background:sevC+"18",color:sevC}}>{sev.toUpperCase()}</span>
-</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:6}}>
-<div style={{fontSize:9}}><span style={{color:T.dm}}>Reprovados:</span> <span style={{fontWeight:700,color:T.rd}}>{d.fails}x</span></div>
-<div style={{fontSize:9}}><span style={{color:T.dm}}>Ajustes:</span> <span style={{fontWeight:700,color:T.or}}>{d.adjusts}x</span></div>
-<div style={{fontSize:9}}><span style={{color:T.dm}}>Casas:</span> <span style={{fontWeight:600}}>{d.houses.size}</span></div>
-</div>
-<div style={{fontSize:9,color:T.dm,marginBottom:4}}>Onde: {[...d.houses].slice(0,4).join(", ")}{d.houses.size>4?" +mais":""}  ·  Quem: {[...d.emps].slice(0,3).join(", ")}</div>
-<div style={{fontSize:10,padding:"6px 10px",borderRadius:4,background:T.ac+"08",color:T.ac,fontWeight:600}}>Ação: {issue.includes("Cama")?"Padronizar técnica de montagem":issue.includes("Lençóis")?"Revisar controle de qualidade":issue.includes("Poeira")||issue.includes("Piso")?"Checklist final antes de sair":issue.includes("Cheiro")?"Protocolo de aromatização":issue.includes("Vaso")||issue.includes("Box")||issue.includes("Ralo")?"Treinamento de sanitização":issue.includes("Toalha")?"Conferir contagem por casa":issue.includes("Bancada")||issue.includes("Fogão")||issue.includes("Micro")?"Inspeção final de cozinha":issue.includes("Geladeira")?"Padrão de organização com foto":issue.includes("Lixeira")?"Trocar saco + limpar cesto":issue.includes("Sofá")||issue.includes("Almofada")?"Foto referência por sala":issue.includes("TV")||issue.includes("AC")||issue.includes("Wi-Fi")||issue.includes("Luz")?"Testar eletrônicos antes de sair":issue.includes("Trava")?"Checklist de segurança obrigatório":issue.includes("Piscina")?"Protocolo visual de piscina":"Revisar e treinar equipe"}</div>
-</div>});})()}</Card>
-
-<Card><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>Resumo Executivo — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return <div style={{color:T.dm,fontSize:11}}>—</div>;const avg=Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length);const appr=mi.filter(i=>i.status==="approved"||i.status==="released").length;const fail=mi.filter(i=>i.status==="failed"||i.status==="blocked").length;return <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-{[["Total",mi.length,T.ac],["Média",avg,getScoreColor(avg)],["Aprovadas",appr,T.gr],["Reprovadas",fail,T.rd]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:"8px",borderRadius:6,background:T.cd}}><div style={{fontSize:8,color:T.dm}}>{l}</div><div style={{fontSize:18,fontWeight:800,color:c}}>{v}</div></div>)}
-</div>;})()}</Card>
-</>}
-
-</>}
-</div>}
-
 
 {/* HISTORY */}
 {vw==="history"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:15,fontWeight:700,marginBottom:12}}>💰 Folhas</div>
-<div style={{display:"flex",gap:4,marginBottom:10}}>{[["todos","Todas"],["rascunho","Rascunhos"],["emitida","Emitidas"],["paga","Pagas"]].map(([k,l])=>{const cnt=sP.filter(p=>k==="todos"?true:(p.status||"paga")===k).length;return <button key={k} onClick={()=>setFPS(k)} style={{flex:1,padding:"8px 4px",borderRadius:8,border:fPS===k?"2px solid "+(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):"1.5px solid "+T.bd,background:fPS===k?(k==="rascunho"?T.or+"15":k==="emitida"?T.ac+"15":k==="paga"?T.gr+"15":T.bl+"15"):T.c2,color:fPS===k?(k==="rascunho"?T.or:k==="emitida"?T.ac:k==="paga"?T.gr:T.bl):T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>{l} ({cnt})</button>})}</div>
 <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
 <select value={fE} onChange={e=>setFE(e.target.value)} style={{...sel,width:"auto",minWidth:150}}><option value="">Todos</option>{em.map(e=><option key={e}>{e}</option>)}</select>
 <select value={fM} onChange={e=>setFM(e.target.value)} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
@@ -829,67 +432,53 @@ return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}
 {filtP.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>{sP.length===0?"Nenhuma folha.":"Sem resultados."}</div>:filtP.map(p=><div key={p.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:7,background:T.aD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:T.ac}}>{p.emp.split(" ").map(n=>n[0]).join("").slice(0,2)}</div><div><div style={{fontSize:12,fontWeight:700}}>{p.emp}</div><div style={{fontSize:9,color:T.dm}}>{p.week} · {p.month} · {p.casas}c</div></div></div>
 <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:800,color:T.ac}}>${p.total}</div><div style={{fontSize:8,color:T.gr}}>+${p.profit}</div></div><div style={{display:"flex",gap:3}}>
-<span style={{padding:"2px 6px",borderRadius:4,fontSize:7,fontWeight:700,background:(p.status||"paga")==="rascunho"?T.or+"18":(p.status||"paga")==="emitida"?T.ac+"18":T.gr+"18",color:(p.status||"paga")==="rascunho"?T.or:(p.status||"paga")==="emitida"?T.ac:T.gr}}>{(p.status||"paga")==="rascunho"?"RASCUNHO":(p.status||"paga")==="emitida"?"EMITIDA":"PAGA"}</span>
-{(p.status||"paga")==="rascunho"&&<button onClick={()=>updatePStatus(p.id,"emitida")} style={bt(T.ac+"15",T.ac,{padding:"5px 8px",fontSize:8})}>Emitir</button>}
-{((p.status||"paga")==="rascunho"||(p.status||"paga")==="emitida")&&<button onClick={()=>updatePStatus(p.id,"paga")} style={bt(T.gr+"15",T.gr,{padding:"5px 8px",fontSize:8})}>Pagar</button>}{(p.status||"paga")==="paga"&&!fin.find(e=>e.ref==="po-"+p.id)&&<button onClick={()=>updatePStatus(p.id,"paga")} style={bt(T.rd+"15",T.rd,{padding:"5px 8px",fontSize:8})}>Sync</button>}
-<button onClick={()=>{setSE(p.emp);setPI(p.items||[]);setWkFrom(p.wkFrom||"");setWkTo(p.wkTo||"");setPM(p.month||MO[new Date().getMonth()]);setEditPId(p.id);fl("Editando folha...");setVw("payroll");}} style={bt(T.or+"15",T.or,{padding:"5px 8px",fontSize:8})}>Editar</button>
 <button onClick={()=>{setVP(p);setVw("payslip");}} style={bt(T.pu+"15",T.pu,{padding:"5px 8px"})}>📄</button>
 <button onClick={()=>dlImg(p.emp,p.week,p.items,p.total)} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})}>📥</button>
 <button onClick={()=>delP(p.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button></div></div></div>)}</Card>
 
 <Card><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={{fontSize:15,fontWeight:700}}>📄 Invoices</div>{sI.length>0&&<span style={{fontSize:11,color:T.dm}}>Total: <strong style={{color:T.ac}}>${fm(sI.reduce((s,i)=>s+i.total,0))}</strong></span>}</div>
-<div style={{display:"flex",gap:6,marginBottom:10}}>
-{[{k:"rascunho",l:"📝 Rascunhos",c:T.or},{k:"emitida",l:"📨 Emitidas",c:T.ac},{k:"paga",l:"💰 Pagas",c:T.gr}].map(t=>{const cnt=sI.filter(i=>(i.status||"emitida")===t.k).length;return <button key={t.k} onClick={()=>setInvTab(t.k)} style={{padding:"6px 14px",borderRadius:7,border:invTab===t.k?"2px solid "+t.c:"1px solid "+T.bd,background:invTab===t.k?t.c+"18":T.cd,color:invTab===t.k?t.c:T.dm,fontSize:10,fontWeight:invTab===t.k?700:500,cursor:"pointer",fontFamily:"inherit"}}>{t.l} ({cnt})</button>;})}
-</div>
-{invTab==="rascunho"&&sI.filter(i=>(i.status||"emitida")==="rascunho").length>0&&<div style={{background:T.or+"12",borderRadius:8,padding:"10px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><span style={{fontSize:11,fontWeight:700,color:T.or}}>📊 Previsão de Ganhos</span><span style={{fontSize:9,color:T.dm,marginLeft:8}}>(se emitir todos os rascunhos)</span></div><span style={{fontSize:18,fontWeight:800,color:T.or}}>${fm(sI.filter(i=>(i.status||"emitida")==="rascunho").reduce((s,i)=>s+i.total,0))}</span></div>}
 <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
 <select value={fIC} onChange={e=>setFIC(e.target.value)} style={{...sel,width:"auto",minWidth:150}}><option value="">Todos</option>{cls.map(c=><option key={c}>{c}</option>)}</select>
 <select value={fIM} onChange={e=>setFIM(e.target.value)} style={{...sel,width:"auto",minWidth:120}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
 {(fIC||fIM)&&<button onClick={()=>{setFIC("");setFIM("");}} style={bt(T.rd+"15",T.rd)}>✕</button>}</div>
-{(()=>{const tabInvs=filtI.filter(i=>(i.status||"emitida")===invTab);
-if(fIC&&tabInvs.length>0)return <div style={{background:T.aD,borderRadius:8,padding:"8px 14px",marginBottom:10,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.ac,fontWeight:600}}>{fIC} — {tabInvs.length}</span><span style={{fontSize:13,fontWeight:800,color:T.ac}}>${fm(tabInvs.reduce((s,i)=>s+i.total,0))}</span></div>;return null;})()}
-{(()=>{const tabInvs=filtI.filter(i=>(i.status||"emitida")===invTab);
-return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma invoice {invTab==="rascunho"?"em rascunho":invTab==="emitida"?"emitida":"paga"}.</div>:tabInvs.map(inv=><div key={inv.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+(invTab==="rascunho"?T.or+"44":invTab==="paga"?T.gr+"44":T.bd),marginBottom:6,background:T.c2}}>
-<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:7,background:invTab==="rascunho"?T.or+"15":invTab==="paga"?T.gr+"15":T.ac+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:invTab==="rascunho"?T.or:invTab==="paga"?T.gr:T.ac}}>#{inv.no}</div><div><div style={{fontSize:12,fontWeight:700}}>{inv.client}</div><div style={{fontSize:9,color:T.dm}}>#{inv.no} · {inv.date} · {(inv.items||[]).length}i</div></div></div>
-<div style={{display:"flex",alignItems:"center",gap:8}}><div style={{fontSize:14,fontWeight:800,color:invTab==="paga"?T.gr:T.ac}}>${fm(inv.total)}</div><div style={{display:"flex",gap:3}}>
-{invTab==="rascunho"&&<button onClick={()=>editInv(inv)} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})} title="Editar">✏️</button>}
-{invTab==="rascunho"&&<button onClick={()=>emitirInv(inv.id)} style={bt(T.gr+"15",T.gr,{padding:"5px 8px"})} title="Emitir">📨</button>}
-{invTab==="emitida"&&<button onClick={()=>pagarInv(inv.id)} style={bt(T.gr+"15",T.gr,{padding:"5px 8px"})} title="Marcar Pago">💰</button>}
+{fIC&&filtI.length>0&&<div style={{background:T.aD,borderRadius:8,padding:"8px 14px",marginBottom:10,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.ac,fontWeight:600}}>{fIC} — {filtI.length}</span><span style={{fontSize:13,fontWeight:800,color:T.ac}}>${fm(filtI.reduce((s,i)=>s+i.total,0))}</span></div>}
+{filtI.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>{sI.length===0?"Nenhuma invoice.":"Sem resultados."}</div>:filtI.map(inv=><div key={inv.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:7,background:T.or+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:T.or}}>#{inv.no}</div><div><div style={{fontSize:12,fontWeight:700}}>{inv.client}</div><div style={{fontSize:9,color:T.dm}}>#{inv.no} · {inv.date} · {inv.items.length}i</div></div></div>
+<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{fontSize:14,fontWeight:800,color:T.ac}}>${fm(inv.total)}</div><div style={{display:"flex",gap:3}}>
 <button onClick={()=>{setVI(inv);setVw("preview");}} style={bt(T.ac+"15",T.ac,{padding:"5px 8px"})}>👁</button>
-{invTab!=="paga"&&<button onClick={()=>delI(inv.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button>}
-</div></div></div>);})()}</Card>
+<button onClick={()=>{setIN(inv.no);setID(inv.date);setIC(inv.client);setII(inv.items.map(i=>({...i,id:Date.now()+Math.random()})));setVw("invoice");}} style={bt(T.bl+"15",T.bl,{padding:"5px 8px"})}>📋</button>
+<button onClick={()=>delI(inv.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button></div></div></div>)}</Card>
 </div>}
 
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>👤 Funcionários ({em.length})</div>
 <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>{em.map((e,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:T.c2,border:"1px solid "+T.bd,fontSize:10}}><span>{e}</span><button onClick={()=>uEM(em.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.rd,cursor:"pointer",fontSize:9,padding:0}}>✕</button></div>)}</div>
-<div style={{display:"flex",gap:8}}><TI value={nEmpN} onChange={e=>{setNEmpN(e.target.value);}} style={{...inp,flex:1}} placeholder="Nome do funcionário"/><button onClick={()=>{if(nEmpN){uEM([...em,nEmpN]);setNEmpN("");fl("✅!");}}} style={bt(T.ac,T.bg)}>+ Add</button></div></Card>
+<div style={{display:"flex",gap:8}}><input value={nEmpN} onChange={e=>setNEmpN(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&nEmpN){uEM([...em,nEmpN]);setNEmpN("");fl("✅!");}}} style={{...inp,flex:1}} placeholder="Nome do funcionário"/><button onClick={()=>{if(nEmpN){uEM([...em,nEmpN]);setNEmpN("");fl("✅!");}}} style={bt(T.ac,T.bg)}>+ Add</button></div></Card>
 
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>👤 Novo Cliente</div>
-<div style={{display:"flex",gap:8}}><TI value={nCl} onChange={e=>setNCl(e.target.value)} style={{...inp,flex:1}} placeholder="Nome do cliente"/><button onClick={()=>{if(nCl&&!cls.includes(nCl)){uDB([...db,{c:nCl,n:"(nova)",a:"",ip:0,ep:0}]);fl("✅ "+nCl);setNCl("");}}} style={bt(T.ac,T.bg)}>+ Criar</button></div></Card>
+<div style={{display:"flex",gap:8}}><input value={nCl} onChange={e=>setNCl(e.target.value)} style={{...inp,flex:1}} placeholder="Nome do cliente"/><button onClick={()=>{if(nCl&&!cls.includes(nCl)){uDB([...db,{c:nCl,n:"(nova)",a:"",ip:0,ep:0}]);fl("✅ "+nCl);setNCl("");}}} style={bt(T.ac,T.bg)}>+ Criar</button></div></Card>
 
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>🏠 Adicionar Propriedade</div>
 <div style={{display:"grid",gridTemplateColumns:"1.2fr 1.5fr 2fr .8fr .8fr auto",gap:6,alignItems:"end"}}>
 <div><label style={lb}>Cliente</label><select value={nCl} onChange={e=>setNCl(e.target.value)} style={sel}><option value="">—</option>{cls.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-<div><label style={lb}>Nome Casa</label><TI value={nNm} onChange={e=>setNNm(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Endereço</label><TI value={nAd} onChange={e=>setNAd(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Inv $</label><NI value={nIp} onChange={e=>setNIp(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Rep $</label><NI value={nEp} onChange={e=>setNEp(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Nome Casa</label><input value={nNm} onChange={e=>setNNm(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Endereço</label><input value={nAd} onChange={e=>setNAd(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Inv $</label><input type="number" value={nIp} onChange={e=>setNIp(e.target.value)} style={inp}/></div>
+<div><label style={lb}>Rep $</label><input type="number" value={nEp} onChange={e=>setNEp(e.target.value)} style={inp}/></div>
 <button onClick={()=>{if(nCl&&nNm){uDB([...db,{c:nCl,n:nNm,a:nAd,ip:parseFloat(nIp)||0,ep:parseFloat(nEp)||0}]);setNNm("");setNAd("");setNIp("");setNEp("");fl("✅!");}}} style={bt(T.ac,T.bg)}>Add</button>
 </div></Card>
 
-<>
-if(!ps.length)return null;return(
+{cls.map(cl=>{const ps=db.filter(p=>p.c===cl&&p.n!=="(nova)");if(!ps.length)return null;return(
 <Card key={cl} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{editCl===cl?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><input defaultValue={cl} id={"ecl-"+cl.replace(/\s/g,"")} style={{...inp,fontSize:12,fontWeight:700,width:200,padding:"4px 8px"}}/><button onClick={()=>{const v=document.getElementById("ecl-"+cl.replace(/\s/g,"")).value;if(v&&v!==cl){const n=db.map(p=>p.c===cl?{...p,c:v}:p);uDB(n);setEditCl(null);fl("✅ Cliente renomeado!");}else setEditCl(null);}} style={bt(T.gr,T.bg,{padding:"3px 8px",fontSize:8})}>✓</button><button onClick={()=>setEditCl(null)} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button></span>:<span>{cl} ({ps.length}) <button onClick={()=>setEditCl(cl)} style={{background:"none",border:"none",cursor:"pointer",fontSize:9,color:T.dm,padding:0}}>✏️</button></span>}</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
+<div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{cl} ({ps.length})</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
 <div style={{padding:"0 16px"}}>{ps.map((p,i)=>{const gI=db.findIndex(x=>x.c===p.c&&x.n===p.n);const isE=eIdx===gI;
-if(isE)return(<div key={i} id={"ed-row-"+gI} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:T.aD}}>
-<input defaultValue={eD.n||""} data-field="n" style={{...inp,fontSize:10}}/>
-<input defaultValue={eD.a||""} data-field="a" style={{...inp,fontSize:10}}/>
-<input type="number" defaultValue={eD.ip||""} data-field="ip" style={{...inp,fontSize:10,textAlign:"center"}}/>
-<input type="number" defaultValue={eD.ep||""} data-field="ep" style={{...inp,fontSize:10,textAlign:"center"}}/>
-<button onClick={()=>{const row=document.getElementById("ed-row-"+gI);const inputs=row.querySelectorAll("input");const upd={n:inputs[0].value,a:inputs[1].value,ip:parseFloat(inputs[2].value)||0,ep:parseFloat(inputs[3].value)||0};const n=[...db];n[gI]={...n[gI],...upd};uDB(n);setEIdx(null);fl("✅!");}} style={bt(T.gr,T.bg,{padding:"4px 6px",fontSize:9})}>✓</button>
+if(isE)return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:T.aD}}>
+<input value={eD.n||""} onChange={e=>setED({...eD,n:e.target.value})} style={{...inp,fontSize:10}}/>
+<input value={eD.a||""} onChange={e=>setED({...eD,a:e.target.value})} style={{...inp,fontSize:10}}/>
+<input type="number" value={eD.ip||""} onChange={e=>setED({...eD,ip:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
+<input type="number" value={eD.ep||""} onChange={e=>setED({...eD,ep:parseFloat(e.target.value)||0})} style={{...inp,fontSize:10,textAlign:"center"}}/>
+<button onClick={()=>{const n=[...db];n[gI]={...n[gI],...eD};uDB(n);setEIdx(null);fl("✅!");}} style={bt(T.gr,T.bg,{padding:"4px 6px",fontSize:9})}>✓</button>
 <button onClick={()=>setEIdx(null)} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);
 return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11,cursor:"pointer"}} onDoubleClick={()=>{setEIdx(gI);setED({n:p.n,a:p.a,ip:p.ip,ep:p.ep});}}>
 <span style={{fontWeight:500}}>{p.n}</span><span style={{fontSize:10,color:T.dm}}>{p.a}</span>
@@ -897,13 +486,5 @@ return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr
 <span style={{textAlign:"center",color:T.gr,fontWeight:600}}>${p.ip-p.ep}</span>
 <button onClick={()=>{const n=[...db];n.splice(gI,1);uDB(n);}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);})}</div></Card>);})}
 <Card style={{fontSize:10,color:T.dm}}>💡 Clique duas vezes em qualquer propriedade para editar</Card>
-</> 
 </div>}
 </div></div>);}
-}
-
-const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
-
-</script>
-<script>(function(){try{var j=document.getElementById("app-jsx").textContent;var c=Babel.transform(j,{presets:["react"]}).code;new Function(c)();}catch(e){console.error(e);document.getElementById("root").innerHTML="<div style=\"color:red;padding:40px\"><pre style=\"white-space:pre-wrap\">"+e.message+"</pre></div>";}})();</script>
-</body></html>
