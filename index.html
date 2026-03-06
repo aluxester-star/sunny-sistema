@@ -108,14 +108,23 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 <button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
 <button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
 </div></div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","inventory","team","inspect","history","database"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
+const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","inventory","team","inspect","history","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
 function App({onLogout,userRole="admin"}){
 const[vw,setVw]=useState("dashboard");
 const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useState(DC);
 const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
-const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
+const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);
+const[ldry,setLdry]=useState([]);
+const[ldryLog,setLdryLog]=useState([]);
+const[ldryCfg,setLdryCfg]=useState({priceLb:1.35,fixedFee:0});
+const[ldryView,setLdryView]=useState("board");
+const[ldryHouse,setLdryHouse]=useState(null);
+const[ldryForm,setLdryForm]=useState({weight:"",notes:"",checks:{}});
+const[ldryFilter,setLdryFilter]=useState("");
+const[ldryClient,setLdryClient]=useState("");
+;const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
 const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(new Date().toISOString().split("T")[0]);const[wkTo,setWkTo]=useState(new Date(Date.now()+7*86400000).toISOString().split("T")[0]);const[pM,setPM]=useState(MO[new Date().getMonth()]);const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("1148");const[iD,setID]=useState("2026-02-25");const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
@@ -148,6 +157,10 @@ try{const r=await FB.get("co3");if(r&&r.value)setCo({...DC,...JSON.parse(r.value
 try{const r=await FB.get("insp3");if(r&&r.value)setInspections(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ls3");if(r&&r.value)setLosses(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cc3");if(r&&r.value)setCustomCats(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ldry3");if(r&&r.value)setLdry(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ldlog3");if(r&&r.value)setLdryLog(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ldcfg3");if(r&&r.value)setLdryCfg({priceLb:1.35,fixedFee:0,...JSON.parse(r.value)});}catch{}
+
 try{const r=await FB.get("cu3");if(r&&r.value)setCustomUnits(JSON.parse(r.value));}catch{}
 })();},[]);
 
@@ -164,6 +177,21 @@ const fmtPeriod=(f,t)=>{if(!f||!t)return"";const d1=new Date(f+"T12:00"),d2=new 
 const wk=fmtPeriod(wkFrom,wkTo);
 const savP=async(status)=>{const st=status||"rascunho";if(editPId){const oldP=sP.find(x=>x.id===editPId);if(oldP&&(oldP.status||"paga")==="paga"){const nf=fin.filter(e=>e.ref!=="po-"+editPId);setFin(nf);await sv("fn3",nf);}const rmv=sP.filter(x=>x.id!==editPId);setSP(rmv);await sv("sp3",rmv);setEditPId(null);}const e={id:Date.now(),emp:sE,week:wk,wkFrom,wkTo,month:pM,items:pI,total:pTot,invTot:pInv,profit:pInv-pTot,at:new Date().toISOString(),casas:pI.length,status:st};const u=[e,...sP.filter(x=>x.id!==editPId)];setSP(u);await sv("sp3",u);if(st==="paga"){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:sE+" - "+wk,amt:pTot,date:new Date().toISOString().split("T")[0],month:pM,week:wk,ref:"po-"+e.id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}setPI([]);setSE("");setEditPId(null);fl(st==="rascunho"?"Rascunho salvo!":st==="emitida"?"Folha emitida!":"Folha paga!");setVw("history");};
 const updatePStatus=async(id,newSt)=>{const p=sP.find(x=>x.id===id);if(!p)return;const today=new Date().toISOString().split("T")[0];const u=sP.map(x=>x.id===id?{...x,status:newSt,paidDate:newSt==="paga"?today:x.paidDate}:x);setSP(u);await sv("sp3",u);if(newSt==="paga"&&!fin.find(e=>e.ref==="po-"+id)){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:`${p.emp} - ${p.week}`,amt:p.total,date:today,month:MO[new Date().getMonth()],week:p.week,ref:"po-"+id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}fl(newSt==="paga"?"Folha paga!":"Status atualizado!");};
+
+const svLdry=async(d)=>{setLdry(d);await sv("ldry3",d);};
+const svLdryLog=async(d)=>{setLdryLog(d);await sv("ldlog3",d);};
+const svLdryCfg=async(d)=>{setLdryCfg(d);await sv("ldcfg3",d);};
+const LDST={ESCRITORIO:{l:"No Escritorio",c:"#4ADE80",i:"OK"},EM_USO:{l:"Em Uso",c:"#60A5FA",i:"USO"},SUJA:{l:"Suja",c:"#FFB547",i:"SUJ"},LAVANDERIA:{l:"Na Lavanderia",c:"#00B4D8",i:"LAV"},LIMPA:{l:"Limpa",c:"#A78BFA",i:"LMP"},INCOMPLETO:{l:"Incompleta",c:"#FF6B6B",i:"ERR"}};
+const DEFAULT_CK=[{s:"Quartos",items:[{n:"King",q:1},{n:"Full",q:2},{n:"Full (elastico)",q:2},{n:"Twin",q:2},{n:"Fronhas King",q:8},{n:"Fronhas Standard",q:12},{n:"Toalhas banho",q:8},{n:"Wash clothes",q:8}]},{s:"Banheiros",items:[{n:"Toalhas banho",q:4},{n:"Toalha rosto",q:8},{n:"Toalha maquiagem",q:8},{n:"Tapete banheiro",q:2}]},{s:"Cozinha",items:[{n:"Pano de prato",q:2}]},{s:"Piscina",items:[{n:"Toalha piscina",q:12}]}];
+const HOUSE_LDRY=[{id:"JOSH-Luxe_Palms",client:"JOSH",name:"Luxe Palms",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "fronhas king", "q": 4}, {"n": "fronhas standard", "q": 12}, {"n": "toalhas de banho", "q": 12}, {"n": "wash clothes", "q": 12}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de banho", "q": 4}, {"n": "toalhas de rosto", "q": 4}, {"n": "toalhas de maquiagem", "q": 4}, {"n": "tapetes de banheiro", "q": 2}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 10}]}]},{id:"JOSH-St_Pete_Sun",client:"JOSH",name:"St Pete Sun",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Queen", "q": 1}, {"n": "fronhas king", "q": 4}, {"n": "fronhas standard", "q": 12}, {"n": "toalhas de banho", "q": 8}, {"n": "wash clothes", "q": 8}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de banho", "q": 6}, {"n": "toalhas de rosto", "q": 6}, {"n": "toalhas de maquiagem", "q": 6}, {"n": "tapetes de banheiro", "q": 3}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 10}]}]},{id:"JOSH-Coastal_Charm",client:"JOSH",name:"Coastal Charm",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "King", "q": 1}, {"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Twin", "q": 1}, {"n": "Twin", "q": 1}, {"n": "fronhas king", "q": 12}, {"n": "fronhas standard", "q": 10}, {"n": "toalhas de banho", "q": 16}, {"n": "wash clothes", "q": 16}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de banho", "q": 6}, {"n": "toalhas de rosto", "q": 6}, {"n": "toalhas de maquiagem", "q": 6}, {"n": "tapetes de banheiro", "q": 3}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 16}]}]},{id:"JOSH-Poinsettia",client:"JOSH",name:"Poinsettia",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Twin", "q": 1}, {"n": "Twin", "q": 1}, {"n": "fronhas king", "q": 4}, {"n": "fronhas standard", "q": 14}, {"n": "toalhas de banho", "q": 16}, {"n": "wash clothes", "q": 16}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de banho", "q": 6}, {"n": "toalhas de rosto", "q": 7}, {"n": "toalhas de maquiagem", "q": 6}, {"n": "tapetes de banheiro", "q": 3}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 16}]}]},{id:"JOSH-Southview",client:"JOSH",name:"Southview",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Twin", "q": 1}, {"n": "Twin", "q": 1}, {"n": "fronhas king", "q": 8}, {"n": "fronhas standard", "q": 10}, {"n": "toalhas de banho", "q": 14}, {"n": "wash clothes", "q": 14}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de banho", "q": 4}, {"n": "toalhas de rosto", "q": 4}, {"n": "toalhas de maquiagem", "q": 4}, {"n": "tapetes de banheiro", "q": 2}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 12}]}]},{id:"PMI-Coastal_Haven",client:"PMI",name:"Coastal Haven",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "Twin", "q": 1}, {"n": "fronhas king", "q": 4}, {"n": "fronhas standard", "q": 12}, {"n": "toalhas de banho", "q": 14}, {"n": "wash cloths", "q": 14}]}, {"s": "Cozinha", "items": [{"n": "pano de prato", "q": 1}]}, {"s": "Banheiros", "items": [{"n": "toalhas de rosto", "q": 2}, {"n": "toalhas de maquiagem", "q": 4}, {"n": "tapetes de banheiro", "q": 2}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 10}]}]},{id:"PMI-Flamingo_Fling",client:"PMI",name:"Flamingo Fling",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "Queen", "q": 1}, {"n": "Full", "q": 1}, {"n": "fronhas standard", "q": 4}, {"n": "toalhas de banho", "q": 4}, {"n": "wash cloths", "q": 4}]}, {"s": "Cozinha", "items": [{"n": "pano de prato", "q": 1}]}, {"s": "Banheiros", "items": [{"n": "toalha de rosto", "q": 1}, {"n": "toalhas de maquiagem", "q": 2}, {"n": "tapete de banheiro", "q": 1}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 4}]}]},{id:"HERMAN-Herman_-_E_Course",client:"HERMAN",name:"Herman - E Course",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Full", "q": 1}, {"n": "Full", "q": 1}, {"n": "fronhas king", "q": 8}, {"n": "fronhas standard", "q": 8}, {"n": "toalhas de banho", "q": 10}, {"n": "wash cloths", "q": 10}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de rosto", "q": 2}, {"n": "tapetes de banheiro", "q": 2}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 10}]}]},{id:"HERMAN-Bayshore_Beautiful",client:"HERMAN",name:"Bayshore Beautiful",status:"ESCRITORIO",checklist:[{"s": "Quartos", "items": [{"n": "King", "q": 1}, {"n": "King", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "Queen", "q": 1}, {"n": "fronhas king", "q": 8}, {"n": "fronhas standard", "q": 10}, {"n": "toalhas de banho", "q": 10}, {"n": "wash cloths", "q": 10}]}, {"s": "Cozinha", "items": [{"n": "panos de prato", "q": 2}]}, {"s": "Banheiros", "items": [{"n": "toalhas de rosto", "q": 2}, {"n": "tapetes de banheiro", "q": 2}]}, {"s": "Piscina", "items": [{"n": "toalhas de piscina", "q": 12}]}]}];
+
+const calcLdryCost=(w)=>Math.round(((w||0)*ldryCfg.priceLb+(ldryCfg.fixedFee||0))*100)/100;
+const ldryReceive=(houseId,weight,checks,notes)=>{const cost=calcLdryCost(parseFloat(weight)||0);const allOk=Object.values(checks).every(v=>v===true||v==="ok");const log={id:Date.now(),houseId,weight:parseFloat(weight)||0,cost,checks,notes,status:allOk?"ESCRITORIO":"INCOMPLETO",date:new Date().toISOString()};const nl=[log,...ldryLog];svLdryLog(nl);const ud=ldry.map(h=>h.id===houseId?{...h,status:allOk?"ESCRITORIO":"INCOMPLETO",lastWeight:weight,lastCost:cost,lastDate:new Date().toISOString()}:h);svLdry(ud);if(cost>0){const nf=[{id:Date.now()+.7,type:"saida",cat:"Lavanderia",desc:((ldry.find(h=>h.id===houseId)||{}).name||"")+" - "+weight+"lb",amt:cost,date:new Date().toISOString().split("T")[0],month:MO[new Date().getMonth()],ref:"ldry-"+houseId+"-"+Date.now(),centro:"Operacional"},...fin];setFin(nf);sv("fn3",nf);}fl(allOk?"Recebida! $"+cost:"Incompleta - verificar!");};
+const ldryChangeStatus=(houseId,status)=>{const ud=ldry.map(h=>h.id===houseId?{...h,status}:h);svLdry(ud);fl("Status atualizado!");};
+
+
+
+
 
 
 
@@ -213,7 +241,7 @@ const lb={fontSize:9,fontWeight:600,color:T.dm,textTransform:"uppercase",letterS
 const bt=(bg,cl,ex)=>({padding:"8px 16px",borderRadius:7,border:"none",background:bg,color:cl,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",...ex});
 const Card=({children,...p})=><div style={{background:T.cd,borderRadius:12,padding:18,border:"1px solid "+T.bd,overflowX:"auto",...p.style}}>{children}</div>;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"database",l:"Base",i:"🗄️"}];
+const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
 const tabs=allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 
 // === PAYSLIP ===
@@ -861,6 +889,242 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 {invTab!=="paga"&&<button onClick={()=>delI(inv.id)} style={bt(T.rd+"08",T.rd,{padding:"5px 8px"})}>🗑</button>}
 </div></div></div>);})()}</Card>
 </div>}
+
+
+
+
+
+
+{/* LAVANDERIA */}
+{vw==="laundry"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+{/* HEADER with totals */}
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+{[["ESCRITORIO","No Escritorio","#4ADE80"],["EM_USO","Em Uso","#60A5FA"],["SUJA","Suja","#FFB547"],["LAVANDERIA","Na Lavanderia","#00B4D8"],["LIMPA","Limpa","#A78BFA"],["INCOMPLETO","Incompleta","#FF6B6B"]].map(([k,l,cl])=>{const cnt=ldry.filter(x=>x.status===k).length;return <div key={k} style={{padding:"8px",borderRadius:8,background:cl+"10",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:cl}}>{cnt}</div><div style={{fontSize:8,color:cl}}>{l}</div></div>})}
+</div>
+
+<div style={{display:"flex",gap:4,marginBottom:8}}>
+{[["board","Casas"],["custos","Custos"],["analytics","Analytics"],["config","Config"]].map(([k,l])=><button key={k} onClick={()=>setLdryView(k)} style={{flex:1,padding:"8px 4px",borderRadius:8,border:ldryView===k?"2px solid "+T.ac:"1.5px solid "+T.bd,background:ldryView===k?T.ac+"15":T.c2,color:ldryView===k?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+</div>
+{/* IMPORT + FILTER */}
+<div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+<select value={ldryClient} onChange={e=>setLdryClient(e.target.value)} style={{...sel,width:"auto",minWidth:140,fontSize:11}}><option value="">Todos clientes</option>{[...new Set(ldry.map(h=>h.client))].map(c=><option key={c}>{c}</option>)}</select>
+<button onClick={()=>{const houses=db.filter(p=>p.n!=="(nova)");const existing=ldry.map(h=>h.id);const missing=houses.filter(h=>!existing.includes(h.c+"-"+h.n));if(missing.length===0){fl("Todas casas ja cadastradas!");return;}const newH=missing.map(h=>{const preset=HOUSE_LDRY.find(p=>p.name.toLowerCase()===h.n.toLowerCase()||(p.client+"-"+p.name)===h.c+"-"+h.n);return{id:h.c+"-"+h.n,client:h.c,name:h.n,address:h.a,status:"ESCRITORIO",checklist:preset?JSON.parse(JSON.stringify(preset.checklist)):JSON.parse(JSON.stringify(DEFAULT_CK)),lastDate:null};});svLdry([...ldry,...newH]);fl(newH.length+" casas importadas!");}} style={bt(T.ac,T.bg,{padding:"5px 12px",fontSize:9,borderRadius:6})}>Importar Casas</button>
+</div>
+
+{/* MAIN VIEW: Client cards or House detail */}
+{!ldryHouse&&ldryView==="board"?<div>
+
+{/* CARDS BY CLIENT */}
+{(()=>{const clients=[...new Set(ldry.map(h=>h.client))].filter(cl=>!ldryClient||cl===ldryClient).sort();return clients.map(cl=>{const houses=ldry.filter(h=>h.client===cl);return <Card key={cl}>
+<div style={{fontSize:13,fontWeight:700,marginBottom:10}}>{cl} <span style={{fontSize:10,color:T.dm,fontWeight:400}}>({houses.length} casas)</span></div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:8}}>
+{houses.map(h=>{const st=LDST[h.status]||LDST.ESCRITORIO;return <div key={h.id} onClick={()=>{setLdryHouse(h);setLdryForm({weight:h.lastWeight?String(h.lastWeight):"",notes:"",checks:{}});}} style={{background:T.bg,borderRadius:8,padding:"10px 12px",border:"1.5px solid "+st.c+"33",cursor:"pointer",borderLeft:"4px solid "+st.c}}>
+<div style={{fontSize:11,fontWeight:700}}>{h.name}</div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+<span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:700,background:st.c+"18",color:st.c}}>{st.l}</span>
+<span style={{fontSize:9,color:T.dm}}>{h.lastWeight?h.lastWeight+"lb":""}{h.lastCost?" $"+h.lastCost:""}</span>
+</div>
+{h.lastDate&&<div style={{fontSize:8,color:T.dm,marginTop:3}}>{new Date(h.lastDate).toLocaleDateString("pt-BR")}</div>}
+</div>})}
+</div>
+</Card>})})()}
+
+{ldry.length===0&&<Card><div style={{textAlign:"center",color:T.dm,padding:20,fontSize:12}}>Clique "Importar Casas" para comecar.</div></Card>}
+
+{/* COSTS SUMMARY */}
+{ldryLog.length>0&&<Card>
+<div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Custos por Casa</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+{(()=>{const tc=ldryLog.reduce((s,l)=>s+(l.cost||0),0);const tw=ldryLog.reduce((s,l)=>s+(l.weight||0),0);return [["$"+tc.toFixed(2),"Custo Total",T.rd],[tw.toFixed(1)+"lb","Peso Total",T.pu],[ldryLog.length+"","Lavagens",T.gr]].map(([v,l,cl],i)=><div key={i} style={{background:T.c2,borderRadius:8,padding:10,textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:cl}}>{v}</div><div style={{fontSize:8,color:T.dm}}>{l}</div></div>)})()}
+</div>
+{(()=>{const byH={};ldryLog.forEach(l=>{if(!byH[l.houseId])byH[l.houseId]={cost:0,weight:0,cnt:0,name:(ldry.find(h=>h.id===l.houseId)||{}).name||"?"};byH[l.houseId].cost+=(l.cost||0);byH[l.houseId].weight+=(l.weight||0);byH[l.houseId].cnt++;});return Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost).slice(0,10).map(([id,d])=><div key={id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span style={{fontWeight:600}}>{d.name} <span style={{color:T.dm,fontWeight:400}}>{d.cnt}x - {d.weight.toFixed(1)}lb</span></span><span style={{fontWeight:700,color:T.rd}}>${d.cost.toFixed(2)}</span></div>)})()}
+</Card>}
+
+</div>:
+
+/* HOUSE DETAIL / FICHA */
+<div>
+<Card>
+{/* Header with back button */}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+<div>
+<div style={{fontSize:15,fontWeight:700}}>{ldryHouse.name}</div>
+<div style={{fontSize:11,color:T.dm}}>{ldryHouse.client}{ldryHouse.address?" - "+ldryHouse.address:""}</div>
+</div>
+<button onClick={()=>setLdryHouse(null)} style={bt(T.dm+"30",T.dm,{padding:"6px 14px",fontSize:10,borderRadius:6})}>Voltar</button>
+</div>
+
+{/* Status selector */}
+<div style={{marginBottom:14}}>
+<div style={{fontSize:11,fontWeight:600,marginBottom:6}}>Status</div>
+<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+{[["ESCRITORIO","No Escritorio","#4ADE80"],["EM_USO","Em Uso","#60A5FA"],["SUJA","Suja","#FFB547"],["LAVANDERIA","Na Lavanderia","#00B4D8"],["LIMPA","Limpa","#A78BFA"],["INCOMPLETO","Incompleta","#FF6B6B"]].map(([k,l,cl])=><button key={k} onClick={()=>{const ud=ldry.map(x=>x.id===ldryHouse.id?{...x,status:k}:x);svLdry(ud);setLdryHouse({...ldryHouse,status:k});fl("Status: "+l);}} style={{padding:"6px 12px",borderRadius:6,fontSize:9,fontWeight:700,border:ldryHouse.status===k?"2px solid "+cl:"1.5px solid "+T.bd,background:ldryHouse.status===k?cl+"18":T.c2,color:ldryHouse.status===k?cl:T.dm,cursor:"pointer"}}>{l}</button>)}
+</div>
+</div>
+
+{/* Weight + Cost (for when sending to laundry) */}
+<div style={{marginBottom:14,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+<div>
+<div style={{fontSize:11,fontWeight:600,marginBottom:4}}>Peso (lb)</div>
+<input type="number" step="0.1" value={ldryForm.weight||""} onChange={e=>setLdryForm({...ldryForm,weight:e.target.value})} placeholder="Ex: 18.5" style={{...inp,fontSize:14,padding:"10px 12px",width:"100%"}}/>
+</div>
+<div>
+<div style={{fontSize:11,fontWeight:600,marginBottom:4}}>Custo</div>
+<div style={{fontSize:22,fontWeight:800,color:T.gr,padding:"6px 0"}}>${calcLdryCost(parseFloat(ldryForm.weight)||0)}</div>
+<div style={{fontSize:9,color:T.dm}}>${ldryCfg.priceLb}/lb</div>
+</div>
+</div>
+
+{/* CHECKLIST */}
+<div style={{marginBottom:14}}>
+<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Checklist - Itens da Casa</div>
+{(ldryHouse.checklist||DEFAULT_CK).map((sec,si)=>{const total=sec.items.length;const checked=sec.items.filter((_,ii)=>ldryForm.checks[si+"-"+ii]===true).length;return <div key={si} style={{marginBottom:10,background:T.c2,borderRadius:8,padding:"10px 12px"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<span style={{fontSize:11,fontWeight:700,color:T.ac}}>{sec.s}</span>
+<span style={{fontSize:9,color:checked===total?T.gr:T.dm,fontWeight:600}}>{checked}/{total}</span>
+</div>
+<div style={{height:3,background:T.bd,borderRadius:2,marginBottom:6}}><div style={{height:3,background:checked===total?T.gr:T.ac,borderRadius:2,width:(total>0?checked/total*100:0)+"%",transition:"width 0.3s"}}/></div>
+{sec.items.map((item,ii)=>{const key=si+"-"+ii;const ok=ldryForm.checks[key]===true;return <div key={ii} onClick={()=>{const nc={...ldryForm.checks};nc[key]=!ok;setLdryForm({...ldryForm,checks:nc});}} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid "+T.bd+"66",cursor:"pointer"}}>
+<div style={{width:20,height:20,borderRadius:5,border:"2px solid "+(ok?T.gr:T.bd),background:ok?T.gr:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",flexShrink:0}}>{ok?"V":""}</div>
+<span style={{fontSize:11,color:ok?T.gr:T.tx,textDecoration:ok?"line-through":"none"}}>{item.q}x {item.n}</span>
+</div>})}
+</div>})}
+</div>
+
+{/* Notes */}
+<div style={{marginBottom:14}}>
+<div style={{fontSize:11,fontWeight:600,marginBottom:4}}>Observacoes</div>
+<textarea value={ldryForm.notes||""} onChange={e=>setLdryForm({...ldryForm,notes:e.target.value})} placeholder="Itens faltando, problemas, etc..." style={{...inp,width:"100%",minHeight:50,fontSize:11}}/>
+</div>
+
+{/* ACTION BUTTONS */}
+<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+<button onClick={()=>{const w=parseFloat(ldryForm.weight)||0;const cost=calcLdryCost(w);const allChecks=ldryHouse.checklist?ldryHouse.checklist.reduce((s,sec)=>s+sec.items.length,0):0;const doneChecks=Object.values(ldryForm.checks).filter(v=>v===true).length;const allOk=allChecks>0&&doneChecks===allChecks;const log={id:Date.now(),houseId:ldryHouse.id,weight:w,cost,checks:ldryForm.checks,notes:ldryForm.notes,date:new Date().toISOString(),status:allOk?"LIMPA":"INCOMPLETO",checksDone:doneChecks,checksTotal:allChecks};svLdryLog([log,...ldryLog]);const newSt=allOk?"ESCRITORIO":"INCOMPLETO";const ud=ldry.map(x=>x.id===ldryHouse.id?{...x,status:newSt,lastWeight:w,lastCost:cost,lastDate:new Date().toISOString()}:x);svLdry(ud);if(cost>0){const nf=[{id:Date.now()+.7,type:"saida",cat:"Lavanderia",desc:ldryHouse.name+" - "+w+"lb",amt:cost,date:new Date().toISOString().split("T")[0],month:MO[new Date().getMonth()],ref:"ldry-"+ldryHouse.id+"-"+Date.now(),centro:"Operacional"},...fin];setFin(nf);sv("fn3",nf);}fl(allOk?"Conferida! $"+cost:"Incompleta - verificar");setLdryHouse(null);}} style={bt(T.gr,T.bg,{padding:"10px 20px",borderRadius:8,fontSize:11})}>Salvar + Registrar Custo</button>
+<button onClick={()=>setLdryHouse(null)} style={bt(T.dm+"30",T.dm,{padding:"10px 16px",borderRadius:8,fontSize:11})}>Cancelar</button>
+</div>
+</Card>
+
+{/* History for this house */}
+{(()=>{const logs=ldryLog.filter(l=>l.houseId===ldryHouse.id);if(logs.length===0)return null;const total=logs.reduce((s,l)=>s+(l.cost||0),0);return <Card>
+<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Historico - {ldryHouse.name} <span style={{color:T.rd}}>Total: ${total.toFixed(2)}</span></div>
+{logs.slice(0,10).map((l,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}>
+<span>{l.weight}lb - {l.checksDone||0}/{l.checksTotal||0} itens</span>
+<span><span style={{color:T.rd,fontWeight:600}}>${(l.cost||0).toFixed(2)}</span> <span style={{color:T.dm}}>{new Date(l.date).toLocaleDateString("pt-BR")}</span></span>
+</div>)}
+</Card>})()}
+</div>}
+
+{/* CONFIG */}
+
+{ldryView==="custos"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Custos por Casa</div>
+
+{/* Filters */}
+<div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+<select value={ldryClient} onChange={e=>setLdryClient(e.target.value)} style={{...sel,width:"auto",minWidth:130,fontSize:11}}><option value="">Todas casas</option>{[...new Set(ldry.map(h=>h.client))].map(c=><option key={c}>{c}</option>)}</select>
+<select onChange={e=>{const v=e.target.value;if(v)setLdryClient(v);}} style={{...sel,width:"auto",minWidth:150,fontSize:11}}><option value="">Casa especifica</option>{ldry.map(h=><option key={h.id} value={h.id}>{h.client} - {h.name}</option>)}</select>
+<select id="ldry-month" style={{...sel,width:"auto",minWidth:120,fontSize:11}}><option value="">Todos meses</option>{MO.map(m=><option key={m}>{m}</option>)}</select>
+</div>
+
+{/* Summary */}
+{(()=>{const monthSel=document.getElementById("ldry-month");const selMonth=monthSel?monthSel.value:"";const filtered=ldryLog.filter(l=>{if(ldryClient&&l.houseId.indexOf(ldryClient)===-1&&!(ldry.find(h=>h.id===l.houseId)||{}).client!==ldryClient)return false;if(selMonth){const d=new Date(l.date);const m=MO[d.getMonth()];if(m!==selMonth)return false;}return true;});const tc=filtered.reduce((s,l)=>s+(l.cost||0),0);const tw=filtered.reduce((s,l)=>s+(l.weight||0),0);return <div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+<div style={{background:T.c2,borderRadius:8,padding:12,textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:T.rd}}>${tc.toFixed(2)}</div><div style={{fontSize:9,color:T.dm}}>Custo Total</div></div>
+<div style={{background:T.c2,borderRadius:8,padding:12,textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:T.pu}}>{tw.toFixed(1)}lb</div><div style={{fontSize:9,color:T.dm}}>Peso Total</div></div>
+<div style={{background:T.c2,borderRadius:8,padding:12,textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:T.ac}}>{filtered.length}</div><div style={{fontSize:9,color:T.dm}}>Lavagens</div></div>
+</div>
+
+{/* Cost per house ranking */}
+{(()=>{const byH={};filtered.forEach(l=>{const h=ldry.find(x=>x.id===l.houseId);const name=h?h.client+" - "+h.name:l.houseId;if(!byH[l.houseId])byH[l.houseId]={cost:0,weight:0,cnt:0,name};byH[l.houseId].cost+=(l.cost||0);byH[l.houseId].weight+=(l.weight||0);byH[l.houseId].cnt++;});const sorted=Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost);const maxCost=sorted.length>0?sorted[0][1].cost:1;return <div style={{marginBottom:14}}>
+<div style={{fontSize:12,fontWeight:600,marginBottom:8}}>Ranking por Casa</div>
+{sorted.map(([id,d])=><div key={id} style={{marginBottom:6}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{d.name}</span><span style={{fontWeight:700,color:T.rd}}>${d.cost.toFixed(2)} <span style={{color:T.dm,fontWeight:400}}>{d.cnt}x {d.weight.toFixed(1)}lb</span></span></div>
+<div style={{height:6,background:T.bd,borderRadius:3}}><div style={{height:6,background:T.rd,borderRadius:3,width:(d.cost/maxCost*100)+"%"}}/></div>
+</div>)}
+</div>})()}
+
+{/* Editable log table */}
+<div style={{fontSize:12,fontWeight:600,marginBottom:8}}>Registros <button onClick={()=>{const hId=prompt("ID da casa (cliente-nome):");if(!hId)return;const w=prompt("Peso (lb):")||"0";const cost=calcLdryCost(parseFloat(w));const log={id:Date.now(),houseId:hId,weight:parseFloat(w)||0,cost,date:new Date().toISOString(),notes:"Manual"};svLdryLog([log,...ldryLog]);fl("Registro adicionado!");}} style={bt(T.ac+"15",T.ac,{padding:"3px 8px",fontSize:8,borderRadius:4,marginLeft:8})}>+ Adicionar</button></div>
+{filtered.slice(0,30).map((l,i)=>{const h=ldry.find(x=>x.id===l.houseId);return <div key={l.id||i} style={{display:"grid",gridTemplateColumns:"2fr 0.7fr 0.7fr 1fr 24px",gap:6,padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10,alignItems:"center"}}>
+<span style={{fontWeight:500}}>{h?h.name:l.houseId}</span>
+<span style={{cursor:"pointer",color:T.pu}} onClick={()=>{const nw=prompt("Novo peso (lb):",l.weight);if(nw!==null){const w=parseFloat(nw)||0;const cost=calcLdryCost(w);const ul=ldryLog.map(x=>x.id===l.id?{...x,weight:w,cost}:x);svLdryLog(ul);fl("Atualizado!");}}}>{l.weight}lb</span>
+<span style={{fontWeight:600,color:T.rd,cursor:"pointer"}} onClick={()=>{const nc=prompt("Novo custo ($):",l.cost);if(nc!==null){const ul=ldryLog.map(x=>x.id===l.id?{...x,cost:parseFloat(nc)||0}:x);svLdryLog(ul);fl("Custo atualizado!");}}}>${(l.cost||0).toFixed(2)}</span>
+<span style={{color:T.dm}}>{l.date?new Date(l.date).toLocaleDateString("pt-BR"):""}</span>
+<button onClick={()=>{if(confirm("Apagar registro?")){svLdryLog(ldryLog.filter(x=>x.id!==l.id));fl("Apagado!");}}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+</div>})}
+</div>})()}
+</Card>
+</div>}
+
+
+{ldryView==="analytics"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+{/* INVENTORY COMPARISON */}
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Comparativo de Inventario</div>
+<div style={{fontSize:10,color:T.dm,marginBottom:12}}>Compara o que SAIU (checklist da casa) com o que VOLTOU (conferido na lavanderia). Diferenca = perda.</div>
+
+{(()=>{const losses={};ldryLog.forEach(l=>{if(!l.checks||!l.checksTotal)return;const h=ldry.find(x=>x.id===l.houseId);if(!h||!h.checklist)return;h.checklist.forEach((sec,si)=>{sec.items.forEach((item,ii)=>{const key=si+"-"+ii;const checked=l.checks[key]===true;if(!checked){const itemKey=item.n;if(!losses[itemKey])losses[itemKey]={name:item.n,lost:0,total:0};losses[itemKey].lost++;losses[itemKey].total+=item.q;}});});});const sorted=Object.values(losses).sort((a,b)=>b.lost-a.lost);if(sorted.length===0)return <div style={{textAlign:"center",color:T.dm,padding:16,fontSize:11}}>Sem dados de perdas ainda. Confira as malas pelo checklist para registrar.</div>;const maxLost=sorted[0].lost||1;return <div>
+<div style={{fontSize:12,fontWeight:600,marginBottom:8,color:T.rd}}>Itens Mais Perdidos</div>
+{sorted.slice(0,10).map((item,i)=><div key={i} style={{marginBottom:6}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{item.name}</span><span style={{fontWeight:700,color:T.rd}}>{item.lost}x nao conferido</span></div>
+<div style={{height:5,background:T.bd,borderRadius:3}}><div style={{height:5,background:T.rd,borderRadius:3,width:(item.lost/maxLost*100)+"%"}}/></div>
+</div>)}
+</div>})()}
+</Card>
+
+{/* MONTHLY COSTS CHART */}
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Custo Mensal</div>
+{(()=>{const byMonth={};ldryLog.forEach(l=>{const d=new Date(l.date);const m=MO[d.getMonth()]+" "+d.getFullYear();if(!byMonth[m])byMonth[m]={cost:0,weight:0,cnt:0};byMonth[m].cost+=(l.cost||0);byMonth[m].weight+=(l.weight||0);byMonth[m].cnt++;});const months=Object.entries(byMonth);if(months.length===0)return <div style={{textAlign:"center",color:T.dm,padding:16}}>Sem dados</div>;const maxC=Math.max(...months.map(([,d])=>d.cost))||1;return <div>
+{months.map(([m,d])=><div key={m} style={{marginBottom:8}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{m}</span><span><span style={{color:T.rd,fontWeight:700}}>${d.cost.toFixed(2)}</span> <span style={{color:T.dm}}>{d.weight.toFixed(0)}lb {d.cnt}x</span></span></div>
+<div style={{height:20,background:T.bd,borderRadius:4,position:"relative"}}><div style={{height:20,background:"linear-gradient(90deg,"+T.ac+","+T.pu+")",borderRadius:4,width:(d.cost/maxC*100)+"%",display:"flex",alignItems:"center",paddingLeft:6}}><span style={{fontSize:8,color:"#fff",fontWeight:700}}>${d.cost.toFixed(0)}</span></div></div>
+</div>)}
+</div>})()}
+</Card>
+
+{/* TOP HOUSES BY COST */}
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Top 10 Casas - Maior Custo</div>
+{(()=>{const byH={};ldryLog.forEach(l=>{const h=ldry.find(x=>x.id===l.houseId);if(!byH[l.houseId])byH[l.houseId]={cost:0,weight:0,cnt:0,name:h?(h.client+" - "+h.name):l.houseId,avgW:0};byH[l.houseId].cost+=(l.cost||0);byH[l.houseId].weight+=(l.weight||0);byH[l.houseId].cnt++;});Object.values(byH).forEach(d=>{d.avgW=d.cnt>0?d.weight/d.cnt:0;});const top=Object.values(byH).sort((a,b)=>b.cost-a.cost).slice(0,10);if(top.length===0)return <div style={{textAlign:"center",color:T.dm,padding:16}}>Sem dados</div>;return <div>
+{top.map((d,i)=><div key={i} style={{display:"grid",gridTemplateColumns:"24px 2fr 0.8fr 0.8fr 0.8fr",gap:6,padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10,alignItems:"center"}}>
+<span style={{fontWeight:800,color:T.ac}}>#{i+1}</span>
+<span style={{fontWeight:600}}>{d.name}</span>
+<span style={{color:T.rd,fontWeight:600}}>${d.cost.toFixed(2)}</span>
+<span style={{color:T.pu}}>{d.weight.toFixed(0)}lb</span>
+<span style={{color:T.dm}}>{d.cnt}x (med:{d.avgW.toFixed(1)}lb)</span>
+</div>)}
+</div>})()}
+</Card>
+
+{/* WEIGHT STATS */}
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Peso Medio por Casa</div>
+{(()=>{const byH={};ldryLog.forEach(l=>{const h=ldry.find(x=>x.id===l.houseId);if(!byH[l.houseId])byH[l.houseId]={weights:[],name:h?(h.client+" - "+h.name):l.houseId};byH[l.houseId].weights.push(l.weight||0);});const stats=Object.values(byH).map(d=>{const avg=d.weights.reduce((s,w)=>s+w,0)/d.weights.length;const max=Math.max(...d.weights);const min=Math.min(...d.weights);return{...d,avg,max,min};}).sort((a,b)=>b.avg-a.avg);if(stats.length===0)return <div style={{textAlign:"center",color:T.dm,padding:16}}>Sem dados</div>;const maxAvg=stats[0].avg||1;return <div>
+{stats.map((d,i)=><div key={i} style={{marginBottom:6}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{d.name}</span><span style={{color:T.pu,fontWeight:700}}>{d.avg.toFixed(1)}lb <span style={{color:T.dm,fontWeight:400}}>min:{d.min.toFixed(1)} max:{d.max.toFixed(1)}</span></span></div>
+<div style={{height:5,background:T.bd,borderRadius:3}}><div style={{height:5,background:T.pu,borderRadius:3,width:(d.avg/maxAvg*100)+"%"}}/></div>
+</div>)}
+</div>})()}
+</Card>
+
+</div>}
+
+{ldryView==="config"&&<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Configuracao</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+<div><label style={{fontSize:10,fontWeight:600,display:"block",marginBottom:4}}>Preco por lb ($)</label>
+<input type="number" step="0.01" value={ldryCfg.priceLb} onChange={e=>svLdryCfg({...ldryCfg,priceLb:parseFloat(e.target.value)||0})} style={inp}/></div>
+<div><label style={{fontSize:10,fontWeight:600,display:"block",marginBottom:4}}>Taxa fixa ($)</label>
+<input type="number" step="0.01" value={ldryCfg.fixedFee||0} onChange={e=>svLdryCfg({...ldryCfg,fixedFee:parseFloat(e.target.value)||0})} style={inp}/></div>
+</div>
+</Card>}
+
+</div>}
+
 
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
