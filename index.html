@@ -166,7 +166,7 @@ const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(nu
 useEffect(()=>{(async()=>{
 try{const r=await FB.get("sp3");if(r&&r.value)setSP(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("si3");if(r&&r.value)setSI(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("db3");if(r&&r.value)setDb(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("db3");if(r&&r.value){const parsed=JSON.parse(r.value);if(parsed&&parsed.length>0)setDb(parsed);else{setDb(D);await sv("db3",D);}}}catch{}
 try{const r=await FB.get("em3");if(r&&r.value)setEm(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("fn3");if(r&&r.value)setFin(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("pr3");if(r&&r.value)setProd(JSON.parse(r.value));}catch{}
