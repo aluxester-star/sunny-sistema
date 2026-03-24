@@ -117,12 +117,12 @@ const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
 const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("todos");const[editPId,setEditPId]=useState(null);
 const[ldHouses,setLdHouses]=useState([]);
-const[ldBags,setLdBags]=useState([]);
+
 const[ldCfg,setLdCfg]=useState({priceLb:1.35,fixedFee:0});
 const[ldSub,setLdSub]=useState("casas");
 const[ldSel,setLdSel]=useState(null);const[ldExpand,setLdExpand]=useState(null);
 const[ldConf,setLdConf]=useState({});
-const[ldLoadForm,setLdLoadForm]=useState({bags:[],weight:"",mode:"bag"});
+
 const[ldLog2,setLdLog2]=useState([]);
 
 
@@ -166,8 +166,8 @@ const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(nu
 useEffect(()=>{(async()=>{
 try{const r=await FB.get("sp3");if(r&&r.value)setSP(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("si3");if(r&&r.value)setSI(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("db3");if(r&&r.value){const parsed=JSON.parse(r.value);if(parsed&&parsed.length>0)setDb(parsed);else{setDb(D);await sv("db3",D);}}}catch{}
-try{const r=await FB.get("em3");if(r&&r.value)setEm(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("db3");if(r&&r.value){const p=JSON.parse(r.value);if(Array.isArray(p)&&p.length>0){setDb(p);}else{setDb(D);await FB.set("db3",JSON.stringify(D));}}else{setDb(D);await FB.set("db3",JSON.stringify(D));}}catch{setDb(D);}
+try{const r=await FB.get("em3");if(r&&r.value){const p=JSON.parse(r.value);if(Array.isArray(p)&&p.length>0)setEm(p);}else{setEm(IE);}}catch{setEm(IE);}
 try{const r=await FB.get("fn3");if(r&&r.value)setFin(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("pr3");if(r&&r.value)setProd(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ln3");if(r&&r.value)setLin(JSON.parse(r.value));}catch{}
@@ -179,7 +179,7 @@ try{const r=await FB.get("insp3");if(r&&r.value)setInspections(JSON.parse(r.valu
 try{const r=await FB.get("ls3");if(r&&r.value)setLosses(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cc3");if(r&&r.value)setCustomCats(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_h2");if(r&&r.value)setLdHouses(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("ld_b2");if(r&&r.value)setLdBags(JSON.parse(r.value));}catch{}
+
 try{const r=await FB.get("ld_cfg2");if(r&&r.value)setLdCfg({priceLb:1.35,fixedFee:0,...JSON.parse(r.value)});}catch{}
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 
@@ -210,12 +210,12 @@ const savP=async(status)=>{const st=status||"rascunho";if(editPId){const oldP=sP
 const updatePStatus=async(id,newSt)=>{const p=sP.find(x=>x.id===id);if(!p)return;const today=new Date().toISOString().split("T")[0];const u=sP.map(x=>x.id===id?{...x,status:newSt,paidDate:newSt==="paga"?today:x.paidDate}:x);setSP(u);await sv("sp3",u);if(newSt==="paga"&&!fin.find(e=>e.ref==="po-"+id)){const nf=[{id:Date.now()+.3,type:"saida",cat:"Pagamento Funcionario",desc:`${p.emp} - ${p.week}`,amt:p.total,date:today,month:MO[new Date().getMonth()],week:p.week,ref:"po-"+id,centro:"Equipe"}];const uf=[...nf,...fin];setFin(uf);await sv("fn3",uf);}fl(newSt==="paga"?"Folha paga!":"Status atualizado!");};
 
 const svLdH=async d=>{setLdHouses(d);await sv("ld_h2",d);};
-const svLdB=async d=>{setLdBags(d);await sv("ld_b2",d);};
 const svLdCfg=async d=>{setLdCfg(d);await sv("ld_cfg2",d);};
 const svLdLog2=async d=>{setLdLog2(d);await sv("ld_log2",d);};
 const ldAddLog=(bagId,action,extra)=>{const e={id:Date.now()+Math.random(),bagId,action,date:new Date().toISOString(),...(extra||{})};svLdLog2([e,...ldLog2]);};
 const ldCalcCost=w=>Math.round(((w||0)*ldCfg.priceLb+(ldCfg.fixedFee||0))*100)/100;
-const ldChangeBag=(id,updates)=>{const ub=ldBags.map(b=>b.id===id?{...b,...updates,updatedAt:new Date().toISOString()}:b);svLdB(ub);ldAddLog(id,updates.status||"update",updates);};
+
+const keepScroll=(fn)=>{const y=window.scrollY;fn();setTimeout(()=>{if(document.activeElement&&document.activeElement.tagName==="INPUT")return;window.scrollTo(0,y);},50);};
 const LINEN_ITEMS=["Fitted Sheet","Flat Sheet","Pillowcase","Duvet Cover","Comforter","Bed Skirt","Mattress Protector","Bath Towel","Hand Towel","Washcloth","Makeup Towel","Bath Mat","Pool Towel","Kitchen Towel","Dish Cloth","Beach Towel"];
 
 
@@ -930,238 +930,196 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 
 
 
-{/* LAVANDERIA */}
-
-
-
-
-
-
-{/* LAVANDERIA */}
-
-
-
-
 
 {/* LAVANDERIA */}
 {vw==="laundry"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-{[["PRONTA","Pronta","#4ADE80"],["EM_USO","Em Uso","#60A5FA"],["SUJA","Suja","#FFB547"],["LAVANDERIA","Lavanderia","#00B4D8"],["CONFERENCIA","Conferir","#A78BFA"],["BLOQUEADA","Bloqueada","#FF6B6B"]].map(([k,l,cl])=>{const cnt=ldBags.filter(b=>b.status===k).length;return <div key={k} style={{padding:"8px",borderRadius:8,background:cl+"10",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:cl}}>{cnt}</div><div style={{fontSize:8,color:cl}}>{l}</div></div>})}
+{[["PRONTA","Ready","#4ADE80"],["EM_USO","In Use","#60A5FA"],["SUJA","Dirty","#FFB547"],["LAVANDERIA","Laundry","#00B4D8"],["CONFERENCIA","Check","#A78BFA"],["BLOQUEADA","Blocked","#FF6B6B"]].map(([k,l,cl])=>{const cnt=ldHouses.filter(h=>(h.status||"PRONTA")===k).length;return <div key={k} style={{padding:8,borderRadius:8,background:cl+"10",textAlign:"center"}}><div style={{fontSize:16,fontWeight:800,color:cl}}>{cnt}</div><div style={{fontSize:8,color:cl}}>{l}</div></div>})}
 </div>
 
 <div style={{display:"flex",gap:3}}>
-{[["casas","Casas"],["malas","Malas"],["lotes","Lotes"],["conf","Conferir"],["cfg","Config"]].map(([k,l])=><button key={k} onClick={()=>{setLdSub(k);setLdSel(null);}} style={{flex:1,padding:"7px 3px",borderRadius:8,border:ldSub===k?"2px solid "+T.ac:"1.5px solid "+T.bd,background:ldSub===k?T.ac+"15":T.c2,color:ldSub===k?T.ac:T.dm,fontSize:9,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+{[["casas","Houses"],["lotes","Send"],["conf","Check"],["custos","Costs"],["cfg","Config"]].map(([k,l])=><button key={k} onClick={()=>{const y=window.scrollY;setLdSub(k);setLdSel(null);setLdConf({});setTimeout(()=>window.scrollTo(0,0),50);}} style={{flex:1,padding:"7px 2px",borderRadius:8,border:ldSub===k?"2px solid "+T.ac:"1.5px solid "+T.bd,background:ldSub===k?T.ac+"15":T.c2,color:ldSub===k?T.ac:T.dm,fontSize:9,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
 </div>
 
-{ldSub==="casas"&&(!ldSel||!ldSel.isEditing)?<Card>
+{ldSub==="casas"&&!ldSel?<div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-<span style={{fontSize:14,fontWeight:700}}>Casas ({ldHouses.length})</span>
+<span style={{fontSize:14,fontWeight:700}}>Houses ({ldHouses.length})</span>
 <div style={{display:"flex",gap:4}}>
-<button onClick={()=>{const n=prompt("Nome da casa:");if(!n)return;setLdSel({id:Date.now(),name:n,code:n.slice(0,8).toUpperCase(),bags:1,sections:[{name:"Bedrooms",items:[]},{name:"Bathrooms",items:[]},{name:"Kitchen",items:[]},{name:"Pool",items:[]}],isNew:true});}} style={bt(T.ac,T.bg,{padding:"5px 12px",fontSize:9,borderRadius:6})}>+ New House</button>
-<button onClick={()=>{const houses=db.filter(p=>p.n!=="(nova)");const existing=ldHouses.map(h=>h.name);const missing=houses.filter(h=>!existing.includes(h.n));if(!missing.length){fl("All imported!");return;}missing.forEach(h=>{const nh={id:Date.now()+Math.random(),name:h.n,code:h.c.slice(0,8).toUpperCase(),client:h.c,bags:1,sections:[{name:"Bedrooms",items:[]},{name:"Bathrooms",items:[]},{name:"Kitchen",items:[]},{name:"Pool",items:[]}]};ldHouses.push(nh);const nb={id:Date.now()+Math.random()+.1,qr:nh.code+"-01",houseId:nh.id,num:1,status:"PRONTA",weight:0,cost:0,notes:""};ldBags.push(nb);});svLdH([...ldHouses]);svLdB([...ldBags]);fl(missing.length+" casas importadas!");}} style={bt(T.or+"18",T.or,{padding:"5px 12px",fontSize:9,borderRadius:6})}>Import Base</button>
+<button onClick={()=>setLdSel({id:Date.now(),name:"",client:"",status:"PRONTA",sections:[{name:"Bedrooms",items:[]},{name:"Bathrooms",items:[]},{name:"Kitchen",items:[]},{name:"Pool",items:[]}],weight:0,cost:0,isNew:true,isEditing:true})} style={bt(T.ac,T.bg,{padding:"5px 12px",fontSize:9,borderRadius:6})}>+ New</button>
+<button onClick={()=>{const houses=db.filter(p=>p.n!=="(nova)");const existing=ldHouses.map(h=>h.name);const missing=houses.filter(h=>!existing.includes(h.n));if(!missing.length){fl("All imported!");return;}const nh=missing.map(h=>({id:Date.now()+Math.random(),name:h.n,client:h.c,status:"PRONTA",sections:[{name:"Bedrooms",items:[]},{name:"Bathrooms",items:[]},{name:"Kitchen",items:[]},{name:"Pool",items:[]}],weight:0,cost:0}));svLdH([...ldHouses,...nh]);fl(nh.length+" imported!");}} style={bt(T.or+"18",T.or,{padding:"5px 12px",fontSize:9,borderRadius:6})}>Import</button>
 </div>
 </div>
+{ldHouses.length===0&&<Card><div style={{textAlign:"center",color:T.dm,padding:20}}>Click + New or Import</div></Card>}
+{[...new Set(ldHouses.map(h=>h.client||"No Client"))].sort().map(client=><div key={client} style={{marginBottom:16}}>
+<div style={{fontSize:13,fontWeight:700,marginBottom:8,color:T.ac,borderBottom:"1px solid "+T.bd,paddingBottom:4}}>{client} ({ldHouses.filter(h=>(h.client||"No Client")===client).length})</div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
-{ldHouses.map(h=>{const hBags=ldBags.filter(b=>b.houseId===h.id);const totalItems=h.sections?h.sections.reduce((s,sec)=>s+sec.items.length,0):0;const colors={PRONTA:"#4ADE80",EM_USO:"#60A5FA",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",BLOQUEADA:"#FF6B6B"};const labels={PRONTA:"Ready",EM_USO:"In Use",SUJA:"Dirty",LAVANDERIA:"Laundry",CONFERENCIA:"Check",BLOQUEADA:"Blocked"};return <div key={h.id} style={{background:T.c2,borderRadius:10,border:"1px solid "+T.bd,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-<div style={{padding:"14px 14px 10px",flex:1}}>
-<div style={{fontSize:15,fontWeight:700,marginBottom:8}}>{h.name}</div>
-{hBags.map(b=>{const cl=colors[b.status]||"#888";return <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 10px",borderRadius:6,border:"1.5px solid "+cl+"44",background:cl+"08",marginBottom:4}}>
-<span style={{fontSize:11,fontWeight:600}}>{h.name} {String(b.num).padStart(2,"0")}</span>
-<span style={{padding:"2px 8px",borderRadius:10,fontSize:8,fontWeight:700,background:cl+"22",color:cl}}>{labels[b.status]||b.status}</span>
-</div>})}
-{hBags.length===0&&<div style={{fontSize:10,color:T.dm,padding:"4px 0"}}>No bags</div>}
+{ldHouses.filter(h=>(h.client||"No Client")===client).map(h=>{const colors={PRONTA:"#4ADE80",EM_USO:"#60A5FA",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",BLOQUEADA:"#FF6B6B"};const labels={PRONTA:"Ready",EM_USO:"In Use",SUJA:"Dirty",LAVANDERIA:"Laundry",CONFERENCIA:"Check",BLOQUEADA:"Blocked"};const cl=colors[h.status||"PRONTA"]||"#888";const totalItems=(h.sections||[]).reduce((s,sec)=>s+sec.items.length,0);return <div key={h.id} style={{background:T.c2,borderRadius:12,border:"2px solid "+cl+"33",overflow:"hidden"}}>
+<div style={{padding:"14px 16px 10px"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+<div><div style={{fontSize:16,fontWeight:800}}>{h.name}</div></div>
+<button onClick={()=>setLdSel({...h,isEditing:true})} style={{border:"none",background:T.ac+"15",color:T.ac,padding:"4px 10px",borderRadius:6,fontSize:9,cursor:"pointer"}}>Edit</button><button onClick={e=>{e.stopPropagation();if(confirm("Delete "+h.name+"?")){keepScroll(()=>{svLdH(ldHouses.filter(x=>x.id!==h.id));fl("Deleted!");});}}} style={{border:"none",background:T.rd+"15",color:T.rd,padding:"4px 8px",borderRadius:6,fontSize:9,cursor:"pointer"}}>x</button>
 </div>
-<div style={{padding:"8px 14px",borderTop:"1px solid "+T.bd,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bg}}>
-<span style={{fontSize:10,color:T.dm}}>{h.client||""} | {totalItems} items</span>
-<div style={{display:"flex",gap:4}}>
-<button onClick={()=>setLdExpand(ldExpand===h.id?null:h.id)} style={{border:"none",background:"transparent",color:T.ac,cursor:"pointer",fontSize:9,fontWeight:600}}>{ldExpand===h.id?"Hide":"Items"}</button>
-<button onClick={()=>setLdSel({...h,isEditing:true})} style={{border:"none",background:T.ac+"15",color:T.ac,padding:"3px 8px",borderRadius:4,fontSize:9,cursor:"pointer",fontWeight:600}}>Edit</button>
+{h.weight>0&&<div style={{fontSize:10,color:T.dm,marginBottom:6}}>Last: {h.weight}lb | ${h.cost}</div>}
+<div style={{display:"flex",gap:2,flexWrap:"wrap"}}>
+{["PRONTA","EM_USO","SUJA","LAVANDERIA","CONFERENCIA","BLOQUEADA"].map(st=>{const sc=colors[st];const active=(h.status||"PRONTA")===st;return <button key={st} onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:st}:x));ldAddLog(h.id,st);fl(labels[st]+"!");});}} style={{padding:"4px 7px",borderRadius:5,fontSize:7,border:active?"2px solid "+sc:"1px solid "+T.bd+"44",background:active?sc+"25":"transparent",color:active?sc:T.dm+"88",cursor:"pointer",fontWeight:active?700:400}}>{labels[st]}</button>})}
 </div>
 </div>
-{ldExpand===h.id&&<div style={{padding:"10px 14px",borderTop:"1px solid "+T.bd,background:T.bg}}>
-{(h.sections||[]).map((sec,si)=><div key={si} style={{marginBottom:6}}>
+<div onClick={()=>setLdExpand(ldExpand===h.id?null:h.id)} style={{padding:"8px 16px",borderTop:"1px solid "+T.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",background:T.bg}}>
+<span style={{fontSize:9,color:T.dm}}>{totalItems} items</span>
+<span style={{fontSize:10,color:T.ac}}>{ldExpand===h.id?"▲":"▼"}</span>
+</div>
+{ldExpand===h.id&&<div style={{padding:"10px 16px",borderTop:"1px solid "+T.bd}}>
+{(h.sections||[]).map((sec,si)=>sec.items.length>0&&<div key={si} style={{marginBottom:6}}>
 <div style={{fontSize:9,fontWeight:700,color:T.ac,marginBottom:2}}>{sec.name}</div>
-{sec.items.map((item,ii)=><div key={ii} style={{fontSize:9,color:T.tx,padding:"1px 0",paddingLeft:8}}>{item.qty}x {item.name} {item.size?"("+item.size+")":""}</div>)}
+{sec.items.map((item,ii)=><div key={item._id||ii} style={{fontSize:9,color:T.tx,paddingLeft:8}}>{item.qty}x {item.name} {item.size?"("+item.size+")":""}</div>)}
 </div>)}
 </div>}
 </div>})}
 </div>
-{ldHouses.length===0&&<div style={{textAlign:"center",color:T.dm,padding:20,fontSize:12}}>Clique + New House ou Import Base</div>}
-</Card>
-
+</div>)}
+</div>
 :ldSub==="casas"&&ldSel&&ldSel.isEditing?<Card>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
 <div>
-<input value={ldSel.name||""} onChange={e=>setLdSel({...ldSel,name:e.target.value})} style={{...inp,fontSize:16,fontWeight:700,border:"none",padding:0,background:"transparent",color:T.tx}}/>
-<div style={{display:"flex",gap:8,marginTop:4}}>
-<div style={{fontSize:10}}><span style={{color:T.dm}}>Codigo:</span> <input value={ldSel.code||""} onChange={e=>setLdSel({...ldSel,code:e.target.value})} style={{...inp,fontSize:10,width:80,padding:"2px 6px"}}/></div>
-<div style={{fontSize:10}}><span style={{color:T.dm}}>Malas:</span> <input type="number" value={ldSel.bags||1} onChange={e=>setLdSel({...ldSel,bags:parseInt(e.target.value)||1})} style={{...inp,fontSize:10,width:40,padding:"2px 6px"}}/></div>
-<div style={{fontSize:10}}><span style={{color:T.dm}}>Cliente:</span> <input value={ldSel.client||""} onChange={e=>setLdSel({...ldSel,client:e.target.value})} style={{...inp,fontSize:10,width:100,padding:"2px 6px"}}/></div>
-</div>
+<input value={ldSel.name||""} onChange={e=>setLdSel({...ldSel,name:e.target.value})} placeholder="House name" style={{...inp,fontSize:16,fontWeight:700,border:"none",padding:0,background:"transparent",color:T.tx}}/>
+<div style={{fontSize:10,marginTop:4}}><span style={{color:T.dm}}>Client:</span> <input value={ldSel.client||""} onChange={e=>setLdSel({...ldSel,client:e.target.value})} style={{...inp,fontSize:10,width:120,padding:"2px 6px"}}/></div>
 </div>
 <button onClick={()=>setLdSel(null)} style={bt(T.dm+"30",T.dm,{padding:"6px 14px",fontSize:10,borderRadius:6})}>Back</button>
 </div>
-
 {(ldSel.sections||[]).map((sec,si)=><div key={si} style={{marginBottom:12,background:T.bg,borderRadius:8,border:"1px solid "+T.bd,overflow:"hidden"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:T.ac+"10"}}>
+<div style={{display:"flex",justifyContent:"space-between",padding:"8px 12px",background:T.ac+"10"}}>
 <input value={sec.name} onChange={e=>{const ns=[...(ldSel.sections||[])];ns[si]={...ns[si],name:e.target.value};setLdSel({...ldSel,sections:ns});}} style={{...inp,fontSize:12,fontWeight:700,border:"none",background:"transparent",color:T.ac,padding:0}}/>
-<button onClick={()=>{const ns=(ldSel.sections||[]).filter((_,i)=>i!==si);setLdSel({...ldSel,sections:ns});}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>Remove</button>
+<button onClick={()=>setLdSel({...ldSel,sections:(ldSel.sections||[]).filter((_,i)=>i!==si)})} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
 </div>
 <div style={{padding:"8px 12px"}}>
-{sec.items.map((item,ii)=><div key={ii} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:"1px solid "+T.bd+"44"}}>
+{sec.items.map((item,ii)=><div key={item._id||ii} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:"1px solid "+T.bd+"44"}}>
 <input type="number" value={item.qty} onChange={e=>{const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,qty:parseInt(e.target.value)||0};setLdSel({...ldSel,sections:ns});}} style={{...inp,fontSize:11,width:40,padding:"3px 6px",textAlign:"center"}}/>
 <span style={{color:T.dm,fontSize:10}}>x</span>
-<select value={item.name} onChange={e=>{const v=e.target.value;if(v==="__custom__"){const nm=prompt("Item name:");if(nm){const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,name:nm};setLdSel({...ldSel,sections:ns});}}else{const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,name:v};setLdSel({...ldSel,sections:ns});}}} style={{...sel,fontSize:11,flex:1,padding:"3px 6px"}}><option value="">-- Select --</option>{LINEN_ITEMS.map(li=><option key={li} value={li}>{li}</option>)}{item.name&&!LINEN_ITEMS.includes(item.name)&&<option value={item.name}>{item.name}</option>}<option value="__custom__">+ Custom...</option></select>
-<select value={item.size||""} onChange={e=>{const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,size:e.target.value};setLdSel({...ldSel,sections:ns});}} style={{...sel,fontSize:10,width:70,padding:"3px"}}>
-<option value="">Tam.</option>
-<option>King</option><option>Queen</option><option>Full</option><option>Twin</option><option>Standard</option>
-</select>
-<button onClick={()=>{const ns=[...(ldSel.sections||[])];ns[si].items.splice(ii,1);setLdSel({...ldSel,sections:ns});}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+<select value={item.name} onChange={e=>{const v=e.target.value;if(v==="__c"){const nm=prompt("Name:");if(nm){const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,name:nm};setLdSel({...ldSel,sections:ns});}}else{const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,name:v};setLdSel({...ldSel,sections:ns});}}} style={{...sel,fontSize:11,flex:1,padding:"3px 6px"}}><option value="">--</option>{LINEN_ITEMS.map(li=><option key={li} value={li}>{li}</option>)}{item.name&&!LINEN_ITEMS.includes(item.name)&&<option value={item.name}>{item.name}</option>}<option value="__c">+ Custom</option></select>
+<select value={item.size||""} onChange={e=>{const ns=[...(ldSel.sections||[])];ns[si].items[ii]={...item,size:e.target.value};setLdSel({...ldSel,sections:ns});}} style={{...sel,fontSize:10,width:65,padding:"3px"}}><option value="">Size</option><option>King</option><option>Queen</option><option>Full</option><option>Twin</option><option>Standard</option></select>
+<button onClick={()=>{const ns=[...(ldSel.sections||[])];ns[si].items.splice(ii,1);setLdSel({...ldSel,sections:ns});}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer"}}>x</button>
 </div>)}
-<button onClick={()=>{const ns=[...(ldSel.sections||[])];ns[si].items.push({name:"",qty:1,size:""});setLdSel({...ldSel,sections:ns});}} style={{marginTop:6,padding:"4px 10px",borderRadius:4,border:"1px dashed "+T.ac,background:"transparent",color:T.ac,cursor:"pointer",fontSize:9,width:"100%"}}>+ Add Item</button>
+<button onClick={()=>{const ns=[...(ldSel.sections||[])];ns[si].items.push({name:"",qty:1,size:"",_id:Date.now()+Math.random()});setLdSel({...ldSel,sections:ns});}} style={{marginTop:6,padding:"4px",borderRadius:4,border:"1px dashed "+T.ac,background:"transparent",color:T.ac,cursor:"pointer",fontSize:9,width:"100%"}}>+ Add Item</button>
 </div>
 </div>)}
-
-<button onClick={()=>{const ns=[...(ldSel.sections||[])];const name=prompt("Section name (e.g. Extras, Living Room):");if(name)ns.push({name,items:[]});setLdSel({...ldSel,sections:ns});}} style={{marginBottom:14,padding:"8px",borderRadius:6,border:"1px dashed "+T.pu,background:"transparent",color:T.pu,cursor:"pointer",fontSize:10,width:"100%"}}>+ New Section</button>
-
+<button onClick={()=>{const name=prompt("Section name:");if(name)setLdSel({...ldSel,sections:[...(ldSel.sections||[]),{name,items:[]}]});}} style={{marginBottom:14,padding:"8px",borderRadius:6,border:"1px dashed "+T.pu,background:"transparent",color:T.pu,cursor:"pointer",fontSize:10,width:"100%"}}>+ New Section</button>
 <div style={{display:"flex",gap:6}}>
-<button onClick={()=>{const h={...ldSel};delete h.isNew;delete h.isEditing;if(h.isNew||!ldHouses.find(x=>x.id===h.id)){const nh=[...ldHouses,h];svLdH(nh);const existing=ldBags.filter(b=>b.houseId===h.id);const need=(h.bags||1)-existing.length;if(need>0){const newBags=[];for(let i=0;i<need;i++){newBags.push({id:Date.now()+Math.random()+i,qr:h.name+" "+String(existing.length+i+1).padStart(2,"0"),houseId:h.id,num:existing.length+i+1,status:"PRONTA",weight:0,cost:0,notes:""});}svLdB([...ldBags,...newBags]);}fl("Casa criada!");}else{const nh=ldHouses.map(x=>x.id===h.id?h:x);svLdH(nh);const existing=ldBags.filter(b=>b.houseId===h.id);const need=(h.bags||1)-existing.length;if(need>0){const newBags=[];for(let i=0;i<need;i++){newBags.push({id:Date.now()+Math.random()+i,qr:h.name+" "+String(existing.length+i+1).padStart(2,"0"),houseId:h.id,num:existing.length+i+1,status:"PRONTA",weight:0,cost:0,notes:""});}svLdB([...ldBags,...newBags]);}fl("Casa salva!");}setLdSel(null);}} style={bt(T.gr,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12,flex:1})}>Save House</button>
-{!ldSel.isNew&&<button onClick={()=>{if(confirm("Delete "+ldSel.name+"?")){svLdH(ldHouses.filter(x=>x.id!==ldSel.id));svLdB(ldBags.filter(x=>x.houseId!==ldSel.id));setLdSel(null);fl("Apagada!");}}} style={bt(T.rd+"15",T.rd,{padding:"10px 14px",borderRadius:8,fontSize:12})}>Delete</button>}
+<button onClick={()=>{const h={...ldSel};delete h.isNew;delete h.isEditing;if(!h.status)h.status="PRONTA";if(ldSel.isNew){svLdH([...ldHouses,h]);}else{svLdH(ldHouses.map(x=>x.id===h.id?h:x));}setLdSel(null);fl("Saved!");}} style={bt(T.gr,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12,flex:1})}>Save</button>
+{!ldSel.isNew&&<button onClick={()=>{if(confirm("Delete?")){svLdH(ldHouses.filter(x=>x.id!==ldSel.id));setLdSel(null);fl("Deleted!");}}} style={bt(T.rd+"15",T.rd,{padding:"10px 14px",borderRadius:8,fontSize:12})}>Delete</button>}
 </div>
 </Card>
 
-:ldSub==="malas"?<Card>
-<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Malas ({ldBags.length})</div>
-{ldHouses.map(h=>{const hBags=ldBags.filter(b=>b.houseId===h.id);if(!hBags.length)return null;return <div key={h.id} style={{marginBottom:12}}>
-<div style={{fontSize:12,fontWeight:700,marginBottom:6,color:T.ac}}>{h.name} <span style={{color:T.dm,fontWeight:400}}>({hBags.length} malas)</span></div>
-{hBags.map(b=>{const colors={PRONTA:"#4ADE80",EM_USO:"#60A5FA",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",BLOQUEADA:"#FF6B6B"};const labels={PRONTA:"Pronta",EM_USO:"Em Uso",SUJA:"Suja",LAVANDERIA:"Lavanderia",CONFERENCIA:"Conferir",BLOQUEADA:"Bloqueada"};const cl=colors[b.status]||"#888";return <div key={b.id} style={{padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:4,borderLeft:"4px solid "+cl,background:T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<div><span style={{fontWeight:700,fontSize:12}}>{(ldHouses.find(x=>x.id===b.houseId)||{}).name||b.qr} - {String(b.num).padStart(2,"0")}</span></div>
-<span style={{padding:"3px 10px",borderRadius:6,fontSize:9,fontWeight:700,background:cl+"18",color:cl}}>{labels[b.status]||b.status}</span>
-</div>
-<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-{[["PRONTA","Pronta","#4ADE80"],["EM_USO","Em Uso","#60A5FA"],["SUJA","Suja","#FFB547"],["LAVANDERIA","Lavand.","#00B4D8"],["CONFERENCIA","Conferir","#A78BFA"],["BLOQUEADA","Bloqueada","#FF6B6B"]].map(([k,l,cl])=><button key={k} onClick={()=>{if(k==="CONFERENCIA"){setLdSel(b);setLdConf({});setLdSub("conf");}else{ldChangeBag(b.id,{status:k});fl(l+"!");}}} style={{padding:"4px 8px",borderRadius:5,fontSize:8,border:b.status===k?"2px solid "+cl:"1px solid "+T.bd,background:b.status===k?cl+"22":T.bg,color:b.status===k?cl:T.dm,cursor:"pointer",fontWeight:b.status===k?700:400}}>
-{l}</button>)}
-{b.weight>0&&<span style={{fontSize:9,color:T.dm,padding:"6px 0"}}>{b.weight}lb | ${b.cost}</span>}
-</div>
-{b.notes&&<div style={{fontSize:9,color:T.rd,marginTop:4}}>{b.notes}</div>}
+:ldSub==="lotes"?<div style={{display:"flex",flexDirection:"column",gap:12}}>
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Step 1 — Select Dirty Houses</div>
+{ldHouses.filter(h=>h.status==="SUJA").map(h=>{const sel=(ldConf.ids||[]).includes(h.id);return <div key={h.id} onClick={()=>{const ids=sel?(ldConf.ids||[]).filter(x=>x!==h.id):[...(ldConf.ids||[]),h.id];setLdConf({...ldConf,ids});}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
+<div><div style={{fontSize:12,fontWeight:600}}>{h.name}</div><div style={{fontSize:9,color:T.dm}}>{h.client||""}</div></div>
+<div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sel?T.ac:T.bd),background:sel?T.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12}}>{sel?"V":""}</div>
 </div>})}
-</div>})}
-{ldBags.length===0&&<div style={{textAlign:"center",color:T.dm,padding:20}}>Register houses first</div>}
+{ldHouses.filter(h=>h.status==="SUJA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>No dirty houses</div>}
 </Card>
-
-:ldSub==="lotes"?<Card>
-<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Lotes de Lavanderia</div>
-<div style={{fontSize:11,fontWeight:600,marginBottom:6}}>Malas sujas para enviar:</div>
-{ldBags.filter(b=>b.status==="SUJA").length>0?<div>
-{ldBags.filter(b=>b.status==="SUJA").map(b=>{const h=ldHouses.find(x=>x.id===b.houseId);const sel=ldLoadForm.bags.includes(b.id);return <div key={b.id} onClick={()=>{const nb=sel?ldLoadForm.bags.filter(x=>x!==b.id):[...ldLoadForm.bags,b.id];setLdLoadForm({...ldLoadForm,bags:nb});}} style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",borderRadius:6,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
-<span style={{fontSize:11,fontWeight:sel?700:400}}>{b.qr} - {h?h.name:"?"}</span>
-<span style={{fontSize:9,color:sel?T.ac:T.dm}}>{sel?"V":""}</span>
+{(ldConf.ids||[]).length>0&&<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Step 2 — Weigh</div>
+{(ldConf.ids||[]).map(hid=>{const h=ldHouses.find(x=>x.id===hid);return <div key={hid} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+<span style={{fontSize:11,fontWeight:600,flex:1}}>{h?h.name:"?"}</span>
+<input type="number" step="0.1" placeholder="lb" defaultValue={ldConf["w_"+hid]||""} onChange={e=>{const v=e.target.value;const span=e.target.nextElementSibling;if(span)span.textContent="$"+ldCalcCost(parseFloat(v)||0);}} onBlur={e=>setLdConf({...ldConf,["w_"+hid]:e.target.value})} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...inp,fontSize:12,width:80,padding:"8px"}}/>
+<span style={{fontSize:10,color:T.gr,fontWeight:600,minWidth:50}}>${ldCalcCost(parseFloat(ldConf["w_"+hid])||0)}</span>
 </div>})}
-{ldLoadForm.bags.length>0&&<div style={{marginTop:12,padding:12,background:T.c2,borderRadius:8}}>
-<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Enviar {ldLoadForm.bags.length} mala(s)</div>
-<div style={{display:"flex",gap:6,marginBottom:8}}>
-{[["bag","Por mala"],["lot","Por lote"]].map(([k,l])=><button key={k} onClick={()=>setLdLoadForm({...ldLoadForm,mode:k})} style={{padding:"5px 10px",borderRadius:6,fontSize:9,border:ldLoadForm.mode===k?"2px solid "+T.ac:"1px solid "+T.bd,background:ldLoadForm.mode===k?T.ac+"15":T.c2,color:ldLoadForm.mode===k?T.ac:T.dm,cursor:"pointer"}}>{l}</button>)}
-</div>
-{ldLoadForm.mode==="lot"?<div style={{marginBottom:8}}>
-<input type="number" step="0.1" value={ldLoadForm.weight||""} onChange={e=>setLdLoadForm({...ldLoadForm,weight:e.target.value})} placeholder="Peso total (lb)" style={{...inp,fontSize:14,width:"100%",marginBottom:4}}/>
-{ldLoadForm.weight&&<div style={{fontSize:10,color:T.gr}}>Total: ${ldCalcCost(parseFloat(ldLoadForm.weight)||0)} | Por mala: ${(ldCalcCost(parseFloat(ldLoadForm.weight)||0)/Math.max(ldLoadForm.bags.length,1)).toFixed(2)}</div>}
-</div>:<div style={{marginBottom:8}}>
-{ldLoadForm.bags.map(bid=>{const b=ldBags.find(x=>x.id===bid);return <div key={bid} style={{display:"flex",gap:6,alignItems:"center",marginBottom:4}}>
-<span style={{fontSize:10,minWidth:80}}>{b?b.qr:"?"}</span>
-<input type="number" step="0.1" placeholder="lb" value={ldLoadForm["w_"+bid]||""} onChange={e=>setLdLoadForm({...ldLoadForm,["w_"+bid]:e.target.value})} style={{...inp,fontSize:11,width:80}}/>
-<span style={{fontSize:9,color:T.gr}}>${ldCalcCost(parseFloat(ldLoadForm["w_"+bid])||0)}</span>
-</div>})}
-</div>}
-<button onClick={()=>{ldLoadForm.bags.forEach(bid=>{const w=ldLoadForm.mode==="lot"?(parseFloat(ldLoadForm.weight)||0)/ldLoadForm.bags.length:parseFloat(ldLoadForm["w_"+bid])||0;const cost=ldCalcCost(w);ldChangeBag(bid,{status:"LAVANDERIA",weight:w,cost});if(cost>0){const b=ldBags.find(x=>x.id===bid);const nf=[{id:Date.now()+Math.random(),type:"saida",cat:"Lavanderia",desc:(b?b.qr:"")+" "+w+"lb",amt:cost,date:new Date().toISOString().split("T")[0],month:MO[new Date().getMonth()],ref:"ld-"+bid+"-"+Date.now(),centro:"Operacional"},...fin];setFin(nf);sv("fn3",nf);}});setLdLoadForm({bags:[],weight:"",mode:"bag"});fl("Enviado!");}} style={bt(T.ac,T.bg,{padding:"10px",borderRadius:8,fontSize:11,width:"100%"})}>Enviar para Lavanderia</button>
-</div>}
-</div>:<div style={{textAlign:"center",color:T.dm,padding:12,fontSize:11}}>No dirty bags</div>}
-<div style={{marginTop:14,fontSize:12,fontWeight:700,marginBottom:6}}>Receber da Lavanderia</div>
-{ldBags.filter(b=>b.status==="LAVANDERIA").length>0?<div>
-{ldBags.filter(b=>b.status==="LAVANDERIA").map(b=>{const h=ldHouses.find(x=>x.id===b.houseId);return <div key={b.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 10px",borderRadius:6,border:"1px solid "+T.bd,marginBottom:4,background:T.c2}}>
-<span style={{fontSize:11}}>{b.qr} - {h?h.name:"?"}</span>
-<button onClick={()=>{ldChangeBag(b.id,{status:"CONFERENCIA"});fl("Recebida!");}} style={{padding:"4px 10px",borderRadius:4,fontSize:9,border:"none",background:T.pu+"22",color:T.pu,cursor:"pointer",fontWeight:700}}>Recebida</button>
-</div>})}
-<button onClick={()=>{ldBags.filter(b=>b.status==="LAVANDERIA").forEach(b=>{ldChangeBag(b.id,{status:"CONFERENCIA"});});fl("Todas recebidas!");}} style={bt(T.pu+"18",T.pu,{padding:"6px 14px",borderRadius:6,fontSize:9,marginTop:6})}>Receber Todas</button>
-</div>:<div style={{textAlign:"center",color:T.dm,padding:12,fontSize:11}}>No bags in laundry</div>}
+</Card>}
+{(ldConf.ids||[]).length>0&&<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Step 3 — Send</div>
+<button onClick={()=>{const updated=[...ldHouses];const newLogs=[];let newFin=[...fin];(ldConf.ids||[]).forEach(hid=>{const w=parseFloat(ldConf["w_"+hid])||0;const cost=ldCalcCost(w);const idx=updated.findIndex(x=>x.id===hid);if(idx>-1){updated[idx]={...updated[idx],status:"LAVANDERIA",weight:w,cost,lastDate:new Date().toISOString()};}newLogs.push({id:Date.now()+Math.random(),bagId:hid,action:"LAVANDERIA",date:new Date().toISOString(),weight:w,cost});if(cost>0){const h=ldHouses.find(x=>x.id===hid);newFin=[{id:Date.now()+Math.random(),type:"saida",cat:"Lavanderia",desc:(h?h.name:"")+" "+w+"lb",amt:cost,date:new Date().toISOString().split("T")[0],month:MO[new Date().getMonth()],ref:"ld-"+hid,centro:"Operacional"},...newFin];}});svLdH(updated);svLdLog2([...newLogs,...ldLog2]);setFin(newFin);sv("fn3",newFin);setLdConf({});fl("Sent!");}} style={bt(T.ac,T.bg,{padding:"14px",borderRadius:8,fontSize:12,width:"100%",fontWeight:700})}>Send to Laundry</button><div style={{fontSize:9,color:T.dm,textAlign:"center",marginTop:6}}>Made a mistake? Go to Receive and click Undo</div>
+</Card>}
+<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Receive</div>
+{ldHouses.filter(h=>h.status==="LAVANDERIA").map(h=><div key={h.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:4,background:T.c2}}>
+<span style={{fontSize:11,fontWeight:600}}>{h.name}</span>
+<button onClick={()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"CONFERENCIA"}:x));ldAddLog(h.id,"CONFERENCIA");fl("Ready!");}} style={{padding:"6px 10px",borderRadius:6,fontSize:9,border:"none",background:T.pu+"22",color:T.pu,cursor:"pointer",fontWeight:700}}>Received</button>
+<button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"SUJA",weight:0,cost:0}:x));ldAddLog(h.id,"UNDO");fl("Back to Send");});}} style={{padding:"6px 10px",borderRadius:6,fontSize:9,border:"none",background:T.rd+"15",color:T.rd,cursor:"pointer",fontWeight:700}}>Back to Send</button>
+</div>)}
+{ldHouses.filter(h=>h.status==="LAVANDERIA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>Nothing in laundry</div>}
 </Card>
+</div>
 
 :ldSub==="conf"?<Card>
-<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Conferencia</div>
-{ldSel&&ldSel.qr?<div>
-<div style={{background:T.ac+"12",borderRadius:8,padding:10,marginBottom:12}}>
-<div style={{fontSize:13,fontWeight:700,color:T.ac}}>{ldSel.qr}</div>
-<div style={{fontSize:10,color:T.dm}}>{(ldHouses.find(x=>x.id===ldSel.houseId)||{}).name||"?"}</div>
-</div>
-{(()=>{const h=ldHouses.find(x=>x.id===ldSel.houseId);const sections=h?h.sections||[]:[];const allItems=sections.reduce((a,s)=>[...a,...s.items.map(it=>({...it,section:s.name}))],[]);const total=allItems.length;const done=allItems.filter((_,i)=>ldConf[i]).length;return <div>
-<div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:10}}><span>{done}/{total} conferidos</span><span style={{color:done===total?T.gr:T.dm}}>{total>0?Math.round(done/total*100):0}%</span></div>
-<div style={{height:4,background:T.bd,borderRadius:2,marginBottom:10}}><div style={{height:4,background:done===total?T.gr:T.ac,borderRadius:2,width:(total>0?done/total*100:0)+"%"}}/></div>
-<div style={{display:"flex",gap:12,marginBottom:12,padding:"8px 12px",background:T.c2,borderRadius:6,fontSize:10}}><span style={{color:"#4ADE80"}}>V = OK</span><span style={{color:"#FF6B6B"}}>! = Missing</span><span style={{color:"#FFB547"}}>M = Stained/Damaged</span></div>
-{sections.map((sec,si)=>{const secStart=sections.slice(0,si).reduce((s,ss)=>s+ss.items.length,0);return <div key={si} style={{marginBottom:10}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Check</div>
+{ldSel&&ldSel.sections?<div>
+<div style={{background:T.ac+"12",borderRadius:8,padding:12,marginBottom:12}}><div style={{fontSize:14,fontWeight:700,color:T.ac}}>{ldSel.name}</div></div>
+<div style={{display:"flex",gap:12,marginBottom:12,padding:"8px 12px",background:T.c2,borderRadius:6,fontSize:10}}><span style={{color:"#4ADE80"}}>V = OK</span><span style={{color:"#FF6B6B"}}>! = Missing</span><span style={{color:"#FFB547"}}>M = Stained</span></div>
+{(()=>{const all=(ldSel.sections||[]).reduce((a,s)=>[...a,...s.items.map(it=>({...it,sec:s.name}))],[]);const total=all.length;const done=all.filter((_,i)=>ldConf[i]).length;return <div>
+<div style={{height:4,background:T.bd,borderRadius:2,marginBottom:12}}><div style={{height:4,background:done===total?T.gr:T.ac,borderRadius:2,width:(total>0?done/total*100:0)+"%"}}/></div>
+{(ldSel.sections||[]).map((sec,si)=>{const off=(ldSel.sections||[]).slice(0,si).reduce((s,ss)=>s+ss.items.length,0);return sec.items.length>0&&<div key={si} style={{marginBottom:10}}>
 <div style={{fontSize:11,fontWeight:700,color:T.ac,marginBottom:4}}>{sec.name}</div>
-{sec.items.map((item,ii)=>{const idx=secStart+ii;const val=ldConf[idx];return <div key={ii} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid "+T.bd+"44"}}>
+{sec.items.map((item,ii)=>{const idx=off+ii;const val=ldConf[idx];return <div key={ii} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid "+T.bd+"44"}}>
 <div style={{display:"flex",gap:3}}>
-{[["ok","V","#4ADE80"],["falta","!","#FF6B6B"],["mancha","M","#FFB547"]].map(([k,l,cl])=><button key={k} onClick={()=>{const nc={...ldConf};nc[idx]=val===k?null:k;setLdConf(nc);}} style={{width:24,height:24,borderRadius:5,border:"2px solid "+(val===k?cl:T.bd),background:val===k?cl+"22":"transparent",color:val===k?cl:T.dm,fontSize:9,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{l}</button>)}
+{[["ok","V","#4ADE80"],["falta","!","#FF6B6B"],["mancha","M","#FFB547"]].map(([k,l,ccl])=><button key={k} onClick={()=>{const nc={...ldConf};nc[idx]=val===k?null:k;setLdConf(nc);}} style={{width:28,height:28,borderRadius:6,border:"2px solid "+(val===k?ccl:T.bd),background:val===k?ccl+"22":"transparent",color:val===k?ccl:T.dm,fontSize:10,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{l}</button>)}
 </div>
 <span style={{fontSize:11,color:val==="ok"?T.gr:val==="falta"?T.rd:val==="mancha"?T.or:T.tx}}>{item.qty}x {item.name} {item.size?"("+item.size+")":""}</span>
 </div>})}
 </div>})}
-<button onClick={()=>{const h=ldHouses.find(x=>x.id===ldSel.houseId);const items=(h?h.sections||[]:[]).reduce((a,s)=>[...a,...s.items.map(it=>({...it,section:s.name}))],[]);const missing=items.filter((_,i)=>ldConf[i]==="falta").map(it=>it.qty+"x "+it.name);const manchas=items.filter((_,i)=>ldConf[i]==="mancha").map(it=>it.name);const ok=missing.length===0&&manchas.length===0;const notes=[];if(missing.length)notes.push("Faltando: "+missing.join(", "));if(manchas.length)notes.push("Manchas: "+manchas.join(", "));ldChangeBag(ldSel.id,{status:ok?"PRONTA":"BLOQUEADA",notes:ok?"":notes.join(" | ")});ldAddLog(ldSel.id,"CONFERENCIA",{ok,missing,manchas});fl(ok?"Aprovada!":"Bloqueada");setLdSel(null);setLdConf({});}} style={bt(T.gr,T.bg,{padding:"10px",borderRadius:8,fontSize:11,width:"100%",marginTop:10})}>Finalizar Conferencia</button>
+<button onClick={()=>{const items=(ldSel.sections||[]).reduce((a,s)=>[...a,...s.items],[]);const miss=items.filter((_,i)=>ldConf[i]==="falta").map(it=>it.qty+"x "+it.name);const stain=items.filter((_,i)=>ldConf[i]==="mancha").map(it=>it.name);const ok=miss.length===0&&stain.length===0;const n=[];if(miss.length)n.push("Missing: "+miss.join(", "));if(stain.length)n.push("Stained: "+stain.join(", "));svLdH(ldHouses.map(x=>x.id===ldSel.id?{...x,status:ok?"PRONTA":"BLOQUEADA",notes:ok?"":n.join(" | ")}:x));ldAddLog(ldSel.id,"CONF",{ok,miss,stain});fl(ok?"OK!":"Blocked");setLdSel(null);setLdConf({});}} style={bt(T.gr,T.bg,{padding:"12px",borderRadius:8,fontSize:12,flex:1,marginTop:10})}>Finish</button><button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===ldSel.id?{...x,status:"LAVANDERIA"}:x));ldAddLog(ldSel.id,"UNDO_LAVANDERIA");fl("Back to Laundry");setLdSel(null);setLdConf({});});}} style={bt(T.rd+"15",T.rd,{padding:"12px",borderRadius:8,fontSize:12,marginTop:10})}>Back to Laundry</button><button onClick={()=>{setLdSel(null);setLdConf({});}} style={bt(T.dm+"20",T.dm,{padding:"12px",borderRadius:8,fontSize:12,marginTop:10})}>Cancel</button>
 </div>})()}
 </div>:<div>
-{ldBags.filter(b=>b.status==="CONFERENCIA").map(b=>{const h=ldHouses.find(x=>x.id===b.houseId);return <button key={b.id} onClick={()=>{setLdSel(b);setLdConf({});}} style={{display:"block",width:"100%",padding:"10px",marginBottom:4,borderRadius:6,border:"1px solid "+T.bd,background:T.c2,color:T.tx,textAlign:"left",cursor:"pointer",fontSize:11}}><strong>{b.qr}</strong> - {h?h.name:"?"}</button>})}
-{ldBags.filter(b=>b.status==="CONFERENCIA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>No bags to check</div>}
+{ldHouses.filter(h=>h.status==="CONFERENCIA").map(h=><div key={h.id} style={{display:"flex",marginBottom:4}}><button onClick={()=>{setLdSel(h);setLdConf({});}} style={{flex:1,padding:"12px",borderRadius:"8px 0 0 8px",border:"1px solid "+T.bd,borderRight:"none",background:T.c2,color:T.tx,textAlign:"left",cursor:"pointer",fontSize:12}}><strong>{h.name}</strong></button><button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"LAVANDERIA"}:x));ldAddLog(h.id,"UNDO_LAVANDERIA");fl("Back to Laundry");});}} style={{width:56,padding:"12px 4px",borderRadius:"0 8px 8px 0",border:"1px solid "+T.bd,background:T.rd+"15",color:T.rd,cursor:"pointer",fontSize:8,fontWeight:700}}>Undo</button></div>)}
+{ldHouses.filter(h=>h.status==="CONFERENCIA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:20}}>No houses to check</div>}
 </div>}
 </Card>
 
+:ldSub==="custos"?<Card>
+<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Costs</div>
+{(()=>{const byH={};ldLog2.filter(l=>l.cost).forEach(l=>{const name=ldHouses.find(x=>x.id===l.bagId);const n=name?name.name:"?";if(!byH[n])byH[n]={cost:0,weight:0,cnt:0};byH[n].cost+=(l.cost||0);byH[n].weight+=(l.weight||0);byH[n].cnt++;});const sorted=Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost);if(!sorted.length)return <div style={{textAlign:"center",color:T.dm,padding:20}}>No data</div>;const mx=sorted[0][1].cost||1;return <div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+{[["$"+sorted.reduce((s,[,d])=>s+d.cost,0).toFixed(2),"Total",T.rd],[sorted.reduce((s,[,d])=>s+d.weight,0).toFixed(1)+"lb","Weight",T.pu],[String(sorted.reduce((s,[,d])=>s+d.cnt,0)),"Washes",T.ac]].map(([v,l,cl],i)=><div key={i} style={{background:T.c2,borderRadius:8,padding:10,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:cl}}>{v}</div><div style={{fontSize:8,color:T.dm}}>{l}</div></div>)}
+</div>
+{sorted.map(([n,d])=><div key={n} style={{marginBottom:8}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{n} <span style={{color:T.dm}}>{d.cnt}x</span></span><span style={{color:T.rd,fontWeight:700}}>${d.cost.toFixed(2)}</span></div>
+<div style={{height:6,background:T.bd,borderRadius:3}}><div style={{height:6,background:T.rd,borderRadius:3,width:Math.max(d.cost/mx*100,2)+"%"}}/></div>
+</div>)}
+</div>})()}
+</Card>
+
 :<Card>
-<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Configuracao</div>
+<div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Config</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-<div><div style={{fontSize:10,fontWeight:600,marginBottom:4}}>Preco por lb ($)</div><input type="number" step="0.01" value={ldCfg.priceLb} onChange={e=>svLdCfg({...ldCfg,priceLb:parseFloat(e.target.value)||0})} style={inp}/></div>
-<div><div style={{fontSize:10,fontWeight:600,marginBottom:4}}>Taxa fixa ($)</div><input type="number" step="0.01" value={ldCfg.fixedFee||0} onChange={e=>svLdCfg({...ldCfg,fixedFee:parseFloat(e.target.value)||0})} style={inp}/></div>
+<div><div style={{fontSize:10,fontWeight:600,marginBottom:4}}>Price/lb ($)</div><input type="number" step="0.01" defaultValue={ldCfg.priceLb} onBlur={e=>svLdCfg({...ldCfg,priceLb:parseFloat(e.target.value)||0})} style={inp}/></div>
+<div><div style={{fontSize:10,fontWeight:600,marginBottom:4}}>Fixed fee ($)</div><input type="number" step="0.01" defaultValue={ldCfg.fixedFee||0} onBlur={e=>svLdCfg({...ldCfg,fixedFee:parseFloat(e.target.value)||0})} style={inp}/></div>
 </div>
 </Card>}
 
 </div>}
 
-
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>👤 Funcionários ({em.length})</div>
-<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>{em.map((e,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:T.c2,border:"1px solid "+T.bd,fontSize:10}}><span>{e}</span><button onClick={()=>uEM(em.filter((_,j)=>j!==i))} style={{background:"none",border:"none",color:T.rd,cursor:"pointer",fontSize:9,padding:0}}>✕</button></div>)}</div>
-<div style={{display:"flex",gap:8}}><TI value={nEmpN} onChange={e=>{setNEmpN(e.target.value);}} style={{...inp,flex:1}} placeholder="Nome do funcionário"/><button onClick={()=>{if(nEmpN){uEM([...em,nEmpN]);setNEmpN("");fl("✅!");}}} style={bt(T.ac,T.bg)}>+ Add</button></div></Card>
+<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Employees ({em.length})</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>{em.map((e,i)=><div key={i} style={{padding:"6px 12px",borderRadius:6,background:T.c2,border:"1px solid "+T.bd,fontSize:10,display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:600}}>{e}</span><button onClick={()=>{const n=[...em];n.splice(i,1);uEM(n);fl("Removed!");}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button></div>)}</div>
+<div style={{display:"flex",gap:8}}><input value={nEmpN} onChange={e=>setNEmpN(e.target.value)} placeholder="Employee name" style={{...inp,flex:1,fontSize:11}}/><button onClick={()=>{if(!nEmpN.trim())return;uEM([...em,nEmpN.trim()]);setNEmpN("");fl("Added!");}} style={bt(T.ac,T.bg,{padding:"6px 14px",fontSize:10,borderRadius:6})}>Add</button></div>
+</Card>
 
-<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>👤 Novo Cliente</div>
-<div style={{display:"flex",gap:8}}><TI value={nCl} onChange={e=>setNCl(e.target.value)} style={{...inp,flex:1}} placeholder="Nome do cliente"/><button onClick={()=>{if(nCl&&!cls.includes(nCl)){uDB([...db,{c:nCl,n:"(nova)",a:"",ip:0,ep:0}]);fl("✅ "+nCl);setNCl("");}}} style={bt(T.ac,T.bg)}>+ Criar</button></div></Card>
+<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Clients</div>
+{cls.map(cl=>{const props=db.filter(p=>p.c===cl);return <div key={cl} style={{marginBottom:12}}>
+<div style={{fontSize:12,fontWeight:700,marginBottom:6}}>{cl} ({props.length})</div>
+{props.map((p,pi)=>{const idx=db.indexOf(p);return <div key={pi} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 8px",borderRadius:6,background:T.c2,marginBottom:3,fontSize:10}}>
+<span><strong>{p.n}</strong> {p.a?" - "+p.a:""}</span>
+<div style={{display:"flex",gap:4,alignItems:"center"}}>
+<span style={{color:T.dm}}>IP:{p.ip||0} EP:{p.ep||0}</span>
+<button onClick={()=>{const n=[...db];n.splice(idx,1);uDB(n);fl("Removed!");}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+</div>
+</div>})}
+</div>})}
+</Card>
 
-<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>🏠 Adicionar Propriedade</div>
-<div style={{display:"grid",gridTemplateColumns:"1.2fr 1.5fr 2fr .8fr .8fr auto",gap:6,alignItems:"end"}}>
-<div><label style={lb}>Cliente</label><select value={nCl} onChange={e=>setNCl(e.target.value)} style={sel}><option value="">—</option>{cls.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-<div><label style={lb}>Nome Casa</label><TI value={nNm} onChange={e=>setNNm(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Endereço</label><TI value={nAd} onChange={e=>setNAd(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Inv $</label><NI value={nIp} onChange={e=>setNIp(e.target.value)} style={inp}/></div>
-<div><label style={lb}>Rep $</label><NI value={nEp} onChange={e=>setNEp(e.target.value)} style={inp}/></div>
-<button onClick={()=>{if(nCl&&nNm){uDB([...db,{c:nCl,n:nNm,a:nAd,ip:parseFloat(nIp)||0,ep:parseFloat(nEp)||0}]);setNNm("");setNAd("");setNIp("");setNEp("");fl("✅!");}}} style={bt(T.ac,T.bg)}>Add</button>
-</div></Card>
-
-{cls.map(cl=>{const ps=db.filter(p=>p.c===cl&&p.n!=="(nova)");if(!ps.length)return null;return(
-<Card key={cl} style={{padding:0,overflow:"hidden"}}>
-<div style={{padding:"10px 16px",background:T.aD,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><span style={{fontSize:12,fontWeight:700}}>{editCl===cl?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><input defaultValue={cl} id={"ecl-"+cl.replace(/\s/g,"")} style={{...inp,fontSize:12,fontWeight:700,width:200,padding:"4px 8px"}}/><button onClick={()=>{const v=document.getElementById("ecl-"+cl.replace(/\s/g,"")).value;if(v&&v!==cl){const n=db.map(p=>p.c===cl?{...p,c:v}:p);uDB(n);setEditCl(null);fl("✅ Cliente renomeado!");}else setEditCl(null);}} style={bt(T.gr,T.bg,{padding:"3px 8px",fontSize:8})}>✓</button><button onClick={()=>setEditCl(null)} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button></span>:<span>{cl} ({ps.length}) <button onClick={()=>setEditCl(cl)} style={{background:"none",border:"none",cursor:"pointer",fontSize:9,color:T.dm,padding:0}}>✏️</button></span>}</span><div style={{display:"flex",gap:10,fontSize:9}}><span>Inv: <strong style={{color:T.ac}}>${ps.reduce((s,p)=>s+p.ip,0)}</strong></span><span>Rep: <strong style={{color:T.pu}}>${ps.reduce((s,p)=>s+p.ep,0)}</strong></span><span>Lucro: <strong style={{color:T.gr}}>${ps.reduce((s,p)=>s+(p.ip-p.ep),0)}</strong></span></div></div>
-<div style={{padding:"0 16px"}}>{ps.map((p,i)=>{const gI=db.findIndex(x=>x.c===p.c&&x.n===p.n);const isE=eIdx===gI;
-if(isE)return(<div key={i} id={"ed-row-"+gI} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:T.aD}}>
-<input defaultValue={eD.n||""} data-field="n" style={{...inp,fontSize:10}}/>
-<input defaultValue={eD.a||""} data-field="a" style={{...inp,fontSize:10}}/>
-<input type="number" defaultValue={eD.ip||""} data-field="ip" style={{...inp,fontSize:10,textAlign:"center"}}/>
-<input type="number" defaultValue={eD.ep||""} data-field="ep" style={{...inp,fontSize:10,textAlign:"center"}}/>
-<button onClick={()=>{const row=document.getElementById("ed-row-"+gI);const inputs=row.querySelectorAll("input");const upd={n:inputs[0].value,a:inputs[1].value,ip:parseFloat(inputs[2].value)||0,ep:parseFloat(inputs[3].value)||0};const n=[...db];n[gI]={...n[gI],...upd};uDB(n);setEIdx(null);fl("✅!");}} style={bt(T.gr,T.bg,{padding:"4px 6px",fontSize:9})}>✓</button>
-<button onClick={()=>setEIdx(null)} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);
-return(<div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr .7fr .7fr .7fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11,cursor:"pointer"}} onDoubleClick={()=>{setEIdx(gI);setED({n:p.n,a:p.a,ip:p.ip,ep:p.ep});}}>
-<span style={{fontWeight:500}}>{p.n}</span><span style={{fontSize:10,color:T.dm}}>{p.a}</span>
-<span style={{textAlign:"center",color:T.ac,fontWeight:600}}>${p.ip}</span><span style={{textAlign:"center",color:T.pu,fontWeight:600}}>${p.ep}</span>
-<span style={{textAlign:"center",color:T.gr,fontWeight:600}}>${p.ip-p.ep}</span>
-<button onClick={()=>{const n=[...db];n.splice(gI,1);uDB(n);}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:8,color:T.rd}}>✕</button></div>);})}</div></Card>);})}
+<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Add Property</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div><div style={{fontSize:10,marginBottom:4}}>Client</div><select id="nc" style={{...sel,width:"100%",fontSize:11}}><option value="">Select</option>{cls.map(c=><option key={c}>{c}</option>)}<option value="__new">+ New Client</option></select></div>
+<div><div style={{fontSize:10,marginBottom:4}}>Property Name</div><input id="nn" style={{...inp,width:"100%",fontSize:11}}/></div>
+<div><div style={{fontSize:10,marginBottom:4}}>Address</div><input id="na" style={{...inp,width:"100%",fontSize:11}}/></div>
+<div><div style={{fontSize:10,marginBottom:4}}>IP / EP</div><div style={{display:"flex",gap:4}}><input id="nip" type="number" placeholder="IP" style={{...inp,width:"50%",fontSize:11}}/><input id="nep" type="number" placeholder="EP" style={{...inp,width:"50%",fontSize:11}}/></div></div>
+</div>
+<button onClick={()=>{let cl=document.getElementById("nc").value;if(cl==="__new"){cl=prompt("Client name:");if(!cl)return;}const nn=document.getElementById("nn").value;if(!nn){fl("Enter property name!");return;}const na=document.getElementById("na").value;const nip=parseInt(document.getElementById("nip").value)||0;const nep=parseInt(document.getElementById("nep").value)||0;uDB([...db,{c:cl,n:nn,a:na,ip:nip,ep:nep}]);document.getElementById("nn").value="";document.getElementById("na").value="";document.getElementById("nip").value="";document.getElementById("nep").value="";fl("Added!");}} style={bt(T.ac,T.bg,{padding:"8px 20px",fontSize:11,borderRadius:6,marginTop:10,width:"100%"})}>Add Property</button>
+</Card>
 </div>}
+
 </div></div>);}
 
 
