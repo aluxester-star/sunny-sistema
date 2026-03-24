@@ -1067,15 +1067,31 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 </Card>
 
 :ldSub==="custos"?<Card>
-<div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Costs</div>
-{(()=>{const byH={};ldLog2.filter(l=>l.cost).forEach(l=>{const name=ldHouses.find(x=>x.id===l.bagId);const n=name?name.name:"?";if(!byH[n])byH[n]={cost:0,weight:0,cnt:0};byH[n].cost+=(l.cost||0);byH[n].weight+=(l.weight||0);byH[n].cnt++;});const sorted=Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost);if(!sorted.length)return <div style={{textAlign:"center",color:T.dm,padding:20}}>No data</div>;const mx=sorted[0][1].cost||1;return <div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
-{[["$"+sorted.reduce((s,[,d])=>s+d.cost,0).toFixed(2),"Total",T.rd],[sorted.reduce((s,[,d])=>s+d.weight,0).toFixed(1)+"lb","Weight",T.pu],[String(sorted.reduce((s,[,d])=>s+d.cnt,0)),"Washes",T.ac]].map(([v,l,cl],i)=><div key={i} style={{background:T.c2,borderRadius:8,padding:10,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:cl}}>{v}</div><div style={{fontSize:8,color:T.dm}}>{l}</div></div>)}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<span style={{fontSize:14,fontWeight:700}}>Costs</span>
+<button onClick={()=>{if(confirm("Clear ALL cost history?")){svLdLog2([]);fl("Cleared!");}}} style={{padding:"4px 10px",borderRadius:4,fontSize:8,border:"none",background:T.rd+"15",color:T.rd,cursor:"pointer"}}>Clear All</button>
 </div>
-{sorted.map(([n,d])=><div key={n} style={{marginBottom:8}}>
-<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{n} <span style={{color:T.dm}}>{d.cnt}x</span></span><span style={{color:T.rd,fontWeight:700}}>${d.cost.toFixed(2)}</span></div>
+{(()=>{const logs=ldLog2.filter(l=>l.cost);if(!logs.length)return <div style={{textAlign:"center",color:T.dm,padding:20}}>No data</div>;const total=logs.reduce((s,l)=>s+(l.cost||0),0);const totalW=logs.reduce((s,l)=>s+(l.weight||0),0);return <div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+{[["$"+total.toFixed(2),"Total",T.rd],[totalW.toFixed(1)+"lb","Weight",T.pu],[String(logs.length),"Washes",T.ac]].map(([v,l,cl],i)=><div key={i} style={{background:T.c2,borderRadius:8,padding:10,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:cl}}>{v}</div><div style={{fontSize:8,color:T.dm}}>{l}</div></div>)}
+</div>
+<div style={{fontSize:11,fontWeight:600,marginBottom:8}}>By House</div>
+{(()=>{const byH={};logs.forEach(l=>{const h=ldHouses.find(x=>x.id===l.bagId);const n=h?h.name:"?";if(!byH[n])byH[n]={cost:0,weight:0,cnt:0};byH[n].cost+=(l.cost||0);byH[n].weight+=(l.weight||0);byH[n].cnt++;});const sorted=Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost);const mx=sorted[0][1].cost||1;return sorted.map(([n,d])=><div key={n} style={{marginBottom:8}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:2}}><span style={{fontWeight:600}}>{n} <span style={{color:T.dm}}>{d.cnt}x {d.weight.toFixed(1)}lb</span></span><span style={{color:T.rd,fontWeight:700}}>${d.cost.toFixed(2)}</span></div>
 <div style={{height:6,background:T.bd,borderRadius:3}}><div style={{height:6,background:T.rd,borderRadius:3,width:Math.max(d.cost/mx*100,2)+"%"}}/></div>
-</div>)}
+</div>)})()}
+<div style={{fontSize:11,fontWeight:600,marginBottom:8,marginTop:16}}>All Records</div>
+{logs.map((l,i)=>{const h=ldHouses.find(x=>x.id===l.bagId);return <div key={l.id||i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}>
+<div>
+<span style={{fontWeight:600}}>{h?h.name:"?"}</span>
+<span style={{color:T.dm,marginLeft:6}}>{l.weight||0}lb</span>
+<span style={{color:T.dm,marginLeft:4}}>{l.date?new Date(l.date).toLocaleDateString("en-US"):""}</span>
+</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>
+<span onClick={()=>{const nc=prompt("New cost:",l.cost);if(nc!==null){keepScroll(()=>{svLdLog2(ldLog2.map(x=>x.id===l.id?{...x,cost:parseFloat(nc)||0}:x));fl("Updated!");});}}} style={{color:T.rd,fontWeight:700,cursor:"pointer"}}>${(l.cost||0).toFixed(2)}</span>
+<button onClick={()=>{if(confirm("Delete this record?")){keepScroll(()=>{svLdLog2(ldLog2.filter(x=>x.id!==l.id));fl("Deleted!");});}}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+</div>
+</div>})}
 </div>})()}
 </Card>
 
