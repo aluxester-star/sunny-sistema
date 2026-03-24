@@ -1185,22 +1185,23 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Employees ({em.length})</div>
-<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>{em.map((e,i)=><div key={i} style={{padding:"6px 12px",borderRadius:6,background:T.c2,border:"1px solid "+T.bd,fontSize:10,display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:600}}>{e}</span><button onClick={()=>{const n=[...em];n.splice(i,1);uEM(n);fl("Removed!");}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button></div>)}</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>{em.map((e,i)=><div key={i} style={{padding:"6px 12px",borderRadius:6,background:T.c2,border:"1px solid "+T.bd,fontSize:10,display:"flex",gap:8,alignItems:"center"}}><span style={{fontWeight:600}}>{e}</span><button onClick={()=>{keepScroll(()=>{const n=[...em];n.splice(i,1);uEM(n);fl("Removed!");});}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button></div>)}</div>
 <div style={{display:"flex",gap:8}}><input value={nEmpN} onChange={e=>setNEmpN(e.target.value)} placeholder="Employee name" style={{...inp,flex:1,fontSize:11}}/><button onClick={()=>{if(!nEmpN.trim())return;uEM([...em,nEmpN.trim()]);setNEmpN("");fl("Added!");}} style={bt(T.ac,T.bg,{padding:"6px 14px",fontSize:10,borderRadius:6})}>Add</button></div>
 </Card>
 
-<Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Clients</div>
-{cls.map(cl=>{const props=db.filter(p=>p.c===cl);return <div key={cl} style={{marginBottom:12}}>
-<div style={{fontSize:12,fontWeight:700,marginBottom:6}}>{cl} ({props.length})</div>
-{props.map((p,pi)=>{const idx=db.indexOf(p);return <div key={pi} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 8px",borderRadius:6,background:T.c2,marginBottom:3,fontSize:10}}>
-<span><strong>{p.n}</strong> {p.a?" - "+p.a:""}</span>
-<div style={{display:"flex",gap:4,alignItems:"center"}}>
-<span style={{color:T.dm}}>IP:{p.ip||0} EP:{p.ep||0}</span>
-<button onClick={()=>{const n=[...db];n.splice(idx,1);uDB(n);fl("Removed!");}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+{cls.map(cl=>{const props=db.filter(p=>p.c===cl);return <Card key={cl}>
+<div style={{fontSize:13,fontWeight:700,marginBottom:8}}>{cl} ({props.length} properties)</div>
+{props.map((p,pi)=>{const idx=db.indexOf(p);return <div key={pi} style={{display:"grid",gridTemplateColumns:"2fr 2fr 0.6fr 0.6fr 30px",gap:6,alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd+"44",fontSize:10}}>
+<div style={{fontWeight:600}}>{p.n}</div>
+<div style={{color:T.dm}}>{p.a||""}</div>
+<div><input type="number" defaultValue={p.ip||0} onBlur={e=>{keepScroll(()=>{const n=[...db];n[idx]={...p,ip:parseInt(e.target.value)||0};uDB(n);});}} style={{...inp,fontSize:10,width:"100%",padding:"3px 4px",textAlign:"center"}}/></div>
+<div><input type="number" defaultValue={p.ep||0} onBlur={e=>{keepScroll(()=>{const n=[...db];n[idx]={...p,ep:parseInt(e.target.value)||0};uDB(n);});}} style={{...inp,fontSize:10,width:"100%",padding:"3px 4px",textAlign:"center"}}/></div>
+<button onClick={()=>{keepScroll(()=>{const n=[...db];n.splice(idx,1);uDB(n);fl("Removed!");});}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10}}>x</button>
+</div>})}
+<div style={{display:"grid",gridTemplateColumns:"2fr 2fr 0.6fr 0.6fr 30px",gap:6,alignItems:"center",marginTop:4,fontSize:9,color:T.dm}}>
+<div>Property</div><div>Address</div><div style={{textAlign:"center"}}>IP</div><div style={{textAlign:"center"}}>EP</div><div></div>
 </div>
-</div>})}
-</div>})}
-</Card>
+</Card>})}
 
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Add Property</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -1214,7 +1215,6 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 </div>}
 
 </div></div>);}
-
 
 const root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(AppWrapper));
 
