@@ -298,7 +298,7 @@ const inp={padding:"8px 10px",borderRadius:7,border:`1.5px solid ${T.bd}`,fontSi
 const sel={...inp,cursor:"pointer",appearance:"auto"};
 const lb={fontSize:9,fontWeight:600,color:T.dm,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:2,display:"block"};
 const bt=(bg,cl,ex)=>({padding:"8px 16px",borderRadius:7,border:"none",background:bg,color:cl,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",...ex});
-const Card=({children,...p})=><div style={{background:T.cd,borderRadius:10,padding:16,border:"1px solid "+T.bd,overflowX:"auto",boxShadow:"0 2px 8px rgba(0,0,0,"+(darkMode?"0.2":"0.06")+")",animation:"fadeIn 0.25s ease-out",...p.style}}>{children}</div>;
+const Card=({children,...p})=><div style={{background:T.cd,borderRadius:10,padding:16,border:"1px solid "+T.bd,overflowX:"auto",boxShadow:"0 2px 8px rgba(0,0,0,"+(darkMode?"0.2":"0.06")+")",...p.style}}>{children}</div>;
 
 const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
 const tabs=allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
