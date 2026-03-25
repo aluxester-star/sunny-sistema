@@ -20,7 +20,7 @@ const IE=["Jeferson e Rhaima","Odi e Gipsy","Veronica","Cris","Altair","Loide e 
 const DC={name:"SUNNY CLEANING SERVICES",address:"3272 N Arlington Ave. - FL 33603",phone:"813-546-2577",bank:"Bank of America",account:"8981 5100 1911",routing:"063100277",zelle:"info@sunnycleaningtampa.com",venmo:"@loidealuxe",site:"www.sunnycleaningofficial.com",instagram:"Sunnycleaningofficial",facebook:"Sunnycleaningofficial"};
 const TD={bg:"#0A0F1E",cd:"#111833",c2:"#182040",ac:"#00B4D8",aD:"rgba(0,180,216,0.12)",tx:"#E8EBF0",dm:"#707A8A",bd:"#1A2545",rd:"#FF6B6B",gr:"#4ADE80",or:"#FFB547",pu:"#A78BFA",bl:"#60A5FA"};
 const TL={bg:"#F5F7FA",cd:"#FFFFFF",c2:"#F0F2F5",ac:"#0094B0",aD:"rgba(0,148,176,0.08)",tx:"#1A1A2E",dm:"#6B7280",bd:"#E5E7EB",rd:"#EF4444",gr:"#22C55E",or:"#F59E0B",pu:"#8B5CF6",bl:"#3B82F6"};
-const T=typeof darkMode!=="undefined"&&!darkMode?TL:TD;
+const T=TD;
 const MO=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const fm=v=>parseFloat(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 const DSC=["Cleaning Service","Extra Cleaning Service","Deep Cleaning Service","Restocking Items","Touch Up","Refresh Cleaning + Inventory","Outdoor Area","Cancel Stay Full Clean","Propane Tank Exchange","AC Filter","Postage (Cost)","Postage (Postal)","Cleaning + Inventory","Airbnb Setup","Extra - Pet Hair","Laundry"];
@@ -117,6 +117,7 @@ const[db,setDb]=useState(D);const[em,setEm]=useState(IE);const[co,setCo]=useStat
 const[ss,setSs]=useState(false);const[toast,setToast]=useState("");
 const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny_theme")!=="light";}catch{return true;}});
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch{}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
+const T=darkMode?TD:TL;
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
 const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("rascunho");const[editPId,setEditPId]=useState(null);
