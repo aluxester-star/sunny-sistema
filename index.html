@@ -119,7 +119,7 @@ const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch{}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
 const[sP,setSP]=useState([]);const[sI,setSI]=useState([]);
 const[vP,setVP]=useState(null);const[vI,setVI]=useState(null);
-const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("paga");const[editPId,setEditPId]=useState(null);
+const[fE,setFE]=useState("");const[fM,setFM]=useState("");const[fPS,setFPS]=useState("rascunho");const[editPId,setEditPId]=useState(null);
 const[ldHouses,setLdHouses]=useState([]);
 
 const[ldCfg,setLdCfg]=useState({priceLb:1.35,fixedFee:0});
