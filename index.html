@@ -149,7 +149,7 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 <button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
 <button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
 </div></div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","inventory","team","inspect","history","agenda","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
+const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","report","inventory","team","inspect","history","agenda","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
 function App({onLogout,userRole="admin"}){
 const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny_theme")!=="light";}catch(e){return true;}});
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch(e){}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
@@ -207,7 +207,7 @@ const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Laundry"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[customFinCats,setCustomFinCats]=useState([]);
-const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
+const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});
@@ -350,7 +350,7 @@ const[modal,setModal]=useState(null);
 const askModal=(title,defaultVal,onOk)=>{setModal({title,val:defaultVal||"",onOk});};
 const ModalC=()=>modal?<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:380,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:T.tx}}>{modal.title}</div><input autoFocus value={modal.val} onChange={e=>setModal({...modal,val:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"){modal.onOk(modal.val);setModal(null);}if(e.key==="Escape")setModal(null);}} style={{...inp,width:"100%",fontSize:15,padding:"12px 14px",marginBottom:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.bg}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{modal.onOk(modal.val);setModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>OK</button><button onClick={()=>setModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:13,borderRadius:10})}>Cancelar</button></div></div></div>:null;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
+const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"report",l:"Relatório",i:"📈"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
 const tabs=allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 
 // === PAYSLIP ===
@@ -748,6 +748,164 @@ return <div key={e.id} style={{padding:"6px 0",borderBottom:"1px solid "+T.bd,fo
 {fFil.length>50&&<div style={{textAlign:"center",padding:"8px 0",fontSize:10,color:T.dm}}>Mostrando 50 de {fFil.length} · Use filtros para refinar</div>}
 </Card>
 </div>}
+
+
+{/* REPORT */}
+{vw==="report"&&(()=>{
+const mo=rptMo;const moIdx=MO.indexOf(mo);
+const mFin=fin.filter(e=>e.month===mo);const mIn=mFin.filter(e=>e.type==="entrada");const mOut=mFin.filter(e=>e.type==="saida");
+const tIn=mIn.reduce((s,e)=>s+e.amt,0);const tOut=mOut.reduce((s,e)=>s+e.amt,0);const tProfit=tIn-tOut;const margin=tIn?(tProfit/tIn*100).toFixed(0):0;
+
+const mPay=sP.filter(p=>p.month===mo);const mInv=sI.filter(i=>i.date&&getMonthFromDate(i.date)===mo);
+const mInsp=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);
+const mLdLogs=ldLog2.filter(l=>l.cost&&l.date&&getMonthFromDate((l.date||"").split("T")[0])===mo);
+
+const cleanRev=mIn.filter(e=>(e.cat||"").includes("Invoice")||(e.cat||"").includes("Cleaning")).reduce((s,e)=>s+e.amt,0);
+const ldRev=mIn.filter(e=>(e.cat||"").toLowerCase().includes("laundry")||(e.desc||"").toLowerCase().includes("laundry")).reduce((s,e)=>s+e.amt,0);
+const otherRev=tIn-cleanRev-ldRev;
+
+const payrollCost=mOut.filter(e=>(e.cat||"").includes("Pagamento Funcionario")||(e.cat||"").includes("Pagamento Funcionário")).reduce((s,e)=>s+e.amt,0);
+const ldCost=mLdLogs.reduce((s,l)=>s+(l.cost||0),0);const ldWeight=mLdLogs.reduce((s,l)=>s+(l.weight||0),0);
+const suppliesCost=mOut.filter(e=>(e.cat||"").includes("Produto")||(e.cat||"").includes("Supplies")||(e.cat||"").includes("Reposição")).reduce((s,e)=>s+e.amt,0);
+const gasCost=mOut.filter(e=>(e.cat||"").includes("Gasolina")||(e.cat||"").includes("Gas")||(e.cat||"").includes("Transporte")).reduce((s,e)=>s+e.amt,0);
+const otherCost=tOut-payrollCost-ldCost-suppliesCost-gasCost;
+
+const totalHouses=mPay.reduce((s,p)=>s+p.casas,0);const avgTicket=totalHouses>0?(tIn/totalHouses):0;
+
+const byClient={};mInv.forEach(i=>{const c=i.client||"?";if(!byClient[c])byClient[c]={rev:0,houses:0,items:[]};byClient[c].rev+=i.total;byClient[c].items.push(...(i.items||[]));});mPay.forEach(p=>{(p.items||[]).forEach(it=>{const c=it.c||"?";if(!byClient[c])byClient[c]={rev:0,houses:0,items:[]};byClient[c].houses++;});});const clientCosts={};mOut.filter(e=>e.centroClient).forEach(e=>{const c=e.centroClient;clientCosts[c]=(clientCosts[c]||0)+e.amt;});
+
+const byHouse={};mPay.forEach(p=>{(p.items||[]).forEach(it=>{const h=it.n||it.propName||"?";if(!byHouse[h])byHouse[h]={rev:0,pay:0,cnt:0,client:it.c||"",ldCost:0};byHouse[h].pay+=(it.ep||0);byHouse[h].rev+=(it.ip||0);byHouse[h].cnt++;});});mLdLogs.forEach(l=>{const h=ldHouses.find(x=>x.id===l.bagId);if(h&&byHouse[h.name])byHouse[h.name].ldCost+=(l.cost||0);});
+
+const inspIssues={};let totalFails=0;let totalAdjusts=0;
+mInsp.forEach(i=>{Object.entries(i.checks||{}).forEach(([k,v])=>{if(v==="fail"){totalFails++;const item=Object.values(INSP_CHECKLIST).flat().find(x=>x.id===k);if(item){inspIssues[item.t]=(inspIssues[item.t]||0)+1;}}if(v==="adjust")totalAdjusts++;});});
+const avgScore=mInsp.length?Math.round(mInsp.reduce((s,i)=>s+i.score,0)/mInsp.length):0;
+const blocked=mInsp.filter(i=>i.status==="blocked").length;
+
+const moLosses=losses.filter(l=>{const ms=mo;return l.date&&getMonthFromDate(l.date)===ms;});const totalLostPcs=moLosses.reduce((s,l)=>s+l.qty,0);
+
+const prevMo=moIdx>0?MO[moIdx-1]:null;
+const prevIn=prevMo?fin.filter(e=>e.month===prevMo&&e.type==="entrada").reduce((s,e)=>s+e.amt,0):0;
+const prevOut=prevMo?fin.filter(e=>e.month===prevMo&&e.type==="saida").reduce((s,e)=>s+e.amt,0):0;
+
+const costData=[{l:"Payroll",v:payrollCost,c:"#FF6B6B"},{l:"Lavanderia",v:ldCost,c:"#A78BFA"},{l:"Supplies",v:suppliesCost,c:"#FFB547"},{l:"Gas/Transp.",v:gasCost,c:"#60A5FA"},{l:"Outros",v:otherCost,c:"#FF8A65"}].filter(d=>d.v>0);
+
+return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>📈 Relatório Mensal</span>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>
+<select value={rptMo} onChange={e=>setRptMo(e.target.value)} style={{...sel,width:"auto",minWidth:130,fontSize:11,borderRadius:8}}>{MO.map(m=><option key={m}>{m}</option>)}</select>
+<button onClick={()=>{const w=window.open("","_blank");if(!w)return;
+const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:900px;margin:0 auto;font-size:11px}h1{font-size:22px}h2{font-size:14px;color:#0094B0;margin:20px 0 6px;border-bottom:2px solid #0094B0;padding-bottom:3px}table{width:100%;border-collapse:collapse;margin:4px 0 14px}th{background:#0A0F1E;color:#fff;padding:5px 8px;text-align:left;font-size:9px}td{padding:4px 8px;border-bottom:1px solid #eee;font-size:10px}.g{color:#22C55E;font-weight:700}.r{color:#EF4444;font-weight:700}.b{color:#0094B0;font-weight:700}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}.box{padding:12px;border:1px solid #ddd;border-radius:6px;text-align:center}.box .n{font-size:24px;font-weight:800}.box .l{font-size:8px;color:#888;text-transform:uppercase}@media print{body{padding:15px;font-size:9px}}";
+let h="<html><head><title>Report "+mo+"</title><style>"+css+"</style></head><body>";
+h+="<h1>"+co.name+" — Monthly Report</h1><p style='color:#888;font-size:10px'>"+co.address+" | "+co.phone+" | "+mo+" 2026</p>";
+h+="<div class='grid'><div class='box'><div class='n g'>$"+tIn.toLocaleString()+"</div><div class='l'>Revenue</div></div><div class='box'><div class='n r'>$"+tOut.toLocaleString()+"</div><div class='l'>Expenses</div></div><div class='box'><div class='n "+(tProfit>=0?"g":"r")+"'>$"+Math.abs(tProfit).toLocaleString()+"</div><div class='l'>"+(tProfit>=0?"Profit":"Loss")+"</div></div><div class='box'><div class='n b'>"+margin+"%</div><div class='l'>Margin</div></div></div>";
+h+="<h2>Revenue Breakdown</h2><table><tr><th>Category</th><th style='text-align:right'>Amount</th></tr><tr><td>Cleaning</td><td class='g' style='text-align:right'>$"+cleanRev.toLocaleString()+"</td></tr><tr><td>Laundry</td><td class='g' style='text-align:right'>$"+ldRev.toLocaleString()+"</td></tr><tr><td>Other</td><td class='g' style='text-align:right'>$"+otherRev.toLocaleString()+"</td></tr></table>";
+h+="<h2>Cost Breakdown</h2><table><tr><th>Category</th><th style='text-align:right'>Amount</th><th style='text-align:right'>%</th></tr>";
+costData.forEach(d=>{h+="<tr><td>"+d.l+"</td><td class='r' style='text-align:right'>$"+d.v.toLocaleString()+"</td><td style='text-align:right'>"+(tOut?(d.v/tOut*100).toFixed(0):0)+"%</td></tr>";});h+="</table>";
+h+="<h2>Operations</h2><div class='grid' style='grid-template-columns:repeat(5,1fr)'><div class='box'><div class='n'>"+totalHouses+"</div><div class='l'>Houses Cleaned</div></div><div class='box'><div class='n'>"+ldWeight.toFixed(0)+"</div><div class='l'>Lbs Washed</div></div><div class='box'><div class='n b'>$"+avgTicket.toFixed(0)+"</div><div class='l'>Avg Ticket</div></div><div class='box'><div class='n'>"+(avgScore||"—")+"</div><div class='l'>Insp. Avg</div></div><div class='box'><div class='n r'>"+totalFails+"</div><div class='l'>Fails</div></div></div>";
+h+="<h2>By Client</h2><table><tr><th>Client</th><th style='text-align:right'>Revenue</th><th style='text-align:right'>Houses</th><th style='text-align:right'>Costs</th><th style='text-align:right'>Profit</th></tr>";
+Object.entries(byClient).sort((a,b)=>b[1].rev-a[1].rev).forEach(([c,d])=>{const cc=clientCosts[c]||0;h+="<tr><td>"+c+"</td><td class='g' style='text-align:right'>$"+d.rev.toLocaleString()+"</td><td style='text-align:right'>"+d.houses+"</td><td class='r' style='text-align:right'>$"+cc.toLocaleString()+"</td><td class='"+(d.rev-cc>=0?"g":"r")+"' style='text-align:right'>$"+Math.abs(d.rev-cc).toLocaleString()+"</td></tr>";});h+="</table>";
+h+="<h2>By Property (Top 20)</h2><table><tr><th>Property</th><th>Client</th><th style='text-align:right'>Revenue</th><th style='text-align:right'>Payroll</th><th style='text-align:right'>Laundry</th><th style='text-align:right'>Profit</th><th style='text-align:right'>Cleans</th></tr>";
+Object.entries(byHouse).sort((a,b)=>(b[1].rev-b[1].pay-b[1].ldCost)-(a[1].rev-a[1].pay-a[1].ldCost)).slice(0,20).forEach(([h2,d])=>{const pr=d.rev-d.pay-d.ldCost;h+="<tr><td>"+h2+"</td><td>"+d.client+"</td><td class='g' style='text-align:right'>$"+d.rev+"</td><td class='r' style='text-align:right'>$"+d.pay+"</td><td style='text-align:right;color:#A78BFA'>$"+d.ldCost.toFixed(0)+"</td><td class='"+(pr>=0?"g":"r")+"' style='text-align:right'>$"+pr.toFixed(0)+"</td><td style='text-align:right'>"+d.cnt+"</td></tr>";});h+="</table>";
+if(ldWeight>0){h+="<h2>Laundry</h2><div class='grid' style='grid-template-columns:repeat(4,1fr)'><div class='box'><div class='n'>"+ldWeight.toFixed(0)+"</div><div class='l'>Total Lbs</div></div><div class='box'><div class='n r'>$"+ldCost.toFixed(2)+"</div><div class='l'>Total Cost</div></div><div class='box'><div class='n'>$"+(ldWeight>0?(ldCost/ldWeight).toFixed(2):"0")+"</div><div class='l'>Cost/Lb</div></div><div class='box'><div class='n b'>$"+ldCfg.priceLb+"</div><div class='l'>Price/Lb</div></div></div>";}
+if(totalFails>0||totalLostPcs>0){h+="<h2>Issues</h2><table><tr><th>Issue</th><th style='text-align:right'>Count</th></tr>";Object.entries(inspIssues).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{h+="<tr><td>"+k+"</td><td class='r' style='text-align:right'>"+v+"x</td></tr>";});if(totalLostPcs>0)h+="<tr><td>Linen Losses</td><td class='r' style='text-align:right'>"+totalLostPcs+" pcs</td></tr>";h+="</table>";}
+h+="<div style='text-align:center;margin-top:30px;border-top:2px solid #111;padding-top:10px'><div style='font-size:16px;font-weight:800;color:#0094B0'>"+co.name+"</div><div style='color:#888;font-size:9px'>"+co.address+" | "+co.phone+"</div></div></body></html>";
+w.document.write(h);w.document.close();setTimeout(()=>w.print(),600);fl("📄 Relatório "+mo+" exportado!");}} style={bt(T.gr,T.bg,{padding:"6px 14px",fontSize:10,borderRadius:8})}>🖨️ Exportar PDF</button>
+</div></div>
+
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+<div style={{background:"linear-gradient(135deg,"+T.gr+"18,"+T.gr+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.gr+"33"}}><div style={{fontSize:8,color:T.gr,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.8px"}}>RECEITA</div><div style={{fontSize:26,fontWeight:800,marginTop:5}}>${tIn.toLocaleString()}</div>{prevIn>0&&<div style={{fontSize:9,color:prevIn<tIn?T.gr:T.rd,marginTop:2}}>{tIn>=prevIn?"▲":"▼"} {prevIn?Math.abs(((tIn-prevIn)/prevIn)*100).toFixed(0):0}%</div>}</div>
+<div style={{background:"linear-gradient(135deg,"+T.rd+"18,"+T.rd+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.rd+"33"}}><div style={{fontSize:8,color:T.rd,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.8px"}}>CUSTOS</div><div style={{fontSize:26,fontWeight:800,marginTop:5}}>${tOut.toLocaleString()}</div>{prevOut>0&&<div style={{fontSize:9,color:prevOut>tOut?T.gr:T.rd,marginTop:2}}>{tOut<=prevOut?"▼":"▲"} {prevOut?Math.abs(((tOut-prevOut)/prevOut)*100).toFixed(0):0}%</div>}</div>
+<div style={{background:"linear-gradient(135deg,"+(tProfit>=0?T.gr:T.rd)+"18,"+(tProfit>=0?T.gr:T.rd)+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+(tProfit>=0?T.gr:T.rd)+"33"}}><div style={{fontSize:8,color:tProfit>=0?T.gr:T.rd,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.8px"}}>{tProfit>=0?"LUCRO":"PREJUÍZO"}</div><div style={{fontSize:26,fontWeight:800,marginTop:5}}>${Math.abs(tProfit).toLocaleString()}</div></div>
+<div style={{background:"linear-gradient(135deg,"+T.ac+"18,"+T.ac+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.ac+"33"}}><div style={{fontSize:8,color:T.ac,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.8px"}}>MARGEM</div><div style={{fontSize:26,fontWeight:800,marginTop:5}}>{margin}%</div></div>
+</div>
+
+<div style={{display:"flex",gap:2,background:T.cd,borderRadius:8,padding:3,border:"1px solid "+T.bd}}>
+{[["resumo","📊 Resumo"],["receita","💰 Receita"],["custos","📉 Custos"],["clientes","👤 Clientes"],["casas","🏠 Casas"],["lavanderia","🧺 Lavanderia"],["problemas","⚠️ Problemas"]].map(([k,l])=><button key={k} onClick={()=>setRptSub(k)} style={{flex:1,padding:"7px 4px",borderRadius:6,border:rptSub===k?"2px solid "+T.ac:"none",background:rptSub===k?T.ac+"15":"transparent",color:rptSub===k?T.ac:T.dm,fontSize:8,fontWeight:rptSub===k?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>)}
+</div>
+
+{rptSub==="resumo"&&<>
+<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+{[{l:"CASAS",v:totalHouses,cl:T.ac},{l:"LBS LAVADAS",v:ldWeight.toFixed(0),cl:T.pu},{l:"TICKET MÉDIO",v:"$"+avgTicket.toFixed(0),cl:T.bl},{l:"INSPEÇÃO",v:avgScore||"—",cl:avgScore>=90?T.gr:avgScore>=80?T.or:avgScore>0?T.rd:T.dm},{l:"PROBLEMAS",v:totalFails+totalAdjusts,cl:totalFails>0?T.rd:T.gr}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"10px 8px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase"}}>{s.l}</div></div>)}
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📊 Receita vs Custos</div>
+{(()=>{const months=MO.slice(0,Math.max(moIdx+1,3));const data=months.map(m=>{const mf=fin.filter(e=>e.month===m);return{l:m.slice(0,3),v1:mf.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0),v2:mf.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0)};});return <div><BarChart data={data} h={140} colors={[T.ac,T.rd]}/><div style={{display:"flex",gap:12,justifyContent:"center",marginTop:6}}><span style={{fontSize:8,display:"flex",alignItems:"center",gap:3}}><span style={{width:6,height:6,borderRadius:2,background:T.ac,display:"inline-block"}}/> Receita</span><span style={{fontSize:8,display:"flex",alignItems:"center",gap:3}}><span style={{width:6,height:6,borderRadius:2,background:T.rd,display:"inline-block"}}/> Custos</span></div></div>;})()}
+</Card>
+<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>💰 Custos por Categoria</div>
+{costData.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados</div>:<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}><DonutChart data={costData.map(d=>({l:d.l,v:d.v,c:d.c}))} size={140}/><div style={{width:"100%"}}>{costData.map((d,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:"1px solid "+T.bd+"44",fontSize:10}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:8,height:8,borderRadius:2,background:d.c,flexShrink:0}}/><span>{d.l}</span></div><strong style={{color:T.rd}}>${d.v.toLocaleString()}</strong></div>)}</div></div>}
+</Card>
+</div>
+<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📈 Evolução Lucro Mensal</div>
+{(()=>{const months=MO.slice(0,Math.max(moIdx+1,3));const data=months.map(m=>{const mf=fin.filter(e=>e.month===m);return mf.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0)-mf.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0);});return <MiniLine data={data} w={900} h={60} color={T.gr}/>;})()}
+<div style={{display:"grid",gridTemplateColumns:"repeat("+Math.max(moIdx+1,3)+",1fr)",gap:4,marginTop:8}}>{MO.slice(0,Math.max(moIdx+1,3)).map(m=>{const mf=fin.filter(e=>e.month===m);const l=mf.filter(e=>e.type==="entrada").reduce((s,e)=>s+e.amt,0)-mf.filter(e=>e.type==="saida").reduce((s,e)=>s+e.amt,0);return <div key={m} style={{textAlign:"center"}}><div style={{fontSize:12,fontWeight:700,color:l>=0?T.gr:T.rd}}>${Math.abs(l).toLocaleString()}</div><div style={{fontSize:8,color:T.dm}}>{m.slice(0,3)}</div></div>})}</div>
+</Card>
+</>}
+
+{rptSub==="receita"&&<>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+{[{l:"LIMPEZA",v:cleanRev,cl:T.gr},{l:"LAVANDERIA",v:ldRev,cl:T.pu},{l:"OUTROS",v:otherRev,cl:T.bl}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"14px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:8,color:T.dm,textTransform:"uppercase"}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl,marginTop:4}}>${s.v.toLocaleString()}</div><div style={{fontSize:9,color:T.dm}}>{tIn?(s.v/tIn*100).toFixed(0):0}%</div></div>)}
+</div>
+<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📄 Invoices do Mês ({mInv.length})</div>
+{mInv.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>—</div>:mInv.sort((a,b)=>(b.total||0)-(a.total||0)).map(inv=><div key={inv.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><div><strong>#{inv.no}</strong> <span style={{color:T.dm}}>{inv.client}</span> <span style={{fontSize:8,color:T.dm}}>{inv.date} · {(inv.items||[]).length} itens</span></div><span style={{fontWeight:700,color:T.gr}}>${fm(inv.total)}</span></div>)}
+</Card>
+</>}
+
+{rptSub==="custos"&&<>
+<div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
+{costData.map((d,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"12px 8px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:d.c}}>${d.v.toLocaleString()}</div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginTop:2}}>{d.l}</div><div style={{fontSize:8,color:T.dm}}>{tOut?(d.v/tOut*100).toFixed(0):0}%</div></div>)}
+</div>
+<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>📋 Todas Despesas ({mOut.length})</div>
+{(()=>{const byCat={};mOut.forEach(e=>{const c=e.cat||"Sem categoria";if(!byCat[c])byCat[c]=0;byCat[c]+=e.amt;});return Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=><div key={c} style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3}}><span>{c}</span><span style={{fontWeight:700,color:T.rd}}>${v.toLocaleString()} <span style={{color:T.dm,fontWeight:400}}>({(tOut?(v/tOut*100).toFixed(0):0)}%)</span></span></div><div style={{height:6,background:T.bd,borderRadius:3}}><div style={{height:6,background:T.rd,borderRadius:3,width:(tOut?(v/tOut*100):0)+"%",transition:"width 0.5s"}}/></div></div>);})()}
+</Card>
+</>}
+
+{rptSub==="clientes"&&<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:12}}>👤 Análise por Cliente — {mo}</div>
+{Object.keys(byClient).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados</div>:Object.entries(byClient).sort((a,b)=>b[1].rev-a[1].rev).map(([c,d])=>{const cc=clientCosts[c]||0;const profit=d.rev-cc;return <div key={c} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div style={{fontSize:13,fontWeight:700}}>{c}</div>
+<div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{d.houses} casas</span><span style={{fontSize:16,fontWeight:800,color:profit>=0?T.gr:T.rd}}>${profit.toLocaleString()}</span></div></div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+{[["Receita",d.rev,T.gr],["Custos",cc,T.rd],["Lucro",profit,profit>=0?T.gr:T.rd]].map(([l,v,cl])=><div key={l} style={{textAlign:"center",padding:"6px",borderRadius:6,background:T.bg}}><div style={{fontSize:7,color:T.dm,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:14,fontWeight:700,color:cl}}>${v.toLocaleString()}</div></div>)}
+</div></div>})}
+</Card>}
+
+{rptSub==="casas"&&<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:12}}>🏠 Análise por Casa — {mo}</div>
+{Object.keys(byHouse).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>Sem dados</div>:Object.entries(byHouse).sort((a,b)=>(b[1].rev-b[1].pay-b[1].ldCost)-(a[1].rev-a[1].pay-a[1].ldCost)).map(([h2,d])=>{const profit=d.rev-d.pay-d.ldCost;return <div key={h2} style={{display:"grid",gridTemplateColumns:"2fr repeat(5,.8fr)",gap:6,padding:"8px 0",borderBottom:"1px solid "+T.bd,alignItems:"center",fontSize:10}}>
+<div><div style={{fontWeight:600}}>{h2}</div><div style={{fontSize:8,color:T.dm}}>{d.client} · {d.cnt}x</div></div>
+<div style={{textAlign:"right",color:T.gr,fontWeight:600}}>${d.rev}</div>
+<div style={{textAlign:"right",color:T.rd}}>${d.pay}</div>
+<div style={{textAlign:"right",color:T.pu}}>${d.ldCost.toFixed(0)}</div>
+<div style={{textAlign:"right",fontWeight:700,color:profit>=0?T.gr:T.rd}}>${profit.toFixed(0)}</div>
+<div style={{textAlign:"right",color:T.dm}}>{d.cnt}x</div>
+</div>})}
+<div style={{display:"grid",gridTemplateColumns:"2fr repeat(5,.8fr)",gap:6,padding:"6px 0",fontSize:8,color:T.dm,borderBottom:"1px solid "+T.bd}}><span>CASA</span><span style={{textAlign:"right"}}>RECEITA</span><span style={{textAlign:"right"}}>PAYROLL</span><span style={{textAlign:"right"}}>LAVAND.</span><span style={{textAlign:"right"}}>LUCRO</span><span style={{textAlign:"right"}}>LIMPEZAS</span></div>
+</Card>}
+
+{rptSub==="lavanderia"&&<>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+{[{l:"TOTAL LBS",v:ldWeight.toFixed(0),cl:T.pu},{l:"CUSTO TOTAL",v:"$"+ldCost.toFixed(2),cl:T.rd},{l:"CUSTO/LB",v:"$"+(ldWeight>0?(ldCost/ldWeight).toFixed(2):"0"),cl:T.or},{l:"PREÇO/LB",v:"$"+ldCfg.priceLb,cl:T.ac}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"14px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginTop:2}}>{s.l}</div></div>)}
+</div>
+{ldWeight>0&&<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>🧺 Lavanderia por Casa</div>
+{(()=>{const byH={};mLdLogs.forEach(l=>{const h=ldHouses.find(x=>x.id===l.bagId);const n=h?h.name:"?";if(!byH[n])byH[n]={cost:0,weight:0,cnt:0};byH[n].cost+=(l.cost||0);byH[n].weight+=(l.weight||0);byH[n].cnt++;});return Object.entries(byH).sort((a,b)=>b[1].cost-a[1].cost).map(([n,d])=><div key={n} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span style={{fontWeight:600}}>{n} <span style={{color:T.dm}}>{d.cnt}x · {d.weight.toFixed(0)}lb</span></span><span style={{fontWeight:700,color:T.rd}}>${d.cost.toFixed(2)}</span></div>);})()}</Card>}
+{ldWeight===0&&<Card style={{padding:20,textAlign:"center"}}><div style={{color:T.dm,fontSize:12}}>Sem dados de lavanderia em {mo}</div></Card>}
+</>}
+
+{rptSub==="problemas"&&<>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+{[{l:"INSPEÇÕES",v:mInsp.length,cl:T.ac},{l:"REPROVAÇÕES",v:totalFails,cl:T.rd},{l:"AJUSTES",v:totalAdjusts,cl:T.or},{l:"PERDAS ROUPA",v:totalLostPcs+"pç",cl:T.pu}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"12px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginTop:2}}>{s.l}</div></div>)}
+</div>
+{Object.keys(inspIssues).length>0&&<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>⚠️ Problemas Recorrentes</div>
+{Object.entries(inspIssues).sort((a,b)=>b[1]-a[1]).map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{k}</span><span style={{fontWeight:700,color:T.rd}}>{v}x</span></div>)}</Card>}
+{blocked>0&&<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,color:T.rd,marginBottom:8}}>🚫 Casas Bloqueadas ({blocked})</div>
+{mInsp.filter(i=>i.status==="blocked").map(i=><div key={i.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span style={{fontWeight:600}}>{i.houseName||i.house}</span><span style={{color:T.rd}}>{i.score} pts · {i.date}</span></div>)}</Card>}
+{moLosses.length>0&&<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,color:T.pu,marginBottom:8}}>🛏️ Perdas de Rouparia ({totalLostPcs} peças)</div>
+{moLosses.map(l=><div key={l.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{l.type} {l.size} <span style={{color:T.dm}}>· {l.reason} · {l.loc}</span></span><span style={{fontWeight:700,color:T.rd}}>{l.qty}x</span></div>)}</Card>}
+{totalFails===0&&totalLostPcs===0&&<Card style={{padding:20,textAlign:"center"}}><div style={{fontSize:14,color:T.gr}}>✅ Nenhum problema registrado em {mo}!</div></Card>}
+</>}
+
+</div>;})()}
 
 
 {/* INVENTORY */}
