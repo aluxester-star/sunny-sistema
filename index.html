@@ -8,7 +8,7 @@
 const{useState,useMemo,useCallback,useEffect}=React;
 const FB={get:async(k)=>{try{const doc=await db.collection("sunny").doc(k).get();if(doc.exists)return{key:k,value:doc.data().value};return null;}catch(e){return null;}},set:async(k,v)=>{try{const val=typeof v==="string"?v:JSON.stringify(v);await db.collection("sunny").doc(k).set({value:val,updated:new Date().toISOString()});return{key:k,value:val};}catch(e){return null;}},del:async(k)=>{try{await db.collection("sunny").doc(k).delete();return{key:k,deleted:true};}catch(e){return null;}}};
 function LoginScreen({onLogin}){const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);const handleLogin=async(e)=>{e.preventDefault();setErr("");setLoading(true);try{await auth.signInWithEmailAndPassword(email,pass);onLogin();}catch(error){if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");else if(error.code==="auth/user-not-found")setErr("Usu\u00e1rio n\u00e3o encontrado");else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas.");else setErr("Erro ao entrar.");}setLoading(false);};return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 40%,#0D1B30 70%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:20,padding:"44px 40px",maxWidth:400,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",animation:"popIn 0.3s ease"}}><div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gest\u00e3o</div></div><div><div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div><div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter")handleLogin(e);}}/></div>{err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}<button onClick={handleLogin} disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button></div><div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito</div></div></div>;}
-function AppWrapper(){const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);const[role,setRole]=useState("admin");useEffect(()=>{const unsub=auth.onAuthStateChanged(async u=>{setUser(u);if(u){try{const r=await FB.get("users");if(r&&r.value){const users=JSON.parse(r.value);const key=u.email.replace(/\./g,"_");if(users[key])setRole(users[key]);else setRole("admin");}}catch{setRole("admin");}}setChecking(false);});return()=>unsub();},[]);if(checking)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16}}>Verificando acesso...</div>;if(!user)return <LoginScreen onLogin={()=>{}}/>;return <App onLogout={()=>auth.signOut()} userRole={role}/>;}
+function AppWrapper(){const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);const[role,setRole]=useState("admin");const[clientName,setClientName]=useState("");const[customTabs,setCustomTabs]=useState(null);useEffect(()=>{const unsub=auth.onAuthStateChanged(async u=>{setUser(u);if(u){try{const r=await FB.get("users");if(r&&r.value){const users=JSON.parse(r.value);const key=u.email.replace(/\./g,"_");const val=users[key]||"admin";if(typeof val==="object"&&val.tabs){setRole(val.role||"custom");setCustomTabs(val.tabs);if(val.client)setClientName(val.client);}else if(typeof val==="string"&&val.startsWith("cliente:")){setRole("cliente");setClientName(val.split(":").slice(1).join(":"));}else{setRole(val);}}}catch{setRole("admin");}}setChecking(false);});return()=>unsub();},[]);if(checking)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16}}>Verificando acesso...</div>;if(!user)return <LoginScreen onLogin={()=>{}}/>;return <App onLogout={()=>auth.signOut()} userRole={role} clientName={clientName} customTabs={customTabs}/>;}
 const D=[{c:"Josh Green",n:"Endless Summer",a:"14137 Thacher Ave, Largo",ip:210,ep:110},{c:"Josh Green",n:"Insta-Worth",a:"1468 Marjohn Ave, Clearwater",ip:210,ep:100},{c:"Josh Green",n:"Jungle Villa",a:"700 25th St SW, Largo",ip:250,ep:110},{c:"Josh Green",n:"Tranquil Top Floor (Madeira)",a:"155 Medallion Blvd #G, Madeira Beach",ip:110,ep:45},{c:"Josh Green",n:"St Pete 3bd Heated Pool (Yellow)",a:"2580 57th Ave N, St. Petersburg",ip:300,ep:90},{c:"Josh Green",n:"Boho (Orange)",a:"3406 Keene Park Dr, Largo",ip:190,ep:90},{c:"Josh Green",n:"Heated Pool Home (Belleair)",a:"1774 Belleair Rd, Clearwater",ip:285,ep:110},{c:"Josh Green",n:"ClearWater Heated pool (Oasis)",a:"1678 Wildwood Road, Clearwater",ip:245,ep:100},{c:"Josh Green",n:"The Palm Haven",a:"12311 Julia St, Seminole",ip:280,ep:110},{c:"Josh Green",n:"Pink Waves Pool",a:"11221 Sol Vista Dr, Largo",ip:250,ep:110},{c:"Josh Green",n:"Putter Course",a:"10047 Nassau Ct, Seminole",ip:250,ep:100},{c:"Josh Green",n:"ClearWater Pickleball",a:"2237 Lawton Drive, Clearwater",ip:320,ep:110},{c:"Josh Green",n:"Iconic",a:"1484 Bugle Lane, Clearwater",ip:240,ep:100},{c:"Josh Green",n:"7bd Jungle Villa",a:"2217 Lawton Drive, Clearwater",ip:475,ep:125},{c:"Josh Green",n:"5bd Heated Pool Home",a:"14465 86th Ave N, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Waterfront Heated Pool Home",a:"835 Seacrest Dr, Largo",ip:380,ep:140},{c:"Josh Green",n:"Paradise Oasis",a:"1085 Hickory Drive, Largo",ip:280,ep:100},{c:"Josh Green",n:"Clearwater Aqua!",a:"1475 Viewtop Drive, Clearwater",ip:250,ep:110},{c:"Josh Green",n:"Surfs Up",a:"11088, 112th Street North, Largo",ip:260,ep:110},{c:"Josh Green",n:"Luxe Palms",a:"1078 Damrosch St, Largo",ip:320,ep:110},{c:"Josh Green",n:"St Pete Sun",a:"7289 61st Ave, St Pete",ip:210,ep:110},{c:"Josh Green",n:"Poinsettia",a:"13045 Poinsettia Ave, Seminole FL",ip:440,ep:170},{c:"Josh Green",n:"Coastal Charm",a:"83rd Place North 14311, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Southview",a:"1758 Southview Rd, Largo",ip:250,ep:110},
 {c:"Travis Fieldman",n:"Unit A",a:"2610 North Highland Ave, Tampa FL #A",ip:180,ep:85},{c:"Travis Fieldman",n:"Unit B",a:"2610 North Highland Ave, Tampa FL #B",ip:180,ep:85},
 {c:"PMI",n:"Cupecoy Circle",a:"Cupecoy Circle 1775, Lutz",ip:120,ep:60},{c:"PMI",n:"Barkfield Street",a:"112 Barkfield Street, Brandon",ip:240,ep:100},{c:"PMI",n:"Coastal Haven",a:"509 1st St, Indian Rocks Beach",ip:310,ep:140},
@@ -30,7 +30,7 @@ const LOGO="https://sunny-sistema.vercel.app/sunny-logo.png";
 function DI({value,onChange,style}){const[v,setV]=useState(value||"");const vR=React.useRef(value);useEffect(()=>{if(vR.current!==value){vR.current=value;setV(value||"");}},[value]);return <input type="date" value={v} onChange={e=>{setV(e.target.value);vR.current=e.target.value;}} onBlur={()=>{if(vR.current!==value&&onChange)onChange({target:{value:vR.current}});}} style={style}/>;}
 const SunnyLogo=({h=34})=><img src={LOGO} style={{height:h,width:"auto",objectFit:"contain",display:"block"}} alt="Sunny"/>;
 const EC=["Pagamento Cliente (Invoice)","Plataforma (Turno/Airbnb)","Gorjeta/Extra","Deep Cleaning Avulso","Outro Serviço","Outra Entrada"];
-const ESC=["Pagamento Funcionário","Produtos Limpeza","Gasolina/Transporte","Tel/Internet/Software","Lavanderia","Seguro/Impostos","Manutenção","Reposição Casa","Café/Filtro/Sabão","Material Escritório","Aluguel","Uniforme/EPI","Treinamento","Alimentação Equipe","Estacionamento","Ferramentas","Contador/Jurídico","Plataforma/App","Outra Despesa"];
+const ESC=["Pagamento Funcionário","Produtos Limpeza","Gasolina/Transporte","Tel/Internet/Software","Lavanderia","Seguro/Impostos","Manutenção","Reposição Casa","Café/Filtro/Sabão","Material Escritório","Aluguel","Uniforme/EPI","Treinamento","Alimentação Equipe","Estacionamento","Ferramentas","Contador/Jurídico","Plataforma/App","Seguro Veículo","Manutenção Veículo","Pedágio/Tolls","Taxas Bancárias","Propaganda/Marketing","Viagem (trabalho)","Aluguel Equipamento","Annual Report","Outra Despesa"];
 const CCTR=["Cliente","Operacional","Administrativo","Equipe","Equipamento","Marketing"];
 const LT=[{c:"Fitted Sheet",s:["Twin","Full","Queen","King"]},{c:"Flat Sheet",s:["Twin","Full","Queen","King"]},{c:"Standard Pillowcase",s:["Standard"]},{c:"King Pillowcase",s:["King"]},{c:"Bath Towel",s:["Standard"]},{c:"Hand Towel",s:["Standard"]},{c:"Washcloth",s:["Standard"]},{c:"Makeup Towel",s:["Standard"]},{c:"Pool Towel",s:["Standard"]}];
 const ILINEN=[{id:1,t:"Fitted Sheet",s:"Queen",q:20,m:8},{id:2,t:"Fitted Sheet",s:"King",q:12,m:6},{id:3,t:"Fitted Sheet",s:"Twin",q:8,m:4},{id:4,t:"Fitted Sheet",s:"Full",q:6,m:4},{id:5,t:"Flat Sheet",s:"Queen",q:18,m:8},{id:6,t:"Flat Sheet",s:"King",q:10,m:6},{id:7,t:"Flat Sheet",s:"Twin",q:8,m:4},{id:8,t:"Flat Sheet",s:"Full",q:6,m:4},{id:9,t:"Standard Pillowcase",s:"Standard",q:30,m:12},{id:10,t:"King Pillowcase",s:"King",q:16,m:8},{id:11,t:"Bath Towel",s:"Standard",q:25,m:10},{id:12,t:"Hand Towel",s:"Standard",q:20,m:8},{id:13,t:"Washcloth",s:"Standard",q:30,m:10},{id:14,t:"Makeup Towel",s:"Standard",q:15,m:6},{id:15,t:"Pool Towel",s:"Standard",q:10,m:4}];
@@ -149,8 +149,8 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 <button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
 <button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
 </div></div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","report","inventory","team","inspect","history","agenda","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"}};
-function App({onLogout,userRole="admin"}){
+const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","report","tax","inventory","team","inspect","history","agenda","deepclean","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","tax","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["inventory"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","inventory","team","deepclean"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect","inventory"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"},cliente:{label:"Cliente",tabs:["deepclean"],color:"#FF8A65"}};
+function App({onLogout,userRole="admin",clientName="",customTabs=null}){
 const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny_theme")!=="light";}catch(e){return true;}});
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch(e){}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
 const T=darkMode?TD:TL;
@@ -207,7 +207,7 @@ const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Laundry"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[customFinCats,setCustomFinCats]=useState([]);
-const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
+const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});
@@ -240,6 +240,7 @@ try{const r=await FB.get("ld_cfg2");if(r&&r.value)setLdCfg({priceLb:1.35,fixedFe
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_lead2");if(r&&r.value)setLdLeadDays(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("dc3");if(r&&r.value)setDcList(JSON.parse(r.value));}catch{}
 
 
 
@@ -272,6 +273,7 @@ const svLdCfg=async d=>{setLdCfg(d);await sv("ld_cfg2",d);};
 const svLdLog2=async d=>{setLdLog2(d);await sv("ld_log2",d);};
 const svLdManual=async d=>{setLdManual(d);await sv("ld_man2",d);};
 const svLdLead=async d=>{setLdLeadDays(d);await sv("ld_lead2",d);};
+const svDc=async d=>{setDcList(d);await sv("dc3",d);};
 const ldAddLog=(bagId,action,extra)=>{const e={id:Date.now()+Math.random(),bagId,action,date:new Date().toISOString(),...(extra||{})};svLdLog2([e,...ldLog2]);};
 const ldCalcCost=w=>Math.round(((w||0)*ldCfg.priceLb+(ldCfg.fixedFee||0))*100)/100;
 
@@ -350,8 +352,9 @@ const[modal,setModal]=useState(null);
 const askModal=(title,defaultVal,onOk)=>{setModal({title,val:defaultVal||"",onOk});};
 const ModalC=()=>modal?<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:380,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:T.tx}}>{modal.title}</div><input autoFocus value={modal.val} onChange={e=>setModal({...modal,val:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"){modal.onOk(modal.val);setModal(null);}if(e.key==="Escape")setModal(null);}} style={{...inp,width:"100%",fontSize:15,padding:"12px 14px",marginBottom:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.bg}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{modal.onOk(modal.val);setModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>OK</button><button onClick={()=>setModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:13,borderRadius:10})}>Cancelar</button></div></div></div>:null;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"report",l:"Relatório",i:"📈"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
-const tabs=allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
+const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"inventory",l:"Estoque",i:"📦"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Lavanderia",i:"🧺"}];
+const tabs=customTabs?allTabs.filter(t=>customTabs.includes(t.id)):allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
+useEffect(()=>{if(tabs.length>0&&!tabs.find(t=>t.id===vw)){setVw(tabs[0].id);}},[tabs.length]);
 
 // === PAYSLIP ===
 if(vw==="payslip"){const d=vP||{emp:sE,week:wk,items:pI,total:pTot};return(
@@ -408,13 +411,46 @@ return(
 </div>
 {userRole==="admin"&&<div style={{marginTop:14,padding:"12px 14px",background:T.c2,borderRadius:8,border:"1px solid "+T.bd}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:11,fontWeight:700}}>👥 Gerenciar Acessos</span>
-<button onClick={()=>{askModal("Email","",(email)=>{if(!email)return;askModal("Nível: admin, financeiro, estoque, operacional, visualizador","",(role)=>{if(!role||!ROLES[role])return fl("❌ Nível inválido");(async()=>{const users=JSON.parse(((await FB.get("users"))||{}).value||"{}");users[email.replace(/\./g,"_")]=role;await FB.set("users",JSON.stringify(users));fl("✅ "+email+" → "+role);})();});});}} style={bt(T.ac,T.bg,{padding:"4px 12px",fontSize:9})}>+ Convidar</button></div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(100px,1fr))",gap:4,marginBottom:8}}>{Object.entries(ROLES).map(([k,r])=><div key={k} style={{padding:"4px 8px",borderRadius:5,background:r.color+"12",textAlign:"center"}}><div style={{fontSize:9,fontWeight:700,color:r.color}}>{r.label}</div><div style={{fontSize:7,color:T.dm}}>{r.tabs.length} abas</div></div>)}</div>
-<div style={{fontSize:9,color:T.dm}}>Seu nível: <strong style={{color:(ROLES[userRole]||{}).color}}>{(ROLES[userRole]||{}).label}</strong></div>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>setInviteModal({email:"",tabs:[],client:""})} style={bt(T.ac,T.bg,{padding:"4px 12px",fontSize:9})}>+ Convidar</button>
+<button onClick={async()=>{try{const r=await FB.get("users");const users=r&&r.value?JSON.parse(r.value):{};const entries=Object.entries(users);if(!entries.length){fl("Nenhum usuário");return;}let list="";entries.forEach(([k,v])=>{const email=k.replace(/_/g,".");const info=typeof v==="object"?(v.tabs||[]).join(", ")+(v.client?" · Cliente: "+v.client:""):v;list+=email+" → "+info+"\n";});askModal("Usuários (copie para referência)",list,()=>{});}catch{fl("Erro");}}} style={bt(T.bl+"15",T.bl,{padding:"4px 12px",fontSize:9})}>👁 Ver</button>
+</div></div>
+<div style={{display:"flex",flexWrap:"wrap",gap:3}}>{allTabs.map(t=><span key={t.id} style={{padding:"2px 6px",borderRadius:4,background:T.ac+"10",color:T.ac,fontSize:8}}>{t.i} {t.id}</span>)}</div>
 </div>}
-<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
+
+{inviteModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setInviteModal(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:480,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+<span style={{fontSize:16,fontWeight:800,color:T.ac}}>👤 Convidar Usuário</span>
+<button onClick={()=>setInviteModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>
+
+<div style={{marginBottom:14}}><label style={lb}>Email</label>
+<input value={inviteModal.email} onChange={e=>setInviteModal({...inviteModal,email:e.target.value})} placeholder="email@exemplo.com" style={{...inp,width:"100%",fontSize:13}}/></div>
+
+<div style={{marginBottom:14}}><label style={lb}>Cliente (só preencher se for acesso de cliente)</label>
+<select value={inviteModal.client} onChange={e=>setInviteModal({...inviteModal,client:e.target.value})} style={{...sel,width:"100%"}}><option value="">— Não é cliente —</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>
+
+<div style={{marginBottom:14}}><label style={lb}>Abas que pode acessar</label>
+<div style={{display:"flex",gap:4,marginBottom:8}}>
+<button onClick={()=>setInviteModal({...inviteModal,tabs:allTabs.map(t=>t.id)})} style={bt(T.ac+"15",T.ac,{padding:"4px 10px",fontSize:8})}>Todas</button>
+<button onClick={()=>setInviteModal({...inviteModal,tabs:[]})} style={bt(T.rd+"15",T.rd,{padding:"4px 10px",fontSize:8})}>Nenhuma</button>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+{allTabs.map(t=>{const checked=(inviteModal.tabs||[]).includes(t.id);return <div key={t.id} onClick={()=>{const tabs=inviteModal.tabs||[];setInviteModal({...inviteModal,tabs:checked?tabs.filter(x=>x!==t.id):[...tabs,t.id]});}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:checked?"2px solid "+T.ac:"1px solid "+T.bd,background:checked?T.ac+"08":T.c2,cursor:"pointer"}}>
+<div style={{width:20,height:20,borderRadius:5,border:"2px solid "+(checked?T.ac:T.bd),background:checked?T.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,flexShrink:0}}>{checked?"✓":""}</div>
+<div><div style={{fontSize:11,fontWeight:checked?700:500,color:checked?T.ac:T.dm}}>{t.i} {t.l}</div></div>
+</div>})}
+</div></div>
+
+<div style={{display:"flex",gap:8,marginTop:16}}>
+<button onClick={async()=>{if(!inviteModal.email){fl("❌ Informe o email!");return;}if(!(inviteModal.tabs||[]).length){fl("❌ Selecione pelo menos uma aba!");return;}try{const users=JSON.parse(((await FB.get("users"))||{}).value||"{}");users[inviteModal.email.replace(/\./g,"_")]={role:inviteModal.client?"cliente":"custom",tabs:inviteModal.tabs,client:inviteModal.client||""};await FB.set("users",JSON.stringify(users));fl("✅ "+inviteModal.email+" — "+inviteModal.tabs.length+" abas!");setInviteModal(null);}catch(err){fl("❌ Erro: "+err.message);}}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>💾 Salvar Acesso</button>
+<button onClick={()=>setInviteModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:10})}>Cancelar</button>
+</div>
+</div></div>}
+<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
 <div style={{display:"flex",gap:1,padding:"6px 10px",borderBottom:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",background:darkMode?T.bg+"cc":"#fff"}}>
-{(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inventory:lowP.length+lowL.length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length};return tabs.map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"6px 10px",borderRadius:8,border:"none",cursor:"pointer",fontSize:9,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none"}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-3,right:-3,minWidth:15,height:15,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:7,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",boxShadow:"0 2px 6px rgba(255,107,107,0.4)"}}>{b}</span>}</button>});})()}
+{(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inventory:lowP.length+lowL.length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length,deepclean:(()=>{const today=getLocalDate();return dcList.filter(d=>{if(!d.active||!d.lastDone||!d.freqMonths)return false;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);const due=last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");return due<=today;}).length;})()};return tabs.map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"6px 10px",borderRadius:8,border:"none",cursor:"pointer",fontSize:9,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none"}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-3,right:-3,minWidth:15,height:15,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:7,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",boxShadow:"0 2px 6px rgba(255,107,107,0.4)"}}>{b}</span>}</button>});})()}
 </div>
 <div style={{maxWidth:1020,margin:"0 auto",padding:"12px 8px",paddingBottom:60}}>
 
@@ -904,6 +940,132 @@ w.document.write(h);w.document.close();setTimeout(()=>w.print(),600);fl("📄 Re
 {moLosses.map(l=><div key={l.id} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{l.type} {l.size} <span style={{color:T.dm}}>· {l.reason} · {l.loc}</span></span><span style={{fontWeight:700,color:T.rd}}>{l.qty}x</span></div>)}</Card>}
 {totalFails===0&&totalLostPcs===0&&<Card style={{padding:20,textAlign:"center"}}><div style={{fontSize:14,color:T.gr}}>✅ Nenhum problema registrado em {mo}!</div></Card>}
 </>}
+
+</div>;})()}
+
+
+{/* TAX */}
+{vw==="tax"&&(()=>{
+const yr=taxYear;
+const yrFin=fin.filter(e=>{if(!e.date)return false;const y=new Date(e.date+"T12:00").getFullYear();return y===yr;});
+const yrIn=yrFin.filter(e=>e.type==="entrada");const yrOut=yrFin.filter(e=>e.type==="saida");
+const totalRev=yrIn.reduce((s,e)=>s+e.amt,0);
+
+const ITAX_MAP=[
+{id:"materiais",label:"Materiais",cats:["Produtos Limpeza","Café/Filtro/Sabão","Reposição Casa"]},
+{id:"ferramentas",label:"Ferramentas",cats:["Ferramentas"]},
+{id:"aluguel_equip",label:"Aluguel de equipamento",cats:["Aluguel Equipamento"]},
+{id:"gasolina",label:"Gasolina",cats:["Gasolina/Transporte","Estacionamento"]},
+{id:"seguro_carro",label:"Seguro do carro",cats:["Seguro Veículo"]},
+{id:"manutencao_carro",label:"Manutenção do carro",cats:["Manutenção Veículo"]},
+{id:"pedagio",label:"Pedágio (tolls)",cats:["Pedágio/Tolls"]},
+{id:"contabilidade",label:"Contabilidade",cats:["Contador/Jurídico"]},
+{id:"annual_report",label:"Annual Report",cats:["Annual Report"]},
+{id:"seguro_empresa",label:"Seguro da empresa",cats:["Seguro/Impostos"]},
+{id:"taxas_bancarias",label:"Taxas bancárias",cats:["Taxas Bancárias"]},
+{id:"telefone",label:"Telefone",cats:["Tel/Internet/Software","Plataforma/App"]},
+{id:"uniforme",label:"Uniforme",cats:["Uniforme/EPI"]},
+{id:"propaganda",label:"Propaganda",cats:["Propaganda/Marketing"]},
+{id:"viagem",label:"Viagem (a trabalho)",cats:["Viagem (trabalho)"]},
+{id:"alimentacao",label:"Alimentação (trabalho)",cats:["Alimentação Equipe"]},
+{id:"helpers",label:"Helpers",cats:["Pagamento Funcionário"]},
+{id:"aluguel",label:"Aluguel",cats:["Aluguel"]},
+{id:"lavanderia",label:"Lavanderia",cats:["Lavanderia"]},
+{id:"treinamento",label:"Treinamento",cats:["Treinamento"]},
+{id:"manutencao",label:"Manutenção Geral",cats:["Manutenção"]},
+{id:"material_escritorio",label:"Material Escritório",cats:["Material Escritório"]}
+];
+
+const itaxData=ITAX_MAP.map(row=>{const total=yrOut.filter(e=>row.cats.includes(e.cat)).reduce((s,e)=>s+e.amt,0);return{...row,total};});
+const totalDesp=itaxData.reduce((s,r)=>s+r.total,0);
+const unmapped=yrOut.filter(e=>!ITAX_MAP.some(r=>r.cats.includes(e.cat)));
+const unmappedTotal=unmapped.reduce((s,e)=>s+e.amt,0);
+
+const byMonth={};yrFin.forEach(e=>{const m=e.month||"?";if(!byMonth[m])byMonth[m]={in:0,out:0};if(e.type==="entrada")byMonth[m].in+=e.amt;else byMonth[m].out+=e.amt;});
+
+const genTaxPDF=()=>{const w=window.open("","_blank");if(!w)return;
+const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:800px;margin:0 auto}h1{font-size:20px;margin-bottom:2px}h2{font-size:14px;color:#0094B0;margin:18px 0 6px;border-bottom:2px solid #0094B0;padding-bottom:3px}table{width:100%;border-collapse:collapse;margin:6px 0 14px}th{background:#f0f0f0;padding:6px 10px;text-align:left;font-size:10px;border-bottom:2px solid #333}td{padding:5px 10px;border-bottom:1px solid #eee;font-size:11px}.r{text-align:right}.b{font-weight:700}.g{color:#22C55E}.rd{color:#EF4444}.meta{color:#888;font-size:10px}.total-row td{border-top:2px solid #333;font-weight:700;font-size:12px}@media print{body{padding:20px;font-size:9px}}";
+let h="<html><head><title>iTax Report "+yr+"</title><style>"+css+"</style></head><body>";
+h+="<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px'><div><h1>"+co.name+"</h1><p class='meta'>"+co.address+" | "+co.phone+"</p></div><div style='text-align:right'><div style='font-size:18px;font-weight:800'>Tax Report "+yr+"</div><div class='meta'>Gerado em "+new Date().toLocaleDateString("en-US")+"</div></div></div>";
+h+="<h2>ENTRADAS</h2><table><tr><th>Descrição</th><th class='r'>Total Anual</th></tr>";
+h+="<tr class='total-row'><td>Total Revenue</td><td class='r g'>$ "+totalRev.toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr></table>";
+h+="<h2>DESPESAS</h2><table><tr><th>Despesas</th><th class='r'>Total Anual</th></tr>";
+itaxData.filter(r=>r.total>0).forEach(r=>{h+="<tr><td>"+r.label+"</td><td class='r'>$ "+r.total.toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr>";});
+if(unmappedTotal>0)h+="<tr><td>Outras Despesas</td><td class='r'>$ "+unmappedTotal.toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr>";
+h+="<tr class='total-row'><td>Total Despesas</td><td class='r rd'>$ "+(totalDesp+unmappedTotal).toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr></table>";
+h+="<h2>RESUMO</h2><table><tr><th>Item</th><th class='r'>Valor</th></tr>";
+h+="<tr><td>Receita Total</td><td class='r g b'>$ "+totalRev.toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr>";
+h+="<tr><td>Despesas Totais</td><td class='r rd b'>$ "+(totalDesp+unmappedTotal).toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr>";
+const lucro=totalRev-(totalDesp+unmappedTotal);
+h+="<tr class='total-row'><td>Lucro Líquido</td><td class='r' style='color:"+(lucro>=0?"#22C55E":"#EF4444")+"'>$ "+Math.abs(lucro).toLocaleString(undefined,{minimumFractionDigits:2})+"</td></tr></table>";
+h+="<div style='margin-top:30px'><p class='meta'>NOME: "+co.name+"</p><p class='meta'>DATA: "+new Date().toLocaleDateString("en-US")+"</p></div>";
+h+="<div style='margin-top:40px;display:flex;justify-content:space-between'><div><div style='border-top:1px solid #333;width:250px;margin-top:40px'></div><p style='font-size:10px;margin-top:4px'>NOME COMPLETO</p></div><div><div style='border-top:1px solid #333;width:250px;margin-top:40px'></div><p style='font-size:10px;margin-top:4px'>ASSINATURA</p></div></div>";
+h+="<div style='text-align:center;margin-top:30px;border-top:1px solid #ddd;padding-top:10px'><p class='meta'>"+co.name+" | "+co.address+" | "+co.phone+"</p></div></body></html>";
+w.document.write(h);w.document.close();setTimeout(()=>w.print(),600);fl("🧾 Tax Report "+yr+" gerado!");};
+
+return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>🧾 Tax — iTax Report</span>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>
+<button onClick={()=>setTaxYear(taxYear-1)} style={bt(T.c2,T.dm,{padding:"6px 10px",fontSize:12,borderRadius:8})}>◀</button>
+<span style={{fontSize:16,fontWeight:800,minWidth:60,textAlign:"center"}}>{taxYear}</span>
+<button onClick={()=>setTaxYear(taxYear+1)} style={bt(T.c2,T.dm,{padding:"6px 10px",fontSize:12,borderRadius:8})}>▶</button>
+<button onClick={genTaxPDF} style={bt(T.gr,T.bg,{padding:"8px 16px",fontSize:11,borderRadius:8})}>🖨️ Gerar PDF para Contadora</button>
+</div></div>
+
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+<div style={{background:"linear-gradient(135deg,"+T.gr+"18,"+T.gr+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.gr+"33"}}><div style={{fontSize:8,color:T.gr,textTransform:"uppercase",fontWeight:700}}>RECEITA {yr}</div><div style={{fontSize:24,fontWeight:800,marginTop:5}}>${totalRev.toLocaleString()}</div></div>
+<div style={{background:"linear-gradient(135deg,"+T.rd+"18,"+T.rd+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.rd+"33"}}><div style={{fontSize:8,color:T.rd,textTransform:"uppercase",fontWeight:700}}>DESPESAS {yr}</div><div style={{fontSize:24,fontWeight:800,marginTop:5}}>${(totalDesp+unmappedTotal).toLocaleString()}</div></div>
+{(()=>{const lucro=totalRev-(totalDesp+unmappedTotal);return <div style={{background:"linear-gradient(135deg,"+(lucro>=0?T.gr:T.rd)+"18,"+(lucro>=0?T.gr:T.rd)+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+(lucro>=0?T.gr:T.rd)+"33"}}><div style={{fontSize:8,color:lucro>=0?T.gr:T.rd,textTransform:"uppercase",fontWeight:700}}>LUCRO {yr}</div><div style={{fontSize:24,fontWeight:800,marginTop:5}}>${Math.abs(lucro).toLocaleString()}</div></div>;})()}
+<div style={{background:"linear-gradient(135deg,"+T.ac+"18,"+T.ac+"06)",borderRadius:14,padding:"16px 18px",border:"1px solid "+T.ac+"33"}}><div style={{fontSize:8,color:T.ac,textTransform:"uppercase",fontWeight:700}}>LANÇAMENTOS</div><div style={{fontSize:24,fontWeight:800,marginTop:5}}>{yrFin.length}</div><div style={{fontSize:9,color:T.dm}}>{yrIn.length} IN · {yrOut.length} OUT</div></div>
+</div>
+
+<Card style={{padding:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div style={{fontSize:14,fontWeight:700}}>📋 Formulário iTax — {yr}</div>
+<div style={{fontSize:9,color:T.dm}}>Dados calculados automaticamente do Financeiro</div></div>
+
+<div style={{background:T.gr+"0C",borderRadius:10,padding:"14px 18px",border:"1px solid "+T.gr+"22",marginBottom:14}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:12,fontWeight:700}}>ENTRADAS</span><span style={{fontSize:20,fontWeight:800,color:T.gr}}>${totalRev.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
+</div>
+
+<div style={{fontSize:12,fontWeight:700,marginBottom:8,color:T.rd}}>DESPESAS</div>
+<div style={{display:"grid",gridTemplateColumns:"2.5fr 1fr",gap:0}}>
+<div style={{padding:"8px 12px",background:T.c2,fontWeight:700,fontSize:10,borderBottom:"2px solid "+T.bd}}>DESPESAS</div>
+<div style={{padding:"8px 12px",background:T.c2,fontWeight:700,fontSize:10,textAlign:"right",borderBottom:"2px solid "+T.bd}}>TOTAL ANUAL</div>
+{itaxData.map(r=><React.Fragment key={r.id}>
+<div style={{padding:"8px 12px",fontSize:11,borderBottom:"1px solid "+T.bd,display:"flex",alignItems:"center",gap:8}}>
+<span>{r.label}</span>
+{r.total===0&&<span style={{fontSize:8,color:T.dm,background:T.c2,padding:"1px 6px",borderRadius:3}}>sem dados</span>}
+</div>
+<div style={{padding:"8px 12px",fontSize:12,fontWeight:r.total>0?700:400,textAlign:"right",borderBottom:"1px solid "+T.bd,color:r.total>0?T.rd:T.dm+"66"}}>{r.total>0?"$ "+r.total.toLocaleString(undefined,{minimumFractionDigits:2}):"—"}</div>
+</React.Fragment>)}
+{unmappedTotal>0&&<><div style={{padding:"8px 12px",fontSize:11,borderBottom:"1px solid "+T.bd,color:T.or}}>Outras Despesas (não mapeadas)</div><div style={{padding:"8px 12px",fontSize:12,fontWeight:700,textAlign:"right",borderBottom:"1px solid "+T.bd,color:T.or}}>$ {unmappedTotal.toLocaleString(undefined,{minimumFractionDigits:2})}</div></>}
+<div style={{padding:"10px 12px",fontSize:12,fontWeight:800,borderTop:"2px solid "+T.bd}}>TOTAL DESPESAS</div>
+<div style={{padding:"10px 12px",fontSize:14,fontWeight:800,textAlign:"right",borderTop:"2px solid "+T.bd,color:T.rd}}>$ {(totalDesp+unmappedTotal).toLocaleString(undefined,{minimumFractionDigits:2})}</div>
+</div>
+</Card>
+
+{unmapped.length>0&&<Card style={{padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+<span style={{fontSize:11,fontWeight:700,color:T.or}}>⚠️ Despesas não mapeadas ({unmapped.length})</span>
+<span style={{fontSize:9,color:T.dm}}>Categorias que não estão no formulário iTax</span></div>
+{(()=>{const byCat={};unmapped.forEach(e=>{const c=e.cat||"Sem categoria";if(!byCat[c])byCat[c]=0;byCat[c]+=e.amt;});return Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=><div key={c} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{c}</span><span style={{fontWeight:600,color:T.or}}>${v.toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>);})()}
+<div style={{fontSize:9,color:T.dm,marginTop:8}}>Dica: essas categorias vão como "Outras Despesas" no PDF. Para mapear, edite os lançamentos no Financeiro e mude a categoria.</div>
+</Card>}
+
+<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📊 Receita vs Despesas por Mês — {yr}</div>
+{(()=>{const months=MO.filter(m=>byMonth[m]);if(!months.length)return <div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>Sem dados em {yr}</div>;const data=months.map(m=>({l:m.slice(0,3),v1:byMonth[m]?.in||0,v2:byMonth[m]?.out||0}));return <div><BarChart data={data} h={160} colors={[T.ac,T.rd]}/><div style={{display:"flex",gap:12,justifyContent:"center",marginTop:6}}><span style={{fontSize:8,display:"flex",alignItems:"center",gap:3}}><span style={{width:6,height:6,borderRadius:2,background:T.ac,display:"inline-block"}}/> Receita</span><span style={{fontSize:8,display:"flex",alignItems:"center",gap:3}}><span style={{width:6,height:6,borderRadius:2,background:T.rd,display:"inline-block"}}/> Despesas</span></div></div>;})()}
+</Card>
+
+<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📋 Top Despesas — {yr}</div>
+{itaxData.filter(r=>r.total>0).sort((a,b)=>b.total-a.total).map(r=>{const pct=(totalDesp+unmappedTotal)>0?(r.total/(totalDesp+unmappedTotal)*100).toFixed(0):0;return <div key={r.id} style={{marginBottom:8}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3}}><span>{r.label} <span style={{color:T.dm}}>({r.cats.join(", ")})</span></span><span style={{fontWeight:700,color:T.rd}}>${r.total.toLocaleString()} ({pct}%)</span></div>
+<div style={{height:6,background:T.bd,borderRadius:3}}><div style={{height:6,background:T.rd,borderRadius:3,width:pct+"%",transition:"width 0.5s"}}/></div>
+</div>})}
+</Card>
+
+<div style={{padding:"12px 16px",background:T.ac+"08",borderRadius:10,border:"1px solid "+T.ac+"22",fontSize:10,color:T.dm}}>
+<strong style={{color:T.ac}}>Como funciona:</strong> Este módulo puxa automaticamente todos os lançamentos do Financeiro do ano selecionado e mapeia para as categorias do formulário iTax. Quando registrar despesas, use as categorias corretas (Seguro Veículo, Pedágio/Tolls, etc.) para que apareçam no lugar certo. No final do ano, clique "Gerar PDF" e entregue para sua contadora.
+</div>
 
 </div>;})()}
 
@@ -1820,6 +1982,162 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 
 </div>}
 
+
+
+{/* DEEP CLEAN */}
+{vw==="deepclean"&&(()=>{
+const today=getLocalDate();
+const DC_CHECKLIST={"Cozinha":["Limpar dentro de todos os armários","Limpar dentro da geladeira","Limpar dentro do forno","Limpar inside microondas","Desengordurar fogão e coifa","Limpar atrás da geladeira","Limpar dentro do dishwasher","Limpar paredes e backsplash"],"Banheiros":["Limpar dentro dos armários","Remover calcário do box/shower","Limpar grout das cerâmicas","Limpar exaustor","Polir metais e torneiras","Limpar atrás do vaso"],"Quartos":["Limpar dentro dos closets","Limpar dentro das gavetas","Limpar debaixo das camas","Rodar colchões","Limpar janelas por dentro","Limpar baseboards"],"Sala/Áreas":["Limpar janelas por dentro","Limpar baseboards","Limpar ventilador de teto","Limpar luminárias","Limpar persianas/blinds","Aspirar estofados profundo"],"Área Externa":["Limpar móveis do patio","Limpar grill","Limpar garage floor","Limpar portas e marcos"]};
+const DC_ITEMS=Object.entries(DC_CHECKLIST).flatMap(([area,items])=>items.map((t,i)=>({id:area+"_"+i,area,t})));
+
+const getDue=(d)=>{if(!d.lastDone||!d.freqMonths)return null;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);return last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");};
+const getDaysUntil=(due)=>{if(!due)return 999;return Math.round((new Date(due+"T12:00")-new Date(today+"T12:00"))/86400000);};
+const getStatus=(d)=>{if(!d.active)return{label:"Inativa",color:T.dm,urgent:false};const due=getDue(d);if(!due)return{label:"Nunca feita",color:T.or,urgent:true};const days=getDaysUntil(due);if(days<0)return{label:"Vencida "+Math.abs(days)+"d",color:T.rd,urgent:true};if(days<=14)return{label:"Vence em "+days+"d",color:T.or,urgent:true};return{label:"OK — "+due,color:T.gr,urgent:false};};
+
+const active=dcList.filter(d=>d.active&&(userRole!=="cliente"||d.client===clientName));
+const inactive=dcList.filter(d=>!d.active&&(userRole!=="cliente"||d.client===clientName));
+const overdue=active.filter(d=>getStatus(d).color===T.rd);
+const soon=active.filter(d=>{const s=getStatus(d);return s.color===T.or&&!overdue.includes(d);});
+const ok=active.filter(d=>getStatus(d).color===T.gr);
+
+const importDcSelected=(selected)=>{const existing=dcList.map(d=>d.house);const missing=selected.filter(h=>!existing.includes(h.n));if(!missing.length){fl("Todas já cadastradas!");return;}const newItems=missing.map(h=>({id:Date.now()+Math.random(),house:h.n,client:h.c,freqMonths:2,lastDone:"",active:true,history:[],dcPrice:h.dc||(h.ip||0)*2}));svDc([...dcList,...newItems]);fl("✅ "+newItems.length+" casa(s) importada(s)!");setDcImport(null);};
+
+const scheduleDC=(d)=>{const prop=db.find(p=>p.n===d.house&&p.c===d.client);setDcSched({dcId:d.id,house:d.house,client:d.client,date:"",time:"08:00",employees:[],notes:"",price:d.dcPrice||(prop?prop.dc||(prop.ip||0)*2:0)});};
+
+const saveDcSchedule=()=>{if(!dcSched||!dcSched.date){fl("Selecione a data!");return;}
+const ev={id:Date.now()+Math.random(),date:dcSched.date,time:dcSched.time||"08:00",client:dcSched.client||"",house:dcSched.house||"",title:"🧹 DC — "+dcSched.house,type:"Deep Clean",employees:dcSched.employees||[],notes:dcSched.notes||"",dcPrice:dcSched.price||0,fromDC:dcSched.dcId};
+uAg([...agEvents,ev]);
+const updated=dcList.map(x=>x.id===dcSched.dcId?{...x,scheduled:dcSched.date,scheduledTeam:dcSched.employees}:x);
+svDc(updated);setDcSched(null);fl("✅ Agendada! Evento criado na Agenda (roxo)");};
+
+const completeDC=(id)=>{const d=dcList.find(x=>x.id===id);if(!d)return;setDcCheck({dcId:id,house:d.house,client:d.client,checks:{},notes:"",photos:{}});};
+
+const saveDcComplete=(dcId)=>{const todayStr=getLocalDate();const d=dcList.find(x=>x.id===dcId);const checks=dcCheck?dcCheck.checks:{};const total=DC_ITEMS.length;const done=Object.values(checks).filter(v=>v==="ok").length;const score=total>0?Math.round((done/total)*100):0;
+const updated=dcList.map(x=>x.id===dcId?{...x,lastDone:todayStr,scheduled:"",scheduledTeam:[],history:[...(x.history||[]),{date:todayStr,score,notes:dcCheck?.notes||""}]}:x);
+svDc(updated);setDcCheck(null);fl("✅ "+d.house+" — DC concluída! Score: "+score+"%");};
+
+return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>🧹 {userRole==="cliente"?"Deep Clean Schedule":"Deep Clean Control"}</span>
+{userRole!=="cliente"&&<div style={{display:"flex",gap:4}}>
+<button onClick={()=>setDcImport({sel:[],client:""})} style={bt(T.ac,T.bg,{padding:"6px 14px",fontSize:10,borderRadius:8})}>+ Adicionar / Importar</button>
+</div>}</div>
+
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+{[{l:"TOTAL",v:active.length,cl:T.ac,s:"casas ativas"},{l:"VENCIDAS",v:overdue.length,cl:T.rd,s:"precisam agora"},{l:"PRÓXIMAS",v:soon.length,cl:T.or,s:"em 14 dias"},{l:"EM DIA",v:ok.length,cl:T.gr,s:""}].map((s,i)=><div key={i} style={{background:"linear-gradient(135deg,"+s.cl+"18,"+s.cl+"06)",borderRadius:14,padding:"14px 16px",border:"1px solid "+s.cl+"33"}}><div style={{fontSize:8,color:s.cl,textTransform:"uppercase",fontWeight:700}}>{s.l}</div><div style={{fontSize:24,fontWeight:800,marginTop:4,color:i>0?s.cl:T.tx}}>{s.v}</div>{s.s&&<div style={{fontSize:9,color:T.dm}}>{s.s}</div>}</div>)}
+</div>
+
+<div style={{display:"flex",gap:2,background:T.cd,borderRadius:8,padding:3,border:"1px solid "+T.bd}}>
+{[["all","Todas ("+active.length+")"],["overdue","🔴 Vencidas ("+overdue.length+")"],["soon","🟡 Próximas ("+soon.length+")"],["ok","🟢 Em dia ("+ok.length+")"],["inactive","⏸ Inativas ("+inactive.length+")"]].map(([k,l])=><button key={k} onClick={()=>setDcFilter(k)} style={{flex:1,padding:"7px 4px",borderRadius:6,border:dcFilter===k?"2px solid "+T.ac:"none",background:dcFilter===k?T.ac+"15":"transparent",color:dcFilter===k?T.ac:T.dm,fontSize:9,fontWeight:dcFilter===k?700:500,cursor:"pointer"}}>{l}</button>)}
+</div>
+
+{(()=>{if(dcFilter==="inactive"){return inactive.length===0?<Card style={{padding:20,textAlign:"center"}}><div style={{color:T.dm,fontSize:12}}>Nenhuma casa inativa</div></Card>:<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>⏸ Casas Inativas ({inactive.length})</div>
+{inactive.map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 4px",borderBottom:"1px solid "+T.bd}}>
+<div><span style={{fontSize:12,fontWeight:600}}>{d.house}</span> <span style={{fontSize:9,color:T.dm}}>{d.client} · Última: {d.lastDone||"nunca"}</span></div>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>{svDc(dcList.map(x=>x.id===d.id?{...x,active:true}:x));fl("✅ "+d.house+" reativada!");}} style={bt(T.gr,T.bg,{padding:"5px 12px",fontSize:9,borderRadius:5})}>♻️ Reativar</button>
+<button onClick={()=>{if(confirm("Deletar "+d.house+" permanentemente?")){svDc(dcList.filter(x=>x.id!==d.id));fl("🗑 Removida!");}}} style={bt(T.rd+"15",T.rd,{padding:"5px 10px",fontSize:9,borderRadius:5})}>🗑</button>
+</div></div>)}</Card>;}
+let filtered=active;if(dcFilter==="overdue")filtered=overdue;if(dcFilter==="soon")filtered=soon;if(dcFilter==="ok")filtered=ok;
+const sorted=[...filtered].sort((a,b)=>{const da=getDue(a)||"9999";const db2=getDue(b)||"9999";return da.localeCompare(db2);});
+return sorted.length===0?<Card style={{padding:20,textAlign:"center"}}><div style={{color:T.dm,fontSize:12}}>Nenhuma casa neste filtro</div></Card>:
+<div>{[...new Set(sorted.map(d=>d.client||"Sem cliente"))].sort().map(client=>{const clientItems=sorted.filter(d=>(d.client||"Sem cliente")===client);return <Card key={client} style={{padding:0,overflow:"hidden",marginBottom:8}}>
+<div style={{padding:"10px 16px",background:T.pu+"08",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:13,fontWeight:700,color:T.pu}}>{client} ({clientItems.length})</span>
+<span style={{fontSize:9,color:T.dm}}>{clientItems.filter(d=>getStatus(d).color===T.rd).length} vencidas</span>
+</div>
+<div style={{padding:"0 12px"}}>{clientItems.map(d=>{const status=getStatus(d);const due=getDue(d);const prop=db.find(p=>p.n===d.house&&p.c===d.client);const price=d.dcPrice||(prop?prop.dc||(prop.ip||0)*2:0);return <div key={d.id} style={{padding:"10px 4px",borderBottom:"1px solid "+T.bd}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+<div style={{flex:1,minWidth:0}}>
+<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700}}>{d.house}</span><span style={{padding:"2px 8px",borderRadius:5,fontSize:8,fontWeight:700,background:status.color+"18",color:status.color}}>{status.label}</span></div>
+<div style={{fontSize:9,color:T.dm,marginTop:2}}>A cada <strong>{d.freqMonths}m</strong> · Última: {d.lastDone||"nunca"} · Próxima: {due||"—"}{userRole!=="cliente"&&<span style={{color:T.pu}}> · DC: ${price}</span>}{d.scheduled&&<span style={{color:T.ac,marginLeft:4}}>📅 Agendada: {d.scheduled}</span>}{d.scheduledTeam&&d.scheduledTeam.length>0&&<span style={{color:T.bl,marginLeft:4}}>👷 {d.scheduledTeam.join(", ")}</span>}</div>
+</div>
+{userRole!=="cliente"&&<div style={{display:"flex",gap:3,alignItems:"center",flexShrink:0}}>
+{!d.scheduled&&<button onClick={()=>scheduleDC(d)} style={bt(T.ac,T.bg,{padding:"5px 10px",fontSize:8,borderRadius:5})}>📅 Agendar</button>}
+{d.scheduled&&<button onClick={()=>completeDC(d.id)} style={bt(T.gr,T.bg,{padding:"5px 10px",fontSize:8,borderRadius:5})}>✅ Concluir</button>}
+<button onClick={()=>{askModal("Frequência (meses)",String(d.freqMonths),(v)=>{svDc(dcList.map(x=>x.id===d.id?{...x,freqMonths:parseInt(v)||2}:x));fl(d.house+": "+v+"m");});}} style={bt(T.pu+"15",T.pu,{padding:"5px 8px",fontSize:8,borderRadius:5})}>⚙</button>
+<button onClick={()=>{svDc(dcList.map(x=>x.id===d.id?{...x,active:false}:x));fl("Desativada");}} style={bt(T.rd+"10",T.rd,{padding:"5px 8px",fontSize:8,borderRadius:5})}>✕</button>
+</div>}
+</div></div>})}</div>
+</Card>})}</div>;})()}
+
+{dcSched&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.15s ease"}} onClick={()=>setDcSched(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.bd,width:"100%",maxWidth:480,boxShadow:"0 16px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}>
+<div style={{fontSize:15,fontWeight:800,color:T.pu,marginBottom:4}}>📅 Agendar Deep Clean</div>
+<div style={{fontSize:12,fontWeight:600,marginBottom:14}}>{dcSched.house} <span style={{color:T.dm,fontWeight:400}}>({dcSched.client})</span></div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+<div><label style={lb}>Data</label><DI value={dcSched.date} onChange={e=>setDcSched({...dcSched,date:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Horário</label><input type="time" value={dcSched.time||"08:00"} onChange={e=>setDcSched({...dcSched,time:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Preço DC ($)</label><input type="number" value={dcSched.price||0} onChange={e=>setDcSched({...dcSched,price:parseFloat(e.target.value)||0})} style={{...inp,width:"100%",color:T.pu,fontWeight:700}}/></div>
+</div>
+<div style={{marginBottom:10}}><label style={lb}>Equipe</label><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{em.map(e=><button type="button" key={e} onClick={()=>{setDcSched(f=>({...f,employees:(f.employees||[]).includes(e)?(f.employees||[]).filter(x=>x!==e):[...(f.employees||[]),e]}));}} style={{padding:"5px 10px",borderRadius:6,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(dcSched.employees||[]).includes(e)?T.pu+"18":T.c2,color:(dcSched.employees||[]).includes(e)?T.pu:T.dm}}>{e}</button>)}</div></div>
+<div style={{marginBottom:12}}><label style={lb}>Notas</label><input value={dcSched.notes||""} onChange={e=>setDcSched({...dcSched,notes:e.target.value})} style={{...inp,width:"100%"}} placeholder="Observações..."/></div>
+<div style={{display:"flex",gap:8}}>
+<button onClick={saveDcSchedule} style={bt(T.pu,T.bg,{flex:1,padding:"12px",fontSize:12,borderRadius:10})}>📅 Agendar + Criar na Agenda</button>
+<button onClick={()=>setDcSched(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 16px",fontSize:12,borderRadius:10})}>Cancelar</button>
+</div></div></div>}
+
+{dcCheck&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.15s ease"}} onClick={()=>setDcCheck(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.bd,width:"100%",maxWidth:560,boxShadow:"0 16px 48px rgba(0,0,0,0.4)",maxHeight:"90vh",overflowY:"auto",animation:"popIn 0.2s ease"}}>
+<div style={{fontSize:15,fontWeight:800,color:T.gr,marginBottom:4}}>✅ Concluir Deep Clean</div>
+<div style={{fontSize:12,fontWeight:600,marginBottom:14}}>{dcCheck.house} <span style={{color:T.dm,fontWeight:400}}>({dcCheck.client})</span></div>
+{Object.entries(DC_CHECKLIST).map(([area,items])=>{const areaChecks=items.filter((_,i)=>dcCheck.checks[area+"_"+i]==="ok").length;return <div key={area} style={{marginBottom:10,background:T.c2,borderRadius:10,border:"1px solid "+T.bd,overflow:"hidden"}}>
+<div style={{padding:"8px 14px",background:T.pu+"10",display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:700,color:T.pu}}><span>{area}</span><span>{areaChecks}/{items.length}</span></div>
+<div style={{padding:"0 10px"}}>{items.map((t,i)=>{const k=area+"_"+i;const v=dcCheck.checks[k];return <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 4px",borderBottom:"1px solid "+T.bd+"44"}}>
+<span style={{fontSize:10,color:v==="ok"?T.gr:v==="skip"?T.dm:T.tx}}>{t}</span>
+<div style={{display:"flex",gap:3}}>
+{[["ok","✓",T.gr],["skip","—",T.dm]].map(([val,lbl,c])=><button key={val} onClick={()=>setDcCheck({...dcCheck,checks:{...dcCheck.checks,[k]:dcCheck.checks[k]===val?"":val}})} style={{padding:"3px 8px",borderRadius:4,fontSize:8,fontWeight:700,cursor:"pointer",border:v===val?"2px solid "+c:"1px solid "+T.bd,background:v===val?c+"22":T.cd,color:c}}>{lbl}</button>)}
+</div></div>})}</div></div>})}
+<div style={{marginBottom:12}}><label style={lb}>Observações</label><input value={dcCheck.notes||""} onChange={e=>setDcCheck({...dcCheck,notes:e.target.value})} style={{...inp,width:"100%"}} placeholder="Problemas encontrados, itens extras..."/></div>
+<div style={{textAlign:"center",marginBottom:12}}><span style={{fontSize:28,fontWeight:800,color:T.gr}}>{DC_ITEMS.length>0?Math.round(Object.values(dcCheck.checks).filter(v=>v==="ok").length/DC_ITEMS.length*100):0}%</span><div style={{fontSize:9,color:T.dm}}>Checklist completado</div></div>
+<div style={{display:"flex",gap:8}}>
+<button onClick={()=>saveDcComplete(dcCheck.dcId)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:12,borderRadius:10})}>✅ Concluir Deep Clean</button>
+<button onClick={()=>setDcCheck(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 16px",fontSize:12,borderRadius:10})}>Cancelar</button>
+</div></div></div>}
+
+{dcImport&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.15s ease"}} onClick={()=>setDcImport(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.bd,width:"100%",maxWidth:560,boxShadow:"0 16px 48px rgba(0,0,0,0.4)",maxHeight:"85vh",overflowY:"auto",animation:"popIn 0.2s ease"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+<span style={{fontSize:15,fontWeight:800,color:T.ac}}>📥 Importar Casas</span>
+<button onClick={()=>setDcImport(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>
+<div style={{display:"flex",gap:4,marginBottom:12,flexWrap:"wrap"}}>
+<button onClick={()=>setDcImport({...dcImport,client:""})} style={{padding:"6px 12px",borderRadius:6,border:!dcImport.client?"2px solid "+T.ac:"1px solid "+T.bd,background:!dcImport.client?T.ac+"15":T.c2,color:!dcImport.client?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>Todos</button>
+{cls.map(c=>{const cnt=db.filter(p=>p.c===c&&p.n!=="(nova)").length;return <button key={c} onClick={()=>setDcImport({...dcImport,client:c,sel:[]})} style={{padding:"6px 12px",borderRadius:6,border:dcImport.client===c?"2px solid "+T.ac:"1px solid "+T.bd,background:dcImport.client===c?T.ac+"15":T.c2,color:dcImport.client===c?T.ac:T.dm,fontSize:10,fontWeight:500,cursor:"pointer"}}>{c} ({cnt})</button>})}
+</div>
+{(()=>{const houses=db.filter(p=>p.n!=="(nova)"&&(!dcImport.client||p.c===dcImport.client));const existing=dcList.map(d=>d.house);const available=houses.filter(h=>!existing.includes(h.n));const alreadyIn=houses.filter(h=>existing.includes(h.n));
+return <div>
+{dcImport.client&&available.length>0&&<button onClick={()=>importDcSelected(available)} style={{...bt(T.pu,T.bg,{padding:"8px 16px",fontSize:11,borderRadius:8,width:"100%",marginBottom:10})}}>📥 Importar todas {available.length} casas de {dcImport.client}</button>}
+<div style={{fontSize:10,fontWeight:700,marginBottom:6,color:T.dm}}>{available.length} disponíveis · {alreadyIn.length} já cadastradas</div>
+{available.map(h=>{const isSel=(dcImport.sel||[]).includes(h.n);return <div key={h.n} onClick={()=>{const sel=dcImport.sel||[];setDcImport({...dcImport,sel:isSel?sel.filter(x=>x!==h.n):[...sel,h.n]});}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:8,border:isSel?"2px solid "+T.pu:"1px solid "+T.bd,background:isSel?T.pu+"08":T.c2,marginBottom:3,cursor:"pointer"}}>
+<div><div style={{fontSize:12,fontWeight:600}}>{h.n}</div><div style={{fontSize:9,color:T.dm}}>{h.c} · DC: <span style={{color:T.pu,fontWeight:600}}>${h.dc||(h.ip||0)*2}</span></div></div>
+<div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(isSel?T.pu:T.bd),background:isSel?T.pu:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:10,flexShrink:0}}>{isSel?"✓":""}</div>
+</div>})}
+{alreadyIn.length>0&&<div style={{marginTop:8}}><div style={{fontSize:9,color:T.gr,fontWeight:600,marginBottom:4}}>✓ Já cadastradas:</div>{alreadyIn.map(h=><span key={h.n} style={{display:"inline-block",padding:"2px 8px",borderRadius:4,background:T.gr+"12",color:T.gr,fontSize:8,fontWeight:600,marginRight:4,marginBottom:2}}>{h.n}</span>)}</div>}
+{(dcImport.sel||[]).length>0&&<div style={{display:"flex",gap:8,marginTop:12}}>
+<button onClick={()=>{const selected=db.filter(p=>(dcImport.sel||[]).includes(p.n));importDcSelected(selected);}} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>✅ Importar {(dcImport.sel||[]).length} selecionada(s)</button>
+<button onClick={()=>setDcImport({...dcImport,sel:[]})} style={bt(T.dm+"15",T.dm,{padding:"12px 16px",fontSize:12,borderRadius:10})}>Limpar</button>
+</div>}
+</div>;})()}
+</div></div>}
+
+<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📅 Próximas 30 dias</div>
+{(()=>{const upcoming=active.map(d=>({...d,due:getDue(d),days:getDaysUntil(getDue(d))})).filter(d=>d.days>=0&&d.days<=30).sort((a,b)=>a.days-b.days);return upcoming.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:12}}>Nenhuma DC nos próximos 30 dias</div>:upcoming.map(d=><div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}>
+<div><span style={{fontWeight:600}}>{d.house}</span> <span style={{color:T.dm}}>{d.client}</span>{d.scheduled&&<span style={{color:T.ac,marginLeft:4}}>📅 {d.scheduled}</span>}</div>
+<span style={{color:d.days<=7?T.rd:d.days<=14?T.or:T.gr,fontWeight:600}}>{d.due} ({d.days}d)</span>
+</div>);})()}</Card>
+
+<Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:10}}>📊 Histórico</div>
+{(()=>{const allHistory=[];dcList.forEach(d=>{(d.history||[]).forEach((h,hi)=>{const rec=typeof h==="string"?{date:h,score:null}:h;allHistory.push({house:d.house,client:d.client,dcId:d.id,hIdx:hi,...rec});});});allHistory.sort((a,b)=>(b.date||"").localeCompare(a.date||""));return allHistory.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:12}}>Nenhuma deep clean registrada</div>:allHistory.slice(0,30).map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}>
+<div><span style={{fontWeight:600}}>{h.house}</span> <span style={{color:T.dm}}>{h.client}</span>{h.notes&&<span style={{color:T.or,marginLeft:4,fontSize:8}}>{h.notes}</span>}</div>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>{h.score!=null&&<span style={{fontWeight:700,color:h.score>=80?T.gr:h.score>=50?T.or:T.rd}}>{h.score}%</span>}<span style={{color:T.gr}}>{h.date}</span>
+{userRole!=="cliente"&&<><button onClick={()=>{askModal("Data (YYYY-MM-DD)",h.date||"",(v)=>{if(!v)return;const upd=[...dcList];const dc=upd.find(x=>x.id===h.dcId);if(dc&&dc.history){const rec=typeof dc.history[h.hIdx]==="string"?{date:dc.history[h.hIdx],score:null}:dc.history[h.hIdx];dc.history[h.hIdx]={...rec,date:v};svDc(upd);fl("✅ Data atualizada!");}});}} style={bt(T.bl+"15",T.bl,{padding:"2px 6px",fontSize:7})}>✏️</button>
+<button onClick={()=>{askModal("Notas",h.notes||"",(v)=>{const upd=[...dcList];const dc=upd.find(x=>x.id===h.dcId);if(dc&&dc.history){const rec=typeof dc.history[h.hIdx]==="string"?{date:dc.history[h.hIdx],score:null}:dc.history[h.hIdx];dc.history[h.hIdx]={...rec,notes:v};svDc(upd);fl("✅ Nota atualizada!");}});}} style={bt(T.or+"15",T.or,{padding:"2px 6px",fontSize:7})}>📝</button>
+<button onClick={()=>{if(!confirm("Deletar este registro?"))return;const upd=[...dcList];const dc=upd.find(x=>x.id===h.dcId);if(dc&&dc.history){dc.history.splice(h.hIdx,1);svDc(upd);fl("Removido!");}}} style={bt(T.rd+"10",T.rd,{padding:"2px 6px",fontSize:7})}>✕</button></>}
+</div></div>);})()}</Card>
+
+</div>;})()}
+
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Employees ({em.length})</div>
@@ -1832,7 +2150,7 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:12,fontWeight:700}}>{cl} ({props.length})</span>
 <button onClick={()=>{askModal("Novo nome para '"+cl+"'",cl,(nn)=>{if(nn&&nn.trim()){uDB(db.map(p=>p.c===cl?{...p,c:nn.trim()}:p));fl("✅ Renomeado!");}});}} style={{border:"none",background:T.bl+"10",color:T.bl,padding:"2px 8px",borderRadius:4,fontSize:8,cursor:"pointer"}}>Renomear</button></div>
 {props.map((p,pi)=>{const idx=db.indexOf(p);return <div key={pi} style={{padding:"8px 10px",borderRadius:8,background:T.c2,marginBottom:4,border:"1px solid "+T.bd}}>
-<div style={{display:"grid",gridTemplateColumns:"2fr 2.5fr .7fr .7fr 28px",gap:6,alignItems:"center"}}>
+<div style={{display:"grid",gridTemplateColumns:"2fr 2.2fr .7fr .7fr .7fr 28px",gap:6,alignItems:"center"}}>
 <div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginBottom:1}}>Nome</div>
 <input defaultValue={p.n} onBlur={e=>{if(e.target.value!==p.n){const n=[...db];n[idx]={...n[idx],n:e.target.value};uDB(n);}}} style={{...inp,fontSize:11,fontWeight:600,padding:"4px 6px",background:"transparent",border:"1px solid transparent"}} onFocus={e=>{e.target.style.border="1px solid "+T.ac;e.target.style.background=T.bg;}} onBlurCapture={e=>{e.target.style.border="1px solid transparent";e.target.style.background="transparent";}}/></div>
 <div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginBottom:1}}>Endereço</div>
@@ -1841,6 +2159,8 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 <input type="number" defaultValue={p.ip||0} onBlur={e=>{const v=parseInt(e.target.value)||0;if(v!==p.ip){const n=[...db];n[idx]={...n[idx],ip:v};uDB(n);}}} style={{...inp,fontSize:11,fontWeight:700,padding:"4px 6px",textAlign:"center",color:T.ac,background:"transparent",border:"1px solid transparent"}} onFocus={e=>{e.target.style.border="1px solid "+T.ac;e.target.style.background=T.bg;}} onBlurCapture={e=>{e.target.style.border="1px solid transparent";e.target.style.background="transparent";}}/></div>
 <div><div style={{fontSize:7,color:T.dm,textTransform:"uppercase",marginBottom:1}}>EP</div>
 <input type="number" defaultValue={p.ep||0} onBlur={e=>{const v=parseInt(e.target.value)||0;if(v!==p.ep){const n=[...db];n[idx]={...n[idx],ep:v};uDB(n);}}} style={{...inp,fontSize:11,fontWeight:700,padding:"4px 6px",textAlign:"center",color:T.gr,background:"transparent",border:"1px solid transparent"}} onFocus={e=>{e.target.style.border="1px solid "+T.ac;e.target.style.background=T.bg;}} onBlurCapture={e=>{e.target.style.border="1px solid transparent";e.target.style.background="transparent";}}/></div>
+<div><div style={{fontSize:7,color:T.pu,textTransform:"uppercase",marginBottom:1}}>DC</div>
+<input type="number" defaultValue={p.dc||(p.ip||0)*2} onBlur={e=>{const v=parseInt(e.target.value)||0;if(v!==(p.dc||(p.ip||0)*2)){const n=[...db];n[idx]={...n[idx],dc:v};uDB(n);}}} style={{...inp,fontSize:11,fontWeight:700,padding:"4px 6px",textAlign:"center",color:T.pu,background:"transparent",border:"1px solid transparent"}} onFocus={e=>{e.target.style.border="1px solid "+T.pu;e.target.style.background=T.bg;}} onBlurCapture={e=>{e.target.style.border="1px solid transparent";e.target.style.background="transparent";}}/></div>
 <button onClick={()=>{if(confirm("Remover "+p.n+"?")){const n=[...db];n.splice(idx,1);uDB(n);fl("Removed!");}}} style={{width:24,height:24,borderRadius:5,border:"none",background:T.rd+"12",cursor:"pointer",fontSize:10,color:T.rd,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
 </div>
 </div>})}
