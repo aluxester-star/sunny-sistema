@@ -206,7 +206,7 @@ const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=
 const[nEmpN,setNEmpN]=useState("");const[eIdx,setEIdx]=useState(null);const[eD,setED]=useState({});
 const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:getLocalDate(),dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
-const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");
+const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");const[trash,setTrash]=useState([]);
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Lavanderia"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[customFinCats,setCustomFinCats]=useState([]);
@@ -257,6 +257,7 @@ try{const r=await FB.get("esc3");if(r&&r.value)setEscData(JSON.parse(r.value));}
 
 
 try{const r=await FB.get("cu3");if(r&&r.value)setCustomUnits(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("_trash");if(r&&r.value)setTrash(JSON.parse(r.value));}catch{}
 
 try{const lastBk=await FB.get("_lastBackup");const now=Date.now();const weekMs=7*24*60*60*1000;if(!lastBk||!lastBk.value||(now-parseInt(lastBk.value))>weekMs){const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const bkData={};for(const k of keys){const rv=await FB.get(k);if(rv)bkData[k]=rv.value;}bkData._date=new Date().toISOString();await FB.set("_autoBackup",JSON.stringify(bkData));await FB.set("_lastBackup",String(now));console.log("✅ Auto-backup semanal salvo no Firebase");}}catch(e){console.log("Auto-backup falhou:",e);}
 })();},[]);
@@ -337,6 +338,8 @@ const fTI=fIn.reduce((s,e)=>s+e.amt,0),fTO=fOut.reduce((s,e)=>s+e.amt,0),fLu=fTI
 const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut.forEach(e=>{fBCO[e.cat]=(fBCO[e.cat]||0)+e.amt;});
 
 const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
+const toTrash=(type,item)=>{const t=[...trash,{type,item,deletedAt:new Date().toISOString(),id:Date.now()}];setTrash(t);try{sv("_trash",t);}catch{}};
+const safeDel=(msg,onConfirm,type,item)=>{if(!confirm("⚠️ "+msg+"\n\nEssa ação pode ser desfeita na Lixeira.")){return false;}if(type&&item)toTrash(type,item);onConfirm();return true;};
 const uInsp=async n=>{setInspections(n);await sv("insp3",n);};
 const uAg=async n=>{setAgEvents(n);await sv("ag3",n);};
 const uTk=async n=>{setTasks(n);await sv("tk3",n);};
@@ -579,6 +582,7 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 <button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #0094B033",background:"#0094B00A",color:"#0094B0",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📦 Backup</button>
 <button onClick={()=>{const missing=D.filter(dp=>!db.some(p=>p.n===dp.n&&p.c===dp.c));if(missing.length===0){fl("✅ Todas as "+D.length+" propriedades já estão no sistema!");return;}if(confirm("Restaurar "+missing.length+" propriedades que estão faltando?\n\n"+[...new Set(missing.map(p=>p.c))].map(c=>c+": "+missing.filter(p=>p.c===c).length+" casas").join("\n"))){uDB([...db,...missing]);fl("✅ "+missing.length+" propriedades restauradas!");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #4ADE8033",background:"#4ADE800A",color:"#4ADE80",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🔄 Restaurar Base</button>
 <button onClick={async()=>{try{const r=await FB.get("_autoBackup");if(!r||!r.value){fl("❌ Nenhum auto-backup encontrado");return;}const data=JSON.parse(r.value);const bkDate=data._date?new Date(data._date).toLocaleDateString("en-US"):"?";if(!confirm("Restaurar auto-backup de "+bkDate+"?\n\nIsso vai sobrescrever TODOS os dados atuais.")){return;}const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}fl("✅ "+c+" módulos restaurados do backup de "+bkDate+"!");setTimeout(()=>window.location.reload(),1500);}catch(e){fl("❌ Erro: "+e.message);}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #A78BFA33",background:"#A78BFA0A",color:"#A78BFA",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>💾 Restaurar Auto-Backup</button>
+<button onClick={()=>{if(!trash.length){fl("🗑 Lixeira vazia!");return;}const msg=trash.map(t=>t.type+": "+(t.item?.n||t.item?.name||t.item?.c||t.item?.emp||"?")+" ("+new Date(t.deletedAt).toLocaleDateString("en-US")+")").join("\n");if(confirm("🗑 Lixeira ("+trash.length+" itens):\n\n"+msg.slice(0,500)+"\n\nDeseja restaurar TUDO?")){const props=trash.filter(t=>t.type==="property").map(t=>t.item);if(props.length){const missing=props.filter(p=>!db.some(d=>d.n===p.n&&d.c===p.c));if(missing.length)uDB([...db,...missing]);}setTrash([]);sv("_trash",[]);fl("✅ "+trash.length+" itens restaurados!");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #FF6B6B33",background:"#FF6B6B0A",color:"#FF6B6B",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit",position:"relative"}}>🗑 Lixeira{trash.length>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:14,height:14,borderRadius:7,background:"#EF4444",color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}}>{trash.length}</span>}</button>
 <label style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.or+"33",background:T.or+"0A",color:T.or,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📥 Restaurar<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos restaurados!");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label>
 </div>
 </div>}
@@ -599,7 +603,7 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 {pI.map(item=>{const cp=db.filter(p=>p.c===item.c);const pr=(item.ip||0)-(item.ep||0);return(
 <div key={item.id} style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"4px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,background:item.extra?T.or+"06":"transparent"}}>
 {item.extra?<TI value={item.c||""} onChange={e=>updPi(item.id,"c",e.target.value)} style={{...inp,fontSize:11,background:T.or+"10",border:"1px solid "+T.or+"33"}} placeholder="Cliente"/>
-:<div style={{display:"flex",alignItems:"center",gap:2}}><select value={item.c} onChange={e=>{if(e.target.value==="__new__"){askModal("Novo cliente","",(nm)=>{if(nm){uDB([...db,{c:nm,n:"(nova)",a:"",ip:0,ep:0}]);updPi(item.id,"c",nm);fl("✅ "+nm);}});}else updPi(item.id,"c",e.target.value);}} style={{...sel,fontSize:11}}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}<option value="__new__">＋ Novo...</option></select><button type="button" onClick={()=>{if(!item.c)return;if(confirm("Deletar "+item.c+" da lista?")){uDB(db.filter(p=>p.c!==item.c));updPi(item.id,"c","");}}} style={{width:20,height:20,border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10,padding:0,flexShrink:0}}>x</button></div>}
+:<div style={{display:"flex",alignItems:"center",gap:2}}><select value={item.c} onChange={e=>{if(e.target.value==="__new__"){askModal("Novo cliente","",(nm)=>{if(nm){uDB([...db,{c:nm,n:"(nova)",a:"",ip:0,ep:0}]);updPi(item.id,"c",nm);fl("✅ "+nm);}});}else updPi(item.id,"c",e.target.value);}} style={{...sel,fontSize:11}}><option value="">—</option>{cls.map(c=><option key={c}>{c}</option>)}<option value="__new__">＋ Novo...</option></select><button type="button" onClick={()=>{if(!item.c)return;const clientHouses=db.filter(p=>p.c===item.c);if(!confirm("⚠️ ATENÇÃO: Deletar "+item.c+" e todas as "+clientHouses.length+" propriedades?\n\nEssa ação move para a Lixeira."))return;if(!confirm("TEM CERTEZA? Digite OK para confirmar.\n\n"+item.c+" — "+clientHouses.length+" casas serão removidas."))return;clientHouses.forEach(p=>toTrash("property",p));toTrash("client",{name:item.c,count:clientHouses.length});uDB(db.filter(p=>p.c!==item.c));updPi(item.id,"c","");fl("🗑 "+item.c+" movido para Lixeira");}} style={{width:20,height:20,border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:10,padding:0,flexShrink:0}}>x</button></div>}
 {item.extra?<TI value={item.n||""} onChange={e=>updPi(item.id,"n",e.target.value)} style={{...inp,fontSize:11,fontWeight:600,background:T.or+"10",border:"1px solid "+T.or+"33"}} placeholder="Serviço / Casa"/>
 :<select value={item.n} onChange={e=>{if(e.target.value==="__custom__"){askModal("Nome","",(nm)=>{if(nm)updPi(item.id,"n",nm);});}else updPi(item.id,"n",e.target.value);}} style={{...sel,fontSize:11,fontWeight:item.n?600:400,background:item.n?T.gr+"12":T.cd}}><option value="">—</option>{cp.map((p,i)=><option key={i} value={p.n}>{p.n} (${p.ep})</option>)}<option value="__custom__">Digitar...</option></select>}
 <DI value={item.date} onChange={e=>updPi(item.id,"date",e.target.value)} style={{...inp,fontSize:10}}/>
@@ -1159,7 +1163,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:12}}>
 <div style={{display:"flex",justifyContent:"center",gap:2}}>
 <button onClick={()=>uPr(prod.map(x=>x.id===p.id?{...x,q:Math.max(0,x.q-1)}:x))} style={bt(T.rd+"18",T.rd,{padding:"2px 7px",fontSize:9})}>−</button>
 <button onClick={()=>uPr(prod.map(x=>x.id===p.id?{...x,q:x.q+1}:x))} style={bt(T.gr+"18",T.gr,{padding:"2px 7px",fontSize:9})}>+</button></div>
-<button onClick={()=>uPr(prod.filter(x=>x.id!==p.id))} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
+<button onClick={()=>{if(confirm("Remover "+p.n+"?")){toTrash("product",p);uPr(prod.filter(x=>x.id!==p.id));}}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
 </div>)})}</div></Card>);})}
 </>}
 
@@ -1185,7 +1189,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:12}}>
 <div style={{display:"flex",justifyContent:"center",gap:2}}>
 <button onClick={()=>uLn(lin.map(x=>x.id===l.id?{...x,q:Math.max(0,x.q-1)}:x))} style={bt(T.rd+"18",T.rd,{padding:"2px 7px",fontSize:9})}>−</button>
 <button onClick={()=>uLn(lin.map(x=>x.id===l.id?{...x,q:x.q+1}:x))} style={bt(T.gr+"18",T.gr,{padding:"2px 7px",fontSize:9})}>+</button>
-<button onClick={()=>uLn(lin.filter(x=>x.id!==l.id))} style={bt(T.rd+"08",T.rd,{padding:"2px 7px",fontSize:9})}>✕</button></div>
+<button onClick={()=>{if(confirm("Remover "+l.t+" "+l.s+"?")){toTrash("linen",l);uLn(lin.filter(x=>x.id!==l.id));}}} style={bt(T.rd+"08",T.rd,{padding:"2px 7px",fontSize:9})}>✕</button></div>
 </div>)})}</div></Card>);})}
 </>}
 
@@ -1203,7 +1207,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:12}}>
 <div style={{padding:"10px 16px",background:T.bl+"15",fontSize:12,fontWeight:700,color:T.bl}}>🏠 {prop} — {items.reduce((s,i)=>s+i.q,0)} pcs</div>
 <div style={{padding:"0 16px"}}>{items.map(l=><div key={l.id} style={{display:"grid",gridTemplateColumns:"2fr 1fr .8fr 24px",gap:4,padding:"5px 0",alignItems:"center",borderBottom:"1px solid "+T.bd,fontSize:11}}>
 <span>{l.t}</span><span style={{color:T.dm}}>{l.s}</span><span style={{textAlign:"center",fontWeight:700,color:T.ac}}>{l.q}</span>
-<button onClick={()=>uLB(lbp.filter(x=>x.id!==l.id))} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
+<button onClick={()=>{if(confirm("Remover?")){uLB(lbp.filter(x=>x.id!==l.id));}}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
 </div>)}</div></Card>);})}
 {lbp.length===0&&<Card style={{textAlign:"center",color:T.dm,fontSize:12}}>Nenhuma rouparia atribuída.</Card>}
 </>}
@@ -1241,7 +1245,7 @@ return fl2.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",pad
 <span style={{color:l.loc==="deposito"?T.pu:T.bl,fontWeight:600,fontSize:9}}>{l.loc==="deposito"?"🏢 Dep.":"👤 "+(l.loc||"").split(" ")[0]}</span>
 <span style={{color:T.dm,fontSize:9}}>{l.house||"—"}</span>
 <span style={{fontWeight:600}}>{l.type}</span><span style={{color:T.dm}}>{l.size}</span><span style={{fontWeight:700,color:T.rd}}>{l.qty}</span><span style={{color:T.or}}>{l.reason}</span><span style={{color:T.dm,fontSize:9}}>{fmD(l.date)}</span>
-<button onClick={async()=>{await uLoss(losses.filter(x=>x.id!==l.id));}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
+<button onClick={async()=>{if(confirm("Remover esta perda?")){toTrash("loss",l);await uLoss(losses.filter(x=>x.id!==l.id));}}} style={{width:20,height:20,borderRadius:4,border:"none",background:T.rd+"08",cursor:"pointer",fontSize:9,color:T.rd}}>✕</button>
 </div>);})()}</Card>
 </>}
 </div>}
@@ -1819,7 +1823,7 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 {m.notes&&<span style={{color:T.or,marginLeft:4,fontSize:8}}>{m.notes}</span>}</div>
 <div style={{display:"flex",gap:3}}>
 <button onClick={()=>setLdCalSel({mode:"add",item:{...m}})} style={bt(T.bl+"15",T.bl,{padding:"3px 8px",fontSize:8})}>✏️</button>
-<button onClick={()=>{svLdManual(ldManual.filter(x=>x.id!==m.id));fl("Removido!");}} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button>
+<button onClick={()=>{if(confirm("Remover?")){svLdManual(ldManual.filter(x=>x.id!==m.id));fl("Removido!");}}} style={bt(T.rd+"15",T.rd,{padding:"3px 8px",fontSize:8})}>✕</button>
 </div></div>})}</Card>
 
 <Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>📅 Próximos 7 dias</div>
@@ -2082,7 +2086,7 @@ return <div key={type} style={{marginBottom:8,borderRadius:10,border:"1px solid 
 {losses.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:16}}>No losses registered</div>:losses.sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,30).map(l=><div key={l.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}>
 <div><span style={{fontWeight:600}}>{l.type} {l.size}</span> <span style={{color:T.dm}}>{l.reason} · {l.loc}{l.house?" · "+l.house:""}</span></div>
 <div style={{display:"flex",gap:4,alignItems:"center"}}><span style={{color:T.rd,fontWeight:700}}>{l.qty}x</span><span style={{color:T.dm}}>{fmD(l.date)}</span>
-<button onClick={async()=>{await uLoss(losses.filter(x=>x.id!==l.id));}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:8}}>✕</button></div>
+<button onClick={async()=>{if(confirm("Remover esta perda?")){toTrash("loss",l);await uLoss(losses.filter(x=>x.id!==l.id));}}} style={{border:"none",background:"transparent",color:T.rd,cursor:"pointer",fontSize:8}}>✕</button></div>
 </div>)}</Card>
 </div>
 
