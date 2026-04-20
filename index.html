@@ -169,7 +169,7 @@ const[ldHouses,setLdHouses]=useState([]);
 const[ldCfg,setLdCfg]=useState({priceLb:1.35,fixedFee:0});
 const[ldSub,setLdSub]=useState("ldash");const[ldAnalytics,setLdAnalytics]=useState({client:"",house:"",period:"month"});
 const[ldSel,setLdSel]=useState(null);const[ldExpand,setLdExpand]=useState(null);
-const[ldConf,setLdConf]=useState({});
+const[ldConf,setLdConf]=useState({});const[ldLots,setLdLots]=useState([]);const[ldLotView,setLdLotView]=useState("create");
 const[estList,setEstList]=useState([]);const[estCount,setEstCount]=useState(1000);
 const[estForm,setEstForm]=useState(null);
 const[estView,setEstView]=useState("list");
@@ -243,6 +243,7 @@ try{const r=await FB.get("ld_cfg2");if(r&&r.value)setLdCfg({priceLb:1.35,fixedFe
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_lead2");if(r&&r.value)setLdLeadDays(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ld_lots");if(r&&r.value)setLdLots(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("dc3");if(r&&r.value)setDcList(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("man3");if(r&&r.value)setManualData(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("esc3");if(r&&r.value)setEscData(JSON.parse(r.value));}catch{}
@@ -261,7 +262,7 @@ try{const r=await FB.get("_trash");if(r&&r.value)setTrash(JSON.parse(r.value));}
 
 try{const pendKeys=Object.keys(localStorage).filter(k=>k.startsWith("_pend_"));if(pendKeys.length>0){for(const pk of pendKeys){const key=pk.replace("_pend_","");const data=localStorage.getItem(pk);if(data){await sv(key,JSON.parse(data));localStorage.removeItem(pk);}}console.log("✅ "+pendKeys.length+" saves pendentes recuperados");}}catch(e){console.log("Recovery check:",e);}
 
-try{const lastBk=await FB.get("_lastBackup");const now=Date.now();const weekMs=7*24*60*60*1000;if(!lastBk||!lastBk.value||(now-parseInt(lastBk.value))>weekMs){const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const bkData={};for(const k of keys){const rv=await FB.get(k);if(rv)bkData[k]=rv.value;}bkData._date=new Date().toISOString();await FB.set("_autoBackup",JSON.stringify(bkData));await FB.set("_lastBackup",String(now));console.log("✅ Auto-backup semanal salvo no Firebase");}}catch(e){console.log("Auto-backup falhou:",e);}
+try{const lastBk=await FB.get("_lastBackup");const now=Date.now();const weekMs=7*24*60*60*1000;if(!lastBk||!lastBk.value||(now-parseInt(lastBk.value))>weekMs){const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const bkData={};for(const k of keys){const rv=await FB.get(k);if(rv)bkData[k]=rv.value;}bkData._date=new Date().toISOString();await FB.set("_autoBackup",JSON.stringify(bkData));await FB.set("_lastBackup",String(now));console.log("✅ Auto-backup semanal salvo no Firebase");}}catch(e){console.log("Auto-backup falhou:",e);}
 })();},[]);
 
 const CRITICAL_KEYS=["db3","em3","sp3","si3","fn3","ag3","ep3","insp3"];
@@ -284,7 +285,7 @@ const updatePStatus=async(id,newSt)=>{const p=sP.find(x=>x.id===id);if(!p)return
 const svLdH=async d=>{setLdHouses(d);await sv("ld_h2",d);};
 const svLdCfg=async d=>{setLdCfg(d);await sv("ld_cfg2",d);};
 const svLdLog2=async d=>{setLdLog2(d);await sv("ld_log2",d);};
-const svLdManual=async d=>{setLdManual(d);await sv("ld_man2",d);};
+const svLdManual=async d=>{setLdManual(d);await sv("ld_man2",d);};const svLdLots=async d=>{setLdLots(d);await sv("ld_lots",d);};
 const svLdLead=async d=>{setLdLeadDays(d);await sv("ld_lead2",d);};
 const svDc=async d=>{setDcList(d);await sv("dc3",d);};
 const svManual=async d=>{setManualData(d);await sv("man3",d);};
@@ -494,7 +495,7 @@ return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T
 </div>})}
 </div></div>}
 
-<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
+<div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
 <div style={{display:"flex",gap:1,padding:"6px 10px",borderBottom:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",background:darkMode?T.bg+"cc":"#fff",alignItems:"center"}}>
 {(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length+lowP.length+lowL.length,deepclean:(()=>{const today=getLocalDate();return dcList.filter(d=>{if(!d.active||!d.lastDone||!d.freqMonths)return false;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);const due=last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");return due<=today;}).length;})()};
 const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database"]]];
@@ -583,11 +584,11 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 <div style={{display:"flex",gap:5,flexWrap:"wrap",padding:"8px 0"}}>
 {[{l:"+ Folha",c:T.ac,g:"payroll"},{l:"+ Invoice",c:T.or,g:"invoice"},{l:"💲 Financeiro",c:T.gr,g:"finance"},{l:"🧴 Estoque",c:T.pu,g:"laundry"},{l:"🔍 Inspeção",c:"#FF8A65",g:"inspect"},{l:"🧺 Lavanderia",c:T.bl,g:"laundry"},{l:"📁 Histórico",c:"#EA80FC",g:"history"}].map((a,i)=><button key={i} onClick={()=>setVw(a.g)} style={{padding:"6px 12px",borderRadius:6,border:`1px solid ${a.c}33`,background:`${a.c}0A`,color:a.c,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{a.l}</button>)}
 <button onClick={()=>genMonthlyReport(fMo)} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #FF8A6533",background:"#FF8A650A",color:"#FF8A65",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📄 Relatório PDF ({fMo})</button>
-<button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #0094B033",background:"#0094B00A",color:"#0094B0",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📦 Backup</button>
+<button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #0094B033",background:"#0094B00A",color:"#0094B0",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📦 Backup</button>
 <button onClick={()=>{const missing=D.filter(dp=>!db.some(p=>p.n===dp.n&&p.c===dp.c));if(missing.length===0){fl("✅ Todas as "+D.length+" propriedades já estão no sistema!");return;}if(confirm("Restaurar "+missing.length+" propriedades que estão faltando?\n\n"+[...new Set(missing.map(p=>p.c))].map(c=>c+": "+missing.filter(p=>p.c===c).length+" casas").join("\n"))){uDB([...db,...missing]);fl("✅ "+missing.length+" propriedades restauradas!");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #4ADE8033",background:"#4ADE800A",color:"#4ADE80",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🔄 Restaurar Base</button>
-<button onClick={async()=>{try{const r=await FB.get("_autoBackup");if(!r||!r.value){fl("❌ Nenhum auto-backup encontrado");return;}const data=JSON.parse(r.value);const bkDate=data._date?new Date(data._date).toLocaleDateString("en-US"):"?";if(!confirm("Restaurar auto-backup de "+bkDate+"?\n\nIsso vai sobrescrever TODOS os dados atuais.")){return;}const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}fl("✅ "+c+" módulos restaurados do backup de "+bkDate+"!");setTimeout(()=>window.location.reload(),1500);}catch(e){fl("❌ Erro: "+e.message);}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #A78BFA33",background:"#A78BFA0A",color:"#A78BFA",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>💾 Restaurar Auto-Backup</button>
+<button onClick={async()=>{try{const r=await FB.get("_autoBackup");if(!r||!r.value){fl("❌ Nenhum auto-backup encontrado");return;}const data=JSON.parse(r.value);const bkDate=data._date?new Date(data._date).toLocaleDateString("en-US"):"?";if(!confirm("Restaurar auto-backup de "+bkDate+"?\n\nIsso vai sobrescrever TODOS os dados atuais.")){return;}const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}fl("✅ "+c+" módulos restaurados do backup de "+bkDate+"!");setTimeout(()=>window.location.reload(),1500);}catch(e){fl("❌ Erro: "+e.message);}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #A78BFA33",background:"#A78BFA0A",color:"#A78BFA",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>💾 Restaurar Auto-Backup</button>
 <button onClick={()=>{if(!trash.length){fl("🗑 Lixeira vazia!");return;}const msg=trash.map(t=>t.type+": "+(t.item?.n||t.item?.name||t.item?.c||t.item?.emp||"?")+" ("+new Date(t.deletedAt).toLocaleDateString("en-US")+")").join("\n");if(confirm("🗑 Lixeira ("+trash.length+" itens):\n\n"+msg.slice(0,500)+"\n\nDeseja restaurar TUDO?")){const props=trash.filter(t=>t.type==="property").map(t=>t.item);if(props.length){const missing=props.filter(p=>!db.some(d=>d.n===p.n&&d.c===p.c));if(missing.length)uDB([...db,...missing]);}setTrash([]);sv("_trash",[]);fl("✅ "+trash.length+" itens restaurados!");}}} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #FF6B6B33",background:"#FF6B6B0A",color:"#FF6B6B",fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit",position:"relative"}}>🗑 Lixeira{trash.length>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:14,height:14,borderRadius:7,background:"#EF4444",color:"#fff",fontSize:8,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}}>{trash.length}</span>}</button>
-<label style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.or+"33",background:T.or+"0A",color:T.or,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📥 Restaurar<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos restaurados!");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label>
+<label style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.or+"33",background:T.or+"0A",color:T.or,fontSize:9,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>📥 Restaurar<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos restaurados!");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label>
 </div>
 </div>}
 
@@ -624,7 +625,7 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}><button onClick={addPi} style={bt(T.aD,T.ac,{fontSize:10})}>+ Casa</button><button onClick={()=>{setPI([...pI,{id:Date.now(),c:"(extra)",n:"",a:"",date:(pI[0]||{}).date||"",ep:0,ip:0,extra:true}]);fl("Linha extra adicionada — preencha os campos");}} style={bt(T.or+"18",T.or,{fontSize:10})}>+ Extra</button>
 <button onClick={()=>{if(!sE)return;const clAll=[...new Set(db.map(p=>p.c))];const items=[];clAll.forEach(cl=>{db.filter(p=>p.c===cl&&p.n!=="(nova)").forEach(p=>{items.push({id:Date.now()+Math.random(),c:cl,n:p.n,a:p.a,date:"",ep:p.ep||0,ip:p.ip||0});});});setPI(items);fl(items.length+" casas adicionadas!");}} style={bt(T.bl+"15",T.bl,{fontSize:10})} title="Adicionar todas as propriedades">+ Todas</button>
 <button onClick={()=>{const last=sP.find(p=>p.emp===sE);if(!last){fl("Nenhuma folha anterior para "+sE);return;}setPI((last.items||[]).map(i=>({...i,id:Date.now()+Math.random(),date:""})));setWkFrom("");setWkTo("");fl("Copiado de "+last.week);}} style={bt(T.pu+"15",T.pu,{fontSize:10})} title="Copiar última folha deste funcionário">Copiar Última</button>
-<button onClick={()=>{if(!sE){fl("Selecione um funcionário!");return;}const from=wkFrom||"";const to=wkTo||"9999";const byEmp=agEvents.filter(ev=>{if(!ev.date||!ev.house)return false;if(ev.date<from||ev.date>to)return false;const emps=ev.employees||[];return matchEmp(emps,sE);});if(byEmp.length>0){const items=byEmp.sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(ev=>{const prop=findProp(ev.house,ev.client);return{id:Date.now()+Math.random(),c:ev.client||"",n:ev.house||ev.title||"",a:prop?prop.a:"",date:ev.date,ep:prop?prop.ep||0:0,ip:prop?prop.ip||0:0,fromAgenda:ev.id};});setPI(items);fl("📅 "+items.length+" casas de "+sE+"!");}else{fl("⚠️ "+sE+" não tem casas na agenda entre "+(wkFrom||"—")+" e "+(wkTo||"—"));}}} style={bt("#FF8A65"+"15","#FF8A65",{fontSize:10})} title="Importar eventos da agenda do período">📅 Agenda</button></div>
+<button onClick={()=>{if(!sE){fl("Selecione um funcionário!");return;}const from=wkFrom||"";const to=wkTo||"9999";const byEmp=agEvents.filter(ev=>{if(!ev.date)return false;if(!ev.house||ev.house==="—"||ev.house.trim()==="")return false;if(ev.date<from||ev.date>to)return false;const emps=ev.employees||[];return matchEmp(emps,sE);});if(byEmp.length>0){const items=byEmp.sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(ev=>{const prop=findProp(ev.house,ev.client);return{id:Date.now()+Math.random(),c:ev.client||"",n:ev.house||"",a:prop?prop.a:"",date:ev.date,ep:prop?prop.ep||0:0,ip:prop?prop.ip||0:0,fromAgenda:ev.id};}).filter(i=>i.n&&i.n!=="—");setPI(items);fl("📅 "+items.length+" casas de "+sE+"!");}else{fl("⚠️ "+sE+" não tem casas na agenda entre "+(wkFrom||"—")+" e "+(wkTo||"—"));}}} style={bt("#FF8A65"+"15","#FF8A65",{fontSize:10})} title="Importar eventos da agenda do período">📅 Agenda</button></div>
 {pI.length>0&&<div style={{display:"grid",gridTemplateColumns:"1.8fr 2.2fr 1fr .7fr .7fr .7fr 28px",gap:4,padding:"10px 0 0",marginTop:4,borderTop:"2px solid "+T.ac+"44"}}><span style={{fontSize:12,fontWeight:800,gridColumn:"1/4"}}>TOTAL — {pI.length} casas</span><div style={{fontSize:11,fontWeight:700,textAlign:"center"}}>${pInv}</div><div style={{fontSize:13,fontWeight:800,textAlign:"center",color:T.ac}}>${pTot}</div><div style={{fontSize:11,fontWeight:700,textAlign:"center",color:pInv-pTot>0?T.gr:T.rd}}>${pInv-pTot}{pInv>0?" ("+(((pInv-pTot)/pInv)*100).toFixed(0)+"%)":""}</div></div>}
 </div></div>
 </Card>}
@@ -1927,8 +1928,14 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 </div>
 </Card>
 
-:ldSub==="lotes"?<div style={{display:"flex",flexDirection:"column",gap:12}}>
-<Card>
+:ldSub==="lotes"?<div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+<div style={{display:"flex",gap:3}}>
+{[["create","+ New Lot"],["active","📦 Active"],["history","📋 History"]].map(([k,l])=><button key={k} onClick={()=>setLdLotView(k)} style={{flex:1,padding:"7px",borderRadius:6,border:ldLotView===k?"2px solid "+T.ac:"1px solid "+T.bd,background:ldLotView===k?T.ac+"12":"transparent",color:ldLotView===k?T.ac:T.dm,fontSize:10,fontWeight:ldLotView===k?700:500,cursor:"pointer"}}>{l}</button>)}
+</div>
+
+{ldLotView==="create"&&<>
+<Card style={{padding:14}}>
 <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>1️⃣ Select Dirty Houses</div>
 {ldHouses.filter(h=>h.status==="SUJA").map(h=>{const sel=(ldConf.ids||[]).includes(h.id);return <div key={h.id} onClick={()=>{const ids=sel?(ldConf.ids||[]).filter(x=>x!==h.id):[...(ldConf.ids||[]),h.id];setLdConf({...ldConf,ids});}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
 <div><div style={{fontSize:12,fontWeight:600}}>{h.name}</div><div style={{fontSize:9,color:T.dm}}>{h.client||""}{h.deadline?" · Deadline: "+fmD(h.deadline):""}</div></div>
@@ -1936,46 +1943,85 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 </div>})}
 {ldHouses.filter(h=>h.status==="SUJA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>No dirty houses</div>}
 </Card>
-{(ldConf.ids||[]).length>0&&<Card>
-<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>2️⃣ Weight & Dates</div>
-{(ldConf.ids||[]).map(hid=>{const h=ldHouses.find(x=>x.id===hid);return <div key={hid} style={{padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
-<div style={{fontSize:12,fontWeight:700,marginBottom:6}}>{h?h.name:"?"} <span style={{fontSize:9,color:T.dm,fontWeight:400}}>{h?h.client:""}</span></div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,alignItems:"end"}}>
-<div><label style={{fontSize:9,color:T.dm,display:"block"}}>⚖️ Weight</label>
-<input type="number" step="0.1" placeholder="lb" defaultValue={ldConf["w_"+hid]||""} onBlur={e=>setLdConf({...ldConf,["w_"+hid]:e.target.value})} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...inp,fontSize:12,width:"100%",padding:"6px 8px"}}/></div>
-<div><label style={{fontSize:9,color:T.or,display:"block"}}>📤 Send Date</label>
-<DI value={ldConf["sd_"+hid]||getLocalDate()} onChange={e=>setLdConf({...ldConf,["sd_"+hid]:e.target.value})} style={{...inp,width:"100%",fontSize:10,padding:"6px 8px",border:"1px solid "+T.or+"44"}}/></div>
-<div><label style={{fontSize:9,color:T.gr,display:"block"}}>📥 Expected Return</label>
-<DI value={ldConf["rd_"+hid]||(h&&h.deadline?h.deadline:getLocalDateOffset(2))} onChange={e=>setLdConf({...ldConf,["rd_"+hid]:e.target.value})} style={{...inp,width:"100%",fontSize:10,padding:"6px 8px",border:"1px solid "+T.gr+"44"}}/></div>
+
+{(ldConf.ids||[]).length>0&&<Card style={{padding:14}}>
+<div style={{fontSize:12,fontWeight:700,marginBottom:10}}>2️⃣ Lot Details</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+<div><label style={{...lb,color:T.or}}>📤 Send Date</label><DI value={ldConf.lotSendDate||getLocalDate()} onChange={e=>setLdConf({...ldConf,lotSendDate:e.target.value})} style={{...inp,width:"100%",border:"1px solid "+T.or+"44"}}/></div>
+<div><label style={{...lb,color:T.gr}}>📥 Expected Return</label><DI value={ldConf.lotReturnDate||getLocalDateOffset(2)} onChange={e=>setLdConf({...ldConf,lotReturnDate:e.target.value})} style={{...inp,width:"100%",border:"1px solid "+T.gr+"44"}}/></div>
 </div>
-<div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:9,color:T.dm}}>
-<span>Cost: <b style={{color:T.gr}}>${ldCalcCost(parseFloat(ldConf["w_"+hid])||0)}</b></span>
-<span>{(()=>{const sd=ldConf["sd_"+hid]||getLocalDate();const rd=ldConf["rd_"+hid]||(h&&h.deadline?h.deadline:getLocalDateOffset(2));const days=Math.round((new Date(rd+"T12:00")-new Date(sd+"T12:00"))/86400000);return days+" day"+(days!==1?"s":"")+" in laundry";})()}</span>
-</div>
+<div style={{fontSize:11,fontWeight:700,marginBottom:6}}>⚖️ Weight per House</div>
+{(ldConf.ids||[]).map(hid=>{const h=ldHouses.find(x=>x.id===hid);return <div key={hid} style={{display:"flex",gap:9,alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd+"44"}}>
+<span style={{fontSize:11,fontWeight:600,flex:1}}>{h?h.name:"?"} <span style={{color:T.dm,fontWeight:400,fontSize:9}}>{h?h.client:""}</span></span>
+<input type="number" step="0.1" placeholder="lb" defaultValue={ldConf["w_"+hid]||""} onBlur={e=>setLdConf({...ldConf,["w_"+hid]:e.target.value})} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...inp,fontSize:12,width:70,padding:"6px 8px",textAlign:"center"}}/>
+<span style={{fontSize:10,color:T.gr,fontWeight:600,minWidth:50}}>${ldCalcCost(parseFloat(ldConf["w_"+hid])||0)}</span>
 </div>})}
+<div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:T.ac+"08",border:"1px solid "+T.ac+"22"}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
+<span>🏠 {(ldConf.ids||[]).length} houses</span>
+<span>⚖️ {(ldConf.ids||[]).reduce((s,hid)=>s+(parseFloat(ldConf["w_"+hid])||0),0).toFixed(1)} lb total</span>
+<span style={{fontWeight:700,color:T.gr}}>💰 ${ldCalcCost((ldConf.ids||[]).reduce((s,hid)=>s+(parseFloat(ldConf["w_"+hid])||0),0))}</span>
+</div>
+<div style={{fontSize:9,color:T.dm,marginTop:4}}>📤 {fmD(ldConf.lotSendDate||getLocalDate())} → 📥 {fmD(ldConf.lotReturnDate||getLocalDateOffset(2))}</div>
+</div>
 </Card>}
-{(ldConf.ids||[]).length>0&&<Card>
-<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>3️⃣ Send</div>
-<button onClick={()=>{const updated=[...ldHouses];const newLogs=[];let newFin=[...fin];const newManual=[...ldManual];(ldConf.ids||[]).forEach(hid=>{const w=parseFloat(ldConf["w_"+hid])||0;const cost=ldCalcCost(w);const sendDate=ldConf["sd_"+hid]||getLocalDate();const returnDate=ldConf["rd_"+hid]||getLocalDateOffset(2);const idx=updated.findIndex(x=>x.id===hid);if(idx>-1){updated[idx]={...updated[idx],status:"LAVANDERIA",weight:w,cost,sentDate:sendDate,expectedReturn:returnDate,lastDate:new Date().toISOString()};}newLogs.push({id:Date.now()+Math.random(),bagId:hid,action:"LAVANDERIA",date:sendDate,weight:w,cost});if(cost>0){const h=ldHouses.find(x=>x.id===hid);newFin=[{id:Date.now()+Math.random(),type:"saida",cat:"Lavanderia",desc:(h?h.name:"")+" "+w+"lb",amt:cost,date:sendDate,month:getMonthFromDate(sendDate),ref:"ld-"+hid,centro:"Operacional"},...newFin];}
-const h=ldHouses.find(x=>x.id===hid);if(h&&!newManual.find(m=>m.house===h.name&&m.sendDate===sendDate)){newManual.push({id:Date.now()+Math.random(),house:h.name,client:h.client||"",date:returnDate,sendDate:sendDate,type:"Turnover",notes:"Auto from Send",source:"send"});}});svLdH(updated);svLdLog2([...newLogs,...ldLog2]);setFin(newFin);sv("fn3",newFin);svLdManual(newManual);setLdConf({});fl("📤 Sent! Dates synced to calendar");}} style={bt(T.ac,T.bg,{padding:"14px",borderRadius:8,fontSize:12,width:"100%",fontWeight:700})}>📤 Send to Laundry</button>
-</Card>}
-<Card>
-<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>📥 Receive</div>
-{ldHouses.filter(h=>h.status==="LAVANDERIA").map(h=>{const daysIn=h.sentDate?Math.round((Date.now()-new Date(h.sentDate+"T12:00"))/86400000):0;const isLate=h.expectedReturn&&getLocalDate()>h.expectedReturn;return <div key={h.id} style={{padding:"10px 12px",borderRadius:8,border:"1px solid "+(isLate?T.rd:T.bd)+"66",marginBottom:4,background:isLate?T.rd+"06":T.c2}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+
+{(ldConf.ids||[]).length>0&&<button onClick={()=>{const sendDate=ldConf.lotSendDate||getLocalDate();const returnDate=ldConf.lotReturnDate||getLocalDateOffset(2);const lotNum=(ldLots.length>0?Math.max(...ldLots.map(l=>l.num||0))+1:1);const houses=(ldConf.ids||[]).map(hid=>{const h=ldHouses.find(x=>x.id===hid);const w=parseFloat(ldConf["w_"+hid])||0;return{houseId:hid,name:h?h.name:"?",client:h?h.client:"?",weight:w,cost:ldCalcCost(w)};});const totalW=houses.reduce((s,h)=>s+h.weight,0);const totalC=houses.reduce((s,h)=>s+h.cost,0);const lot={id:Date.now(),num:lotNum,sendDate,returnDate,houses,totalWeight:totalW,totalCost:totalC,status:"sent",createdAt:new Date().toISOString()};
+const updated=ldHouses.map(h=>(ldConf.ids||[]).includes(h.id)?{...h,status:"LAVANDERIA",sentDate:sendDate,expectedReturn:returnDate,lotId:lot.id,weight:parseFloat(ldConf["w_"+h.id])||0,cost:ldCalcCost(parseFloat(ldConf["w_"+h.id])||0)}:h);svLdH(updated);
+const newLogs=houses.map(h=>({id:Date.now()+Math.random(),bagId:h.houseId,action:"LAVANDERIA",date:sendDate,weight:h.weight,cost:h.cost,lotId:lot.id}));svLdLog2([...newLogs,...ldLog2]);
+if(totalC>0){const nf={id:Date.now()+.3,type:"saida",cat:"Lavanderia",desc:"LOT #"+lotNum+" ("+houses.length+" houses) "+totalW+"lb",amt:totalC,date:sendDate,month:getMonthFromDate(sendDate),ref:"lot-"+lot.id,centro:"Operacional"};setFin([nf,...fin]);sv("fn3",[nf,...fin]);}
+svLdLots([lot,...ldLots]);setLdConf({});setLdLotView("active");fl("📦 LOT #"+lotNum+" sent! "+houses.length+" houses, "+totalW.toFixed(1)+"lb, $"+totalC.toLocaleString("en-US",{minimumFractionDigits:2}));}} style={bt(T.ac,T.bg,{padding:"14px",borderRadius:10,fontSize:13,width:"100%",fontWeight:700})}>📦 Create & Send LOT #{(ldLots.length>0?Math.max(...ldLots.map(l=>l.num||0))+1:1)}</button>}
+</>}
+
+{ldLotView==="active"&&<>
+{ldLots.filter(l=>l.status==="sent").length===0&&<div style={{textAlign:"center",color:T.dm,padding:30}}>No active lots</div>}
+{ldLots.filter(l=>l.status==="sent").map(lot=>{const isLate=lot.returnDate&&getLocalDate()>lot.returnDate;const daysIn=Math.round((Date.now()-new Date(lot.sendDate+"T12:00"))/86400000);return <Card key={lot.id} style={{padding:14,border:"1px solid "+(isLate?T.rd:T.ac)+"33"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
 <div>
-<div style={{fontSize:12,fontWeight:600}}>{h.name}{isLate&&" ⚠️"}</div>
-<div style={{fontSize:9,color:T.dm}}>
-📤 Sent: {h.sentDate?fmD(h.sentDate):"?"} → 📥 Expected: {h.expectedReturn?fmD(h.expectedReturn):"?"} · ⏱ {daysIn}d{isLate?" · LATE!":""}
+<span style={{fontSize:16,fontWeight:800,color:T.ac}}>LOT #{lot.num}</span>
+{isLate&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:T.rd+"18",color:T.rd,fontWeight:700,marginLeft:8}}>⚠️ LATE</span>}
 </div>
+<span style={{fontSize:10,color:T.dm}}>⏱ {daysIn}d in laundry</span>
 </div>
-<div style={{display:"flex",gap:4}}>
-<button onClick={()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"CONFERENCIA",receivedDate:getLocalDate()}:x));ldAddLog(h.id,"CONFERENCIA");fl("✅ Received → Check");}} style={{padding:"6px 12px",borderRadius:6,fontSize:10,border:"none",background:T.pu+"22",color:T.pu,cursor:"pointer",fontWeight:700}}>✅ Received</button>
-<button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"SUJA",weight:0,cost:0,sentDate:"",expectedReturn:""}:x));ldAddLog(h.id,"UNDO");fl("↩ Back to Send");});}} style={{padding:"6px 10px",borderRadius:6,fontSize:9,border:"none",background:T.rd+"15",color:T.rd,cursor:"pointer",fontWeight:600}}>Undo</button>
-</div></div>
-</div>})}
-{ldHouses.filter(h=>h.status==="LAVANDERIA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>Nothing in laundry</div>}
-</Card>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
+{[["Houses",lot.houses.length,T.ac],["Weight",lot.totalWeight.toFixed(1)+"lb",T.pu],["Cost","$"+lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2}),T.rd],["Return",fmD(lot.returnDate),isLate?T.rd:T.gr]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:6,borderRadius:6,background:T.c2}}>
+<div style={{fontSize:14,fontWeight:800,color:c}}>{v}</div>
+<div style={{fontSize:9,color:T.dm}}>{l}</div>
+</div>)}
+</div>
+<div style={{fontSize:10,color:T.dm,marginBottom:6}}>📤 Sent: {fmD(lot.sendDate)} → 📥 Expected: {fmD(lot.returnDate)}</div>
+{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd+"33",fontSize:10}}>
+<span><b>{h.name}</b> <span style={{color:T.dm}}>{h.client}</span></span>
+<span>{h.weight}lb · <span style={{color:T.rd}}>${h.cost.toLocaleString("en-US",{minimumFractionDigits:2})}</span></span>
+</div>)}
+<div style={{display:"flex",gap:6,marginTop:10}}>
+<button onClick={()=>{const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"CONFERENCIA",receivedDate:getLocalDate()}:h);svLdH(updated);svLdLots(ldLots.map(l=>l.id===lot.id?{...l,status:"received",receivedDate:getLocalDate()}:l));fl("✅ LOT #"+lot.num+" received! → Check");}} style={bt(T.gr,T.bg,{flex:1,padding:"10px",fontSize:11,borderRadius:8})}>✅ Receive Entire Lot</button>
+<button onClick={()=>{const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"SUJA",lotId:null,sentDate:"",expectedReturn:""}:h);svLdH(updated);svLdLots(ldLots.filter(l=>l.id!==lot.id));fl("↩ LOT #"+lot.num+" undone");}} style={bt(T.rd+"15",T.rd,{padding:"10px 14px",fontSize:10,borderRadius:8})}>↩ Undo</button>
+</div>
+</Card>})}
+</>}
+
+{ldLotView==="history"&&<>
+{ldLots.filter(l=>l.status==="received").length===0&&<div style={{textAlign:"center",color:T.dm,padding:30}}>No completed lots</div>}
+{ldLots.filter(l=>l.status==="received").sort((a,b)=>(b.sendDate||"").localeCompare(a.sendDate||"")).map(lot=>{const daysIn=lot.receivedDate&&lot.sendDate?Math.round((new Date(lot.receivedDate+"T12:00")-new Date(lot.sendDate+"T12:00"))/86400000):0;return <Card key={lot.id} style={{padding:14}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<span style={{fontSize:14,fontWeight:800}}>LOT #{lot.num}</span>
+<span style={{fontSize:10,color:T.gr}}>✅ Received {fmD(lot.receivedDate)}</span>
+</div>
+<div style={{display:"flex",gap:10,marginBottom:6,fontSize:10,color:T.dm}}>
+<span>📤 {fmD(lot.sendDate)} → 📥 {fmD(lot.receivedDate)}</span>
+<span>⏱ {daysIn}d</span>
+<span>🏠 {lot.houses.length}</span>
+<span>⚖️ {lot.totalWeight.toFixed(1)}lb</span>
+<span style={{color:T.rd,fontWeight:700}}>💰 ${lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
+</div>
+{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd+"22",fontSize:10}}>
+<span>{h.name} <span style={{color:T.dm}}>{h.client}</span></span>
+<span>{h.weight}lb · ${h.cost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
+</div>)}
+</Card>})}
+</>}
+
 </div>
 
 :ldSub==="conf"?<Card>
