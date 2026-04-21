@@ -1595,7 +1595,7 @@ return tabInvs.length===0?<div style={{padding:"20px 0",textAlign:"center",color
 </div>:null;})()}
 
 <div style={{display:"flex",gap:2,background:T.cd,borderRadius:8,padding:3,border:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
-{[["ldash","📊 Dashboard"],["casas","🏠 Houses"],["lotes","📤 Send"],["conf","✅ Check"],["agenda","📅 Schedule"],["analytics","📈 Analytics"],["prod","🧴 Products"],["linen","🛏️ Linen"],["losses","📉 Losses"],["custos","💰 Costs"],["cfg","⚙️"]].map(([k,l])=><button key={k} onClick={()=>{setLdSub(k);setLdSel(null);setLdConf({});setTimeout(()=>window.scrollTo(0,0),50);}} style={{padding:"7px 8px",borderRadius:6,border:ldSub===k?"2px solid "+T.ac:"none",background:ldSub===k?T.ac+"15":"transparent",color:ldSub===k?T.ac:T.dm,fontSize:10,fontWeight:ldSub===k?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>)}
+{[["ldash","📊 Dashboard"],["casas","🏠 Houses"],["lotes","📤 Send"],["conf","✅ Check"],["lotsHist","📦 Lots"],["agenda","📅 Schedule"],["analytics","📈 Analytics"],["prod","🧴 Products"],["linen","🛏️ Linen"],["losses","📉 Losses"],["custos","💰 Costs"],["cfg","⚙️"]].map(([k,l])=><button key={k} onClick={()=>{setLdSub(k);setLdSel(null);setLdConf({});setTimeout(()=>window.scrollTo(0,0),50);}} style={{padding:"7px 8px",borderRadius:6,border:ldSub===k?"2px solid "+T.ac:"none",background:ldSub===k?T.ac+"15":"transparent",color:ldSub===k?T.ac:T.dm,fontSize:10,fontWeight:ldSub===k?700:500,cursor:"pointer",whiteSpace:"nowrap"}}>{l}</button>)}
 </div>
 
 {ldSub==="ldash"?(()=>{
@@ -1704,6 +1704,72 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
 </div>
 
 </div>;})()
+
+:ldSub==="lotsHist"?<div style={{display:"flex",flexDirection:"column",gap:10}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+{(()=>{const active=ldLots.filter(l=>l.status==="sent");const done=ldLots.filter(l=>l.status==="received");const totalW=ldLots.reduce((s,l)=>s+l.totalWeight,0);const totalC=ldLots.reduce((s,l)=>s+l.totalCost,0);return[["Active",active.length,T.or],["Completed",done.length,T.gr],["Total Weight",totalW.toFixed(0)+"lb",T.pu],["Total Cost","$"+totalC.toLocaleString("en-US",{minimumFractionDigits:2}),T.rd]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:10,borderRadius:10,background:"linear-gradient(135deg,"+c+"12,"+c+"04)",border:"1px solid "+c+"33"}}><div style={{fontSize:18,fontWeight:800,color:c}}>{v}</div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase"}}>{l}</div></div>);})()}
+</div>
+
+{ldLots.filter(l=>l.status==="sent").length>0&&<Card style={{padding:14}}>
+<div style={{fontSize:12,fontWeight:700,marginBottom:8,color:T.or}}>📦 Active Lots</div>
+{ldLots.filter(l=>l.status==="sent").map(lot=>{const isLate=lot.returnDate&&getLocalDate()>lot.returnDate;const daysIn=Math.round((Date.now()-new Date(lot.sendDate+"T12:00"))/86400000);return <div key={lot.id} style={{padding:"12px",borderRadius:10,border:"1px solid "+(isLate?T.rd:T.ac)+"33",marginBottom:8,background:isLate?T.rd+"06":T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+<div><span style={{fontSize:14,fontWeight:800,color:T.ac}}>LOT #{lot.num}</span>{isLate&&<span style={{fontSize:9,padding:"2px 6px",borderRadius:4,background:T.rd+"18",color:T.rd,fontWeight:700,marginLeft:6}}>LATE</span>}</div>
+<span style={{fontSize:9,color:T.dm}}>⏱ {daysIn}d · 📤 {fmD(lot.sendDate)} → 📥 {fmD(lot.returnDate)}</span>
+</div>
+{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 8px",fontSize:10,borderBottom:"1px solid "+T.bd+"22"}}>
+<span><b>{h.name}</b> <span style={{color:T.dm}}>{h.client}</span></span>
+<span>{h.weight}lb</span>
+</div>)}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+<span style={{fontSize:10,fontWeight:700}}>🏠 {lot.houses.length} · ⚖️ {lot.totalWeight.toFixed(1)}lb · 💰 ${lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>{const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"CONFERENCIA",receivedDate:getLocalDate()}:h);svLdH(updated);svLdLots(ldLots.map(l=>l.id===lot.id?{...l,status:"received",receivedDate:getLocalDate()}:l));fl("✅ LOT #"+lot.num+" received!");}} style={bt(T.gr,T.bg,{padding:"6px 12px",fontSize:9,borderRadius:6})}>✅ Receive</button>
+<button onClick={()=>{setLdConf({editLotId:lot.id,lotSendDate:lot.sendDate,lotReturnDate:lot.returnDate,...Object.fromEntries(lot.houses.map(h=>["w_"+h.houseId,String(h.weight)]))});}} style={bt(T.or+"15",T.or,{padding:"6px 12px",fontSize:9,borderRadius:6})}>✏️ Edit</button>
+<button onClick={()=>{const w=window.open("","_blank");if(w){w.document.write("<html><head><title>LOT #"+lot.num+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:800px;margin:0 auto}h1{font-size:24px;margin-bottom:2px}.meta{color:#888;font-size:11px}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0A0F1E;color:#fff;padding:8px 12px;text-align:left;font-size:11px}td{padding:6px 12px;border-bottom:1px solid #eee;font-size:12px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.info-box{padding:14px;border:1px solid #ddd;border-radius:8px;text-align:center}.info-box .num{font-size:24px;font-weight:800}.info-box .lbl{font-size:10px;color:#888;text-transform:uppercase;margin-top:2px}@media print{body{padding:20px}}</style></head><body>");w.document.write("<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'><div style='width:50px;height:50px;background:#0094B0;border-radius:12px;display:flex;align-items:center;justify-content:center'><span style='color:#fff;font-size:24px;font-weight:800'>S</span></div><div><h1>"+co.name+"</h1><p class='meta'>"+co.address+" | "+co.phone+"</p></div></div>");w.document.write("<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'><span style='font-size:28px;font-weight:800;color:#0094B0'>LOT #"+lot.num+"</span><div style='text-align:right'><div class='meta'>LAUNDRY SLIP</div><div style='font-size:14px;font-weight:700'>"+fmD(lot.sendDate)+"</div></div></div>");w.document.write("<div class='info-grid'><div class='info-box'><div class='num'>"+lot.houses.length+"</div><div class='lbl'>Houses</div></div><div class='info-box'><div class='num'>"+lot.totalWeight.toFixed(1)+"</div><div class='lbl'>Total Lbs</div></div><div class='info-box'><div class='num' style='color:#0094B0'>"+fmD(lot.returnDate)+"</div><div class='lbl'>Expected Return</div></div></div>");w.document.write("<table><tr><th>#</th><th>House</th><th>Client</th><th style='text-align:right'>Weight (lb)</th></tr>");lot.houses.forEach((h,i)=>{w.document.write("<tr><td>"+(i+1)+"</td><td><strong>"+h.name+"</strong></td><td>"+h.client+"</td><td style='text-align:right;font-weight:700'>"+h.weight.toFixed(1)+"</td></tr>");});w.document.write("<tr style='border-top:2px solid #222'><td colspan='3'><strong>TOTAL</strong></td><td style='text-align:right;font-weight:800;font-size:14px'>"+lot.totalWeight.toFixed(1)+" lb</td></tr></table>");w.document.write("<div style='text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #111'><div style='font-size:18px;font-weight:800;color:#0094B0'>"+co.name+"</div><div class='meta'>"+co.address+" | "+co.phone+"</div></div></body></html>");w.document.close();setTimeout(()=>w.print(),600);}}} style={bt(T.bl+"15",T.bl,{padding:"6px 12px",fontSize:9,borderRadius:6})}>🖨️</button>
+<button onClick={()=>{if(!confirm("Undo LOT #"+lot.num+"?"))return;const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"SUJA",lotId:null,sentDate:"",expectedReturn:""}:h);svLdH(updated);svLdLots(ldLots.filter(l=>l.id!==lot.id));fl("↩ LOT #"+lot.num+" undone");}} style={bt(T.rd+"15",T.rd,{padding:"6px 10px",fontSize:9,borderRadius:6})}>↩</button>
+</div></div>
+{ldConf.editLotId===lot.id&&<div style={{marginTop:8,padding:12,borderRadius:8,background:T.ac+"08",border:"1px solid "+T.ac+"33"}}>
+<div style={{fontSize:11,fontWeight:700,color:T.ac,marginBottom:8}}>✏️ Edit LOT #{lot.num}</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+<div><label style={{fontSize:9,color:T.or}}>📤 Send Date</label><DI value={ldConf.lotSendDate||lot.sendDate} onChange={e=>setLdConf({...ldConf,lotSendDate:e.target.value})} style={{...inp,width:"100%",border:"1px solid "+T.or+"44"}}/></div>
+<div><label style={{fontSize:9,color:T.gr}}>📥 Expected Return</label><DI value={ldConf.lotReturnDate||lot.returnDate} onChange={e=>setLdConf({...ldConf,lotReturnDate:e.target.value})} style={{...inp,width:"100%",border:"1px solid "+T.gr+"44"}}/></div>
+</div>
+{lot.houses.map((h,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",padding:"4px 0",borderBottom:"1px solid "+T.bd+"33"}}>
+<span style={{fontSize:10,flex:1,fontWeight:600}}>{h.name}</span>
+<input type="number" step="0.1" defaultValue={ldConf["w_"+h.houseId]||h.weight} onBlur={e=>setLdConf({...ldConf,["w_"+h.houseId]:e.target.value})} style={{...inp,fontSize:11,width:65,padding:"4px 6px",textAlign:"center"}}/>
+<span style={{fontSize:9,color:T.gr,minWidth:45}}>${ldCalcCost(parseFloat(ldConf["w_"+h.houseId])||h.weight)}</span>
+</div>)}
+<div style={{display:"flex",gap:6,marginTop:10}}>
+<button onClick={()=>{const sd=ldConf.lotSendDate||lot.sendDate;const rd=ldConf.lotReturnDate||lot.returnDate;const newHouses=lot.houses.map(h=>{const w=parseFloat(ldConf["w_"+h.houseId])||h.weight;return{...h,weight:w,cost:ldCalcCost(w)};});const tw=newHouses.reduce((s,h)=>s+h.weight,0);const tc=newHouses.reduce((s,h)=>s+h.cost,0);svLdLots(ldLots.map(l=>l.id===lot.id?{...l,sendDate:sd,returnDate:rd,houses:newHouses,totalWeight:tw,totalCost:tc}:l));const updated=ldHouses.map(h=>{const lh=newHouses.find(x=>x.houseId===h.id);return lh&&h.lotId===lot.id?{...h,sentDate:sd,expectedReturn:rd,weight:lh.weight,cost:lh.cost}:h;});svLdH(updated);setLdConf({});fl("✅ LOT #"+lot.num+" updated!");}} style={bt(T.ac,T.bg,{flex:1,padding:"8px",fontSize:11,borderRadius:6})}>💾 Save</button>
+<button onClick={()=>setLdConf({})} style={bt(T.dm+"15",T.dm,{padding:"8px 14px",fontSize:10,borderRadius:6})}>Cancel</button>
+</div>
+</div>}
+</div>})}
+</Card>}
+
+<Card style={{padding:14}}>
+<div style={{fontSize:12,fontWeight:700,marginBottom:8}}>📋 Completed Lots ({ldLots.filter(l=>l.status==="received").length})</div>
+{ldLots.filter(l=>l.status==="received").length===0&&<div style={{textAlign:"center",color:T.dm,padding:20}}>No completed lots yet</div>}
+{ldLots.filter(l=>l.status==="received").sort((a,b)=>(b.sendDate||"").localeCompare(a.sendDate||"")).map(lot=>{const daysIn=lot.receivedDate&&lot.sendDate?Math.round((new Date(lot.receivedDate+"T12:00")-new Date(lot.sendDate+"T12:00"))/86400000):0;return <div key={lot.id} style={{padding:"10px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+<span style={{fontSize:13,fontWeight:800}}>LOT #{lot.num}</span>
+<span style={{fontSize:9,color:T.gr}}>✅ {fmD(lot.receivedDate)} · {daysIn}d turnaround</span>
+</div>
+<div style={{display:"flex",gap:8,fontSize:10,color:T.dm,marginBottom:6}}>
+<span>📤 {fmD(lot.sendDate)}</span><span>🏠 {lot.houses.length}</span><span>⚖️ {lot.totalWeight.toFixed(1)}lb</span><span style={{color:T.rd,fontWeight:700}}>💰 ${lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
+</div>
+{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"2px 8px",fontSize:10,borderBottom:"1px solid "+T.bd+"22"}}>
+<span>{h.name} <span style={{color:T.dm}}>{h.client}</span></span>
+<span>{h.weight}lb · ${h.cost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
+</div>)}
+<div style={{display:"flex",gap:4,marginTop:6}}>
+<button onClick={()=>{const w=window.open("","_blank");if(w){w.document.write("<html><head><title>LOT #"+lot.num+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:800px;margin:0 auto}h1{font-size:24px;margin-bottom:2px}.meta{color:#888;font-size:11px}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0A0F1E;color:#fff;padding:8px 12px;text-align:left;font-size:11px}td{padding:6px 12px;border-bottom:1px solid #eee;font-size:12px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.info-box{padding:14px;border:1px solid #ddd;border-radius:8px;text-align:center}.info-box .num{font-size:24px;font-weight:800}.info-box .lbl{font-size:10px;color:#888;text-transform:uppercase;margin-top:2px}@media print{body{padding:20px}}</style></head><body>");w.document.write("<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'><div style='width:50px;height:50px;background:#0094B0;border-radius:12px;display:flex;align-items:center;justify-content:center'><span style='color:#fff;font-size:24px;font-weight:800'>S</span></div><div><h1>"+co.name+"</h1><p class='meta'>"+co.address+" | "+co.phone+"</p></div></div>");w.document.write("<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'><span style='font-size:28px;font-weight:800;color:#0094B0'>LOT #"+lot.num+"</span><div style='text-align:right'><div class='meta'>LAUNDRY SLIP</div><div style='font-size:14px;font-weight:700'>"+fmD(lot.sendDate)+"</div></div></div>");w.document.write("<div class='info-grid'><div class='info-box'><div class='num'>"+lot.houses.length+"</div><div class='lbl'>Houses</div></div><div class='info-box'><div class='num'>"+lot.totalWeight.toFixed(1)+"</div><div class='lbl'>Total Lbs</div></div><div class='info-box'><div class='num' style='color:#4ADE80'>"+fmD(lot.receivedDate)+"</div><div class='lbl'>Received</div></div></div>");w.document.write("<table><tr><th>#</th><th>House</th><th>Client</th><th style='text-align:right'>Weight (lb)</th></tr>");lot.houses.forEach((h,i)=>{w.document.write("<tr><td>"+(i+1)+"</td><td><strong>"+h.name+"</strong></td><td>"+h.client+"</td><td style='text-align:right;font-weight:700'>"+h.weight.toFixed(1)+"</td></tr>");});w.document.write("<tr style='border-top:2px solid #222'><td colspan='3'><strong>TOTAL</strong></td><td style='text-align:right;font-weight:800;font-size:14px'>"+lot.totalWeight.toFixed(1)+" lb</td></tr></table>");w.document.write("<div style='text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #111'><div style='font-size:18px;font-weight:800;color:#0094B0'>"+co.name+"</div><div class='meta'>"+co.address+" | "+co.phone+"</div></div></body></html>");w.document.close();setTimeout(()=>w.print(),600);}}} style={bt(T.bl+"15",T.bl,{padding:"4px 10px",fontSize:9,borderRadius:5})}>🖨️ Print</button>
+<button onClick={()=>{if(!confirm("Revert LOT #"+lot.num+" back to Active?"))return;const updated=ldHouses.map(h=>{const lh=lot.houses.find(x=>x.houseId===h.id);return lh?{...h,status:"LAVANDERIA",receivedDate:"",lotId:lot.id}:h;});svLdH(updated);svLdLots(ldLots.map(l=>l.id===lot.id?{...l,status:"sent",receivedDate:""}:l));fl("↩ LOT #"+lot.num+" back to Active");}} style={bt(T.or+"15",T.or,{padding:"4px 10px",fontSize:9,borderRadius:5})}>↩ Back to Active</button>
+</div>
+</div>})}
+</Card>
+</div>
 
 :ldSub==="agenda"?<div style={{display:"flex",flexDirection:"column",gap:10}}>
 
@@ -1930,11 +1996,8 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 
 :ldSub==="lotes"?<div style={{display:"flex",flexDirection:"column",gap:10}}>
 
-<div style={{display:"flex",gap:3}}>
-{[["create","+ New Lot"],["active","📦 Active"],["history","📋 History"]].map(([k,l])=><button key={k} onClick={()=>setLdLotView(k)} style={{flex:1,padding:"7px",borderRadius:6,border:ldLotView===k?"2px solid "+T.ac:"1px solid "+T.bd,background:ldLotView===k?T.ac+"12":"transparent",color:ldLotView===k?T.ac:T.dm,fontSize:10,fontWeight:ldLotView===k?700:500,cursor:"pointer"}}>{l}</button>)}
-</div>
 
-{ldLotView==="create"&&<>
+
 <Card style={{padding:14}}>
 <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>1️⃣ Select Dirty Houses</div>
 {ldHouses.filter(h=>h.status==="SUJA").map(h=>{const sel=(ldConf.ids||[]).includes(h.id);return <div key={h.id} onClick={()=>{const ids=sel?(ldConf.ids||[]).filter(x=>x!==h.id):[...(ldConf.ids||[]),h.id];setLdConf({...ldConf,ids});}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
@@ -1983,57 +2046,6 @@ w.document.write("<div style='display:flex;justify-content:space-between;margin-
 w.document.write("<div style='text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #111'><div style='font-size:18px;font-weight:800;color:#0094B0'>"+co.name+"</div><div class='meta'>"+co.address+" | "+co.phone+"</div><div class='meta' style='margin-top:4px'>"+co.site+"</div></div></body></html>");
 w.document.close();setTimeout(()=>w.print(),600);}
 fl("📦 LOT #"+lotNum+" sent! "+houses.length+" houses, "+totalW.toFixed(1)+"lb");}} style={bt(T.ac,T.bg,{padding:"14px",borderRadius:10,fontSize:13,width:"100%",fontWeight:700})}>📦 Create & Send LOT #{(ldLots.length>0?Math.max(...ldLots.map(l=>l.num||0))+1:1)}</button>}
-</>}
-
-{ldLotView==="active"&&<>
-{ldLots.filter(l=>l.status==="sent").length===0&&<div style={{textAlign:"center",color:T.dm,padding:30}}>No active lots</div>}
-{ldLots.filter(l=>l.status==="sent").map(lot=>{const isLate=lot.returnDate&&getLocalDate()>lot.returnDate;const daysIn=Math.round((Date.now()-new Date(lot.sendDate+"T12:00"))/86400000);return <Card key={lot.id} style={{padding:14,border:"1px solid "+(isLate?T.rd:T.ac)+"33"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-<div>
-<span style={{fontSize:16,fontWeight:800,color:T.ac}}>LOT #{lot.num}</span>
-{isLate&&<span style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:T.rd+"18",color:T.rd,fontWeight:700,marginLeft:8}}>⚠️ LATE</span>}
-</div>
-<span style={{fontSize:10,color:T.dm}}>⏱ {daysIn}d in laundry</span>
-</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:10}}>
-{[["Houses",lot.houses.length,T.ac],["Weight",lot.totalWeight.toFixed(1)+"lb",T.pu],["Cost","$"+lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2}),T.rd],["Return",fmD(lot.returnDate),isLate?T.rd:T.gr]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:6,borderRadius:6,background:T.c2}}>
-<div style={{fontSize:14,fontWeight:800,color:c}}>{v}</div>
-<div style={{fontSize:9,color:T.dm}}>{l}</div>
-</div>)}
-</div>
-<div style={{fontSize:10,color:T.dm,marginBottom:6}}>📤 Sent: {fmD(lot.sendDate)} → 📥 Expected: {fmD(lot.returnDate)}</div>
-{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd+"33",fontSize:10}}>
-<span><b>{h.name}</b> <span style={{color:T.dm}}>{h.client}</span></span>
-<span>{h.weight}lb · <span style={{color:T.rd}}>${h.cost.toLocaleString("en-US",{minimumFractionDigits:2})}</span></span>
-</div>)}
-<div style={{display:"flex",gap:6,marginTop:10}}>
-<button onClick={()=>{const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"CONFERENCIA",receivedDate:getLocalDate()}:h);svLdH(updated);svLdLots(ldLots.map(l=>l.id===lot.id?{...l,status:"received",receivedDate:getLocalDate()}:l));fl("✅ LOT #"+lot.num+" received! → Check");}} style={bt(T.gr,T.bg,{flex:1,padding:"10px",fontSize:11,borderRadius:8})}>✅ Receive Entire Lot</button>
-<button onClick={()=>{const w=window.open("","_blank");if(w){w.document.write("<html><head><title>LOT #"+lot.num+"</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:800px;margin:0 auto}h1{font-size:24px;margin-bottom:2px}.meta{color:#888;font-size:11px}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0A0F1E;color:#fff;padding:8px 12px;text-align:left;font-size:11px}td{padding:6px 12px;border-bottom:1px solid #eee;font-size:12px}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.info-box{padding:14px;border:1px solid #ddd;border-radius:8px;text-align:center}.info-box .num{font-size:24px;font-weight:800}.info-box .lbl{font-size:10px;color:#888;text-transform:uppercase;margin-top:2px}@media print{body{padding:20px}}</style></head><body>");w.document.write("<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'><div style='width:50px;height:50px;background:#0094B0;border-radius:12px;display:flex;align-items:center;justify-content:center'><span style='color:#fff;font-size:24px;font-weight:800'>S</span></div><div><h1>"+co.name+"</h1><p class='meta'>"+co.address+" | "+co.phone+"</p></div></div>");w.document.write("<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'><span style='font-size:28px;font-weight:800;color:#0094B0'>LOT #"+lot.num+"</span><div style='text-align:right'><div class='meta'>LAUNDRY SLIP</div><div style='font-size:14px;font-weight:700'>"+fmD(lot.sendDate)+"</div></div></div>");w.document.write("<div class='info-grid'><div class='info-box'><div class='num'>"+lot.houses.length+"</div><div class='lbl'>Houses</div></div><div class='info-box'><div class='num'>"+lot.totalWeight.toFixed(1)+"</div><div class='lbl'>Total Lbs</div></div><div class='info-box'><div class='num' style='color:#0094B0'>"+fmD(lot.returnDate)+"</div><div class='lbl'>Expected Return</div></div></div>");w.document.write("<table><tr><th>#</th><th>House</th><th>Client</th><th style='text-align:right'>Weight (lb)</th></tr>");lot.houses.forEach((h,i)=>{w.document.write("<tr><td>"+(i+1)+"</td><td><strong>"+h.name+"</strong></td><td>"+h.client+"</td><td style='text-align:right;font-weight:700'>"+h.weight.toFixed(1)+"</td></tr>");});w.document.write("<tr style='border-top:2px solid #222'><td colspan='3'><strong>TOTAL</strong></td><td style='text-align:right;font-weight:800;font-size:14px'>"+lot.totalWeight.toFixed(1)+" lb</td></tr></table>");w.document.write("<div style='text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #111'><div style='font-size:18px;font-weight:800;color:#0094B0'>"+co.name+"</div><div class='meta'>"+co.address+" | "+co.phone+"</div></div></body></html>");w.document.close();setTimeout(()=>w.print(),600);}}} style={bt(T.bl+"15",T.bl,{padding:"10px 14px",fontSize:10,borderRadius:8})}>🖨️ Print</button>
-<button onClick={()=>{const updated=ldHouses.map(h=>h.lotId===lot.id&&h.status==="LAVANDERIA"?{...h,status:"SUJA",lotId:null,sentDate:"",expectedReturn:""}:h);svLdH(updated);svLdLots(ldLots.filter(l=>l.id!==lot.id));fl("↩ LOT #"+lot.num+" undone");}} style={bt(T.rd+"15",T.rd,{padding:"10px 14px",fontSize:10,borderRadius:8})}>↩ Undo</button>
-</div>
-</Card>})}
-</>}
-
-{ldLotView==="history"&&<>
-{ldLots.filter(l=>l.status==="received").length===0&&<div style={{textAlign:"center",color:T.dm,padding:30}}>No completed lots</div>}
-{ldLots.filter(l=>l.status==="received").sort((a,b)=>(b.sendDate||"").localeCompare(a.sendDate||"")).map(lot=>{const daysIn=lot.receivedDate&&lot.sendDate?Math.round((new Date(lot.receivedDate+"T12:00")-new Date(lot.sendDate+"T12:00"))/86400000):0;return <Card key={lot.id} style={{padding:14}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-<span style={{fontSize:14,fontWeight:800}}>LOT #{lot.num}</span>
-<span style={{fontSize:10,color:T.gr}}>✅ Received {fmD(lot.receivedDate)}</span>
-</div>
-<div style={{display:"flex",gap:10,marginBottom:6,fontSize:10,color:T.dm}}>
-<span>📤 {fmD(lot.sendDate)} → 📥 {fmD(lot.receivedDate)}</span>
-<span>⏱ {daysIn}d</span>
-<span>🏠 {lot.houses.length}</span>
-<span>⚖️ {lot.totalWeight.toFixed(1)}lb</span>
-<span style={{color:T.rd,fontWeight:700}}>💰 ${lot.totalCost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
-</div>
-{lot.houses.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd+"22",fontSize:10}}>
-<span>{h.name} <span style={{color:T.dm}}>{h.client}</span></span>
-<span>{h.weight}lb · ${h.cost.toLocaleString("en-US",{minimumFractionDigits:2})}</span>
-</div>)}
-</Card>})}
-</>}
 
 </div>
 
