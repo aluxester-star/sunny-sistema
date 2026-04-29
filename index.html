@@ -215,7 +215,7 @@ const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(getLocalDate());co
 const[iN,setIN]=useState("");const[iD,setID]=useState(getLocalDate());const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nCl,setNCl]=useState("");const[nNm,setNNm]=useState("");const[nAd,setNAd]=useState("");const[nIp,setNIp]=useState("");const[nEp,setNEp]=useState("");
 const[nEmpN,setNEmpN]=useState("");const[eIdx,setEIdx]=useState(null);const[eD,setED]=useState({});
-const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");
+const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");const[fixedCosts,setFixedCosts]=useState([]);
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:getLocalDate(),dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
 const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");const[trash,setTrash]=useState([]);
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
@@ -235,6 +235,7 @@ try{const r=await FB.get("si3");if(r&&r.value)setSI(JSON.parse(r.value));}catch{
 try{const r=await FB.get("db3");if(r&&r.value){let p=JSON.parse(r.value);if(Array.isArray(p)&&p.length>0){if(p.some(x=>!x.cd)){const byClient={};p.forEach(x=>{const c=x.c||"?";if(!byClient[c])byClient[c]=[];byClient[c].push(x);});Object.entries(byClient).forEach(([client,houses])=>{const ini=(client||"XX").trim().split(/\s+/).length>=2?(client.trim().split(/\s+/)[0][0]+client.trim().split(/\s+/)[1][0]).toUpperCase():client.slice(0,2).toUpperCase();houses.sort((a,b)=>(a.n||"").localeCompare(b.n||"")).forEach((h,i)=>{const idx=p.findIndex(x=>x.n===h.n&&x.c===h.c);if(idx>-1&&!p[idx].cd)p[idx].cd=ini+"-"+String(i+1).padStart(3,"0");});});await sv("db3",p);console.log("Auto-generated codes");}setDb(p);}else{console.warn("db3 vazio");setDb(D);}}else{console.warn("db3 not found");setDb(D);}}catch(e){console.error("db3 err:",e);setDb(D);}
 try{const r=await FB.get("em3");if(r&&r.value){const p=JSON.parse(r.value);if(Array.isArray(p)&&p.length>0)setEm(p);}else{setEm(IE);}}catch{setEm(IE);}
 try{const r=await FB.get("fn3");if(r&&r.value)setFin(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("fc3");if(r&&r.value){const fc=JSON.parse(r.value);setFixedCosts(fc);const today=getLocalDate();const ym=today.slice(0,7);const rFin=await FB.get("fn3");const currentFin=rFin&&rFin.value?JSON.parse(rFin.value):[];let newEntries=[];fc.filter(c=>c.active!==false).forEach(c=>{const day=String(c.day||1).padStart(2,"0");const entryDate=ym+"-"+day;if(entryDate>today)return;const tag="FC_"+c.id+"_"+ym;if(currentFin.some(f=>f.fcTag===tag))return;newEntries.push({id:Date.now()+Math.random(),date:entryDate,desc:c.name,amount:c.amount,type:"saida",cat:c.category||"Custo Fixo",fcTag:tag});});if(newEntries.length>0){const updated=[...currentFin,...newEntries];setFin(updated);await sv("fn3",updated);console.log("💰 Auto-generated "+newEntries.length+" fixed costs");}}}catch{}
 try{const r=await FB.get("pr3");if(r&&r.value)setProd(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ln3");if(r&&r.value)setLin(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("lb3");if(r&&r.value)setLbp(JSON.parse(r.value));}catch{}
@@ -303,6 +304,7 @@ const findProp=(house,client)=>db.find(p=>norm(p.n)===norm(house)&&(!client||nor
 const getInitials=(name)=>{const parts=(name||"").trim().split(/\s+/);if(parts.length>=2)return(parts[0][0]+parts[1][0]).toUpperCase();return(name||"XX").slice(0,2).toUpperCase();};
 const CLIENT_COLORS={"JG":"#0094B0","HH":"#FF8A65","TF":"#A78BFA","DP":"#EA80FC","PM":"#4ADE80","KB":"#FFB547"};
 const getClientColor=(code)=>{const prefix=(code||"").split("-")[0];return CLIENT_COLORS[prefix]||"#0094B0";};
+const getHouseCode=(h)=>{if(h.cd)return h.cd;const prop=db.find(p=>norm(p.n)===norm(h.name||h.n)&&norm(p.c)===norm(h.client||h.c));return prop&&prop.cd?prop.cd:"";};
 const genCodes=(props)=>{const byClient={};props.forEach(p=>{const c=p.c||"?";if(!byClient[c])byClient[c]=[];byClient[c].push(p);});const result=props.map(p=>({...p}));Object.entries(byClient).forEach(([client,houses])=>{const ini=getInitials(client);const sorted=[...houses].sort((a,b)=>(a.n||"").localeCompare(b.n||""));sorted.forEach((h,i)=>{const idx=result.findIndex(r=>r.n===h.n&&r.c===h.c);if(idx>-1){result[idx].cd=ini+"-"+String(i+1).padStart(3,"0");}});});
 const updatedLd=ldHouses.map(lh=>{const match=result.find(p=>norm(p.n)===norm(lh.name)&&norm(p.c)===norm(lh.client))||result.find(p=>norm(p.n)===norm(lh.name));if(match&&match.cd&&lh.cd!==match.cd)return{...lh,cd:match.cd};return lh;});if(updatedLd.some((h,i)=>h.cd!==ldHouses[i]?.cd))svLdH(updatedLd);
 return result;};
@@ -347,7 +349,7 @@ const pdfFooter=()=>"<div style='text-align:center;margin-top:30px;padding-top:1
 const pdfBack="<button onclick='window.close();history.back();' style='position:fixed;top:12px;left:12px;z-index:999;padding:8px 16px;border-radius:8px;border:none;background:#0094B0;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2)' class='no-print'>← Back</button><style>@media print{.no-print{display:none!important}}</style>";
 const[showScanInput,setShowScanInput]=useState(false);const[scanCode,setScanCode]=useState("");const[scanModal,setScanModal]=useState(null);
 const scanReceive=(code)=>{const c=code.trim().toUpperCase();let prop=db.find(p=>(p.cd||"").toUpperCase()===c);if(!prop){const prefix=c.split("-")[0];const num=parseInt(c.split("-")[1])||0;const matchClient=db.filter(p=>getInitials(p.c)===prefix);const sorted=[...matchClient].sort((a,b)=>(a.n||"").localeCompare(b.n||""));if(num>0&&num<=sorted.length)prop=sorted[num-1];}if(prop){const ldHouse=ldHouses.find(h=>norm(h.name)===norm(prop.n));setScanModal({code:c,prop,ldHouse:ldHouse||{id:"t"+Date.now(),name:prop.n,client:prop.c,status:"?"}});return true;}fl(c+" not found");return false;};
-const confirmScan=(status)=>{if(!scanModal)return;const h=scanModal.ldHouse;const propName=scanModal.prop?scanModal.prop.n:h?h.name:"";const propClient=scanModal.prop?scanModal.prop.c:h?h.client:"";var wEl=document.getElementById("scanWeight");var weight=wEl?parseFloat(wEl.value)||0:0;svLdH(ldHouses.map(x=>{if(x.id===h.id||(norm(x.name)===norm(propName)&&norm(x.client)===norm(propClient))){const updates={...x,status,receivedDate:(status==="PRONTA"||status==="CONFERENCIA")?getLocalDate():x.receivedDate};if(weight>0){updates.weight=weight;updates.cost=ldCalcCost(weight);}return updates;}return x;}));const activeLots=ldLots.filter(lt=>lt.status==="sent"||lt.status==="partial");for(const lot of activeLots){const lh=lot.houses.find(x=>(x.code||"").toUpperCase()===scanModal.code||norm(x.name)===norm(propName));if(lh&&!(lot.receivedHouses||[]).includes(lh.houseId)){const newRcv=[...(lot.receivedHouses||[]),lh.houseId];const allDone=newRcv.length>=lot.houses.length;svLdLots(ldLots.map(lt=>lt.id===lot.id?{...lt,status:allDone?"received":"partial",receivedHouses:newRcv,receivedDate:allDone?getLocalDate():lt.receivedDate}:lt));break;}}const labels={PRONTA:"Ready",SUJA:"Dirty",LAVANDERIA:"Laundry",CONFERENCIA:"Check",EM_USO:"In Use",BLOQUEADA:"Blocked"};fl(scanModal.code+" -> "+(labels[status]||status));setScanModal({...scanModal,done:true,newStatus:labels[status]||status,statusColor:{PRONTA:"#4ADE80",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",EM_USO:"#60A5FA",BLOQUEADA:"#FF6B6B"}[status]||"#888"});};
+const confirmScan=(status)=>{if(!scanModal)return;const h=scanModal.ldHouse;const propName=scanModal.prop?scanModal.prop.n:h?h.name:"";const propClient=scanModal.prop?scanModal.prop.c:h?h.client:"";var wEl=document.getElementById("scanWeight");var weight=wEl?parseFloat(wEl.value)||0:0;if(ldHouses.length<2){fl("Error: houses not loaded yet. Try again.");return;}const updated=ldHouses.map(x=>{if(x.id===h.id||(norm(x.name)===norm(propName)&&norm(x.client)===norm(propClient))){const updates={...x,status,receivedDate:(status==="PRONTA"||status==="CONFERENCIA")?getLocalDate():x.receivedDate};if(weight>0){updates.weight=weight;updates.cost=ldCalcCost(weight);}return updates;}return x;});if(updated.length>=ldHouses.length){svLdH(updated);}else{fl("Error: data mismatch");return;}const activeLots=ldLots.filter(lt=>lt.status==="sent"||lt.status==="partial");for(const lot of activeLots){const lh=lot.houses.find(x=>(x.code||"").toUpperCase()===scanModal.code||norm(x.name)===norm(propName));if(lh&&!(lot.receivedHouses||[]).includes(lh.houseId)){const newRcv=[...(lot.receivedHouses||[]),lh.houseId];const allDone=newRcv.length>=lot.houses.length;svLdLots(ldLots.map(lt=>lt.id===lot.id?{...lt,status:allDone?"received":"partial",receivedHouses:newRcv,receivedDate:allDone?getLocalDate():lt.receivedDate}:lt));break;}}const labels={PRONTA:"Ready",SUJA:"Dirty",LAVANDERIA:"Laundry",CONFERENCIA:"Check",EM_USO:"In Use",BLOQUEADA:"Blocked"};fl(scanModal.code+" -> "+(labels[status]||status));setScanModal({...scanModal,done:true,newStatus:labels[status]||status,statusColor:{PRONTA:"#4ADE80",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",EM_USO:"#60A5FA",BLOQUEADA:"#FF6B6B"}[status]||"#888"});};
 const handleScan=()=>{var code=prompt("Enter house code from tag\n(e.g. DP-001):");if(code&&code.trim())scanReceive(code.trim());};
 
 const SUNNY_URL="https://sunny-sistema.vercel.app";
@@ -499,11 +501,11 @@ return(
 </div>
 </div>}
 
-<button onClick={()=>{setShowScanInput(true);setScanCode("");}} style={{position:"fixed",bottom:80,right:16,zIndex:9990,width:56,height:56,borderRadius:28,border:"none",background:"linear-gradient(135deg,#0094B0,#00B4D8)",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,148,176,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<button onClick={()=>{setScanModal(null);setShowScanInput(true);setScanCode("");}} style={{position:"fixed",bottom:80,right:16,zIndex:9990,width:56,height:56,borderRadius:28,border:"none",background:"linear-gradient(135deg,#0094B0,#00B4D8)",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,148,176,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
 <span style={{lineHeight:1}}>QR</span>
 </button>
 
-{showScanInput&&!scanModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",zIndex:99998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowScanInput(false)}>
+{showScanInput&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",zIndex:99999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowScanInput(false)}>
 <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:20,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:340,boxShadow:"0 16px 48px rgba(0,0,0,0.5)"}}>
 <div style={{textAlign:"center",marginBottom:16}}>
 <div style={{fontSize:32,marginBottom:4}}>📷</div>
@@ -954,9 +956,33 @@ return <div key={e.id} style={{padding:"6px 0",borderBottom:"1px solid "+T.bd,fo
 {fFil.length>50&&<div style={{textAlign:"center",padding:"8px 0",fontSize:10,color:T.dm}}>Mostrando 50 de {fFil.length} · Use filtros para refinar</div>}
 </div>}
 </Card>
+
+<Card>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+<span style={{fontSize:13,fontWeight:700}}>🔄 Custos Fixos ({fixedCosts.filter(c=>c.active!==false).length})</span>
+<span style={{fontSize:10,color:T.dm}}>Total: ${fixedCosts.filter(c=>c.active!==false).reduce((s,c)=>s+c.amount,0).toLocaleString("en-US")}/mês</span>
+</div>
+
+{fixedCosts.map((c,i)=><div key={c.id} style={{display:"grid",gridTemplateColumns:"1fr 80px 50px 60px 28px",gap:6,padding:"6px 0",borderBottom:"1px solid "+T.bd+"33",alignItems:"center",opacity:c.active===false?0.4:1}}>
+<div><div style={{fontSize:12,fontWeight:600}}>{c.name}</div><div style={{fontSize:9,color:T.dm}}>{c.category||"Custo Fixo"} · Day {c.day}</div></div>
+<span style={{fontSize:12,fontWeight:700,color:T.rd,textAlign:"right"}}>${c.amount.toLocaleString("en-US")}</span>
+<span style={{fontSize:9,color:T.dm,textAlign:"center"}}>dia {c.day}</span>
+<button onClick={()=>{const updated=[...fixedCosts];updated[i]={...c,active:c.active===false?true:false};setFixedCosts(updated);sv("fc3",updated);fl(c.active===false?"Ativado!":"Pausado!");}} style={{border:"none",background:c.active===false?T.gr+"15":T.or+"15",color:c.active===false?T.gr:T.or,padding:"3px 6px",borderRadius:4,fontSize:9,cursor:"pointer"}}>{c.active===false?"Ativar":"Pausar"}</button>
+<button onClick={()=>{if(confirm("Deletar \""+c.name+"\"?")){const updated=fixedCosts.filter(x=>x.id!==c.id);setFixedCosts(updated);sv("fc3",updated);fl("Deletado!");}}} style={{border:"none",background:T.rd+"12",color:T.rd,fontSize:10,cursor:"pointer",borderRadius:4,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>)}
+
+{(()=>{const cats=["Aluguel","Seguro","Financiamento","Empréstimo","Internet","Telefone","Software","Veículo","Outros"];return <div style={{marginTop:10,padding:12,borderRadius:8,background:T.ac+"06",border:"1px solid "+T.ac+"22"}}>
+<div style={{fontSize:10,fontWeight:700,marginBottom:6}}>➕ Add Fixed Cost</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+<div><label style={lb}>Name</label><input id="fcName" placeholder="Ex: Aluguel" style={{...inp,width:"100%",fontSize:11}}/></div>
+<div><label style={lb}>Amount ($)</label><input id="fcAmt" type="number" step="0.01" placeholder="0.00" style={{...inp,width:"100%",fontSize:11}}/></div>
+<div><label style={lb}>Day of Month</label><input id="fcDay" type="number" min="1" max="31" placeholder="1" style={{...inp,width:"100%",fontSize:11}}/></div>
+</div>
+<div style={{marginTop:6}}><label style={lb}>Category</label><select id="fcCat" style={{...sel,width:"100%",fontSize:11}}>{cats.map(c=><option key={c}>{c}</option>)}<option value="__c">+ Custom</option></select></div>
+<button onClick={()=>{const name=document.getElementById("fcName").value;const amount=parseFloat(document.getElementById("fcAmt").value)||0;const day=parseInt(document.getElementById("fcDay").value)||1;let cat=document.getElementById("fcCat").value;if(cat==="__c"){cat=prompt("Category name:");if(!cat)return;}if(!name||!amount){fl("Fill name and amount!");return;}const item={id:Date.now(),name,amount,day:Math.min(28,Math.max(1,day)),category:cat,active:true};const updated=[...fixedCosts,item];setFixedCosts(updated);sv("fc3",updated);document.getElementById("fcName").value="";document.getElementById("fcAmt").value="";document.getElementById("fcDay").value="";fl("✅ "+name+" added!");}} style={bt(T.ac,T.bg,{padding:"8px",fontSize:11,width:"100%",marginTop:8,borderRadius:6})}>Add Fixed Cost</button>
+</div>})()}
+</Card>
 </div>}
-
-
 {/* REPORT */}
 {vw==="report"&&(()=>{
 const mo=rptMo;const moIdx=MO.indexOf(mo);
@@ -2074,7 +2100,7 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 <button onClick={()=>{const houses=ldHouses.filter(h=>(h.client||"No Client")===client).map(h=>{const prop=findProp(h.name,h.client);return{n:h.name,c:h.client,cd:h.cd||(prop&&prop.cd?prop.cd:"")};}).filter(h=>h.cd);if(!houses.length){fl("No codes!");return;}genTag(houses,"Reserve "+client,true);}} style={{border:"none",background:"#FF6B6B10",color:"#FF6B6B",padding:"2px 8px",borderRadius:4,fontSize:9,cursor:"pointer",fontWeight:700}}>R</button>
 </div></div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
-{ldHouses.filter(h=>(h.client||"No Client")===client).sort((a,b)=>(a.cd||"ZZZ").localeCompare(b.cd||"ZZZ")).map(h=>{const code=h.cd||(()=>{const prop=findProp(h.name,h.client);return prop&&prop.cd?prop.cd:"";})();const codeColor=getClientColor(code);const colors={PRONTA:"#4ADE80",EM_USO:"#60A5FA",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",BLOQUEADA:"#FF6B6B"};const labels={PRONTA:"Ready",EM_USO:"In Use",SUJA:"Dirty",LAVANDERIA:"Lavanderia",CONFERENCIA:"Check",BLOQUEADA:"Blocked"};const cl=colors[h.status||"PRONTA"]||"#888";const totalItems=(h.sections||[]).reduce((s,sec)=>s+sec.items.length,0);return <div key={h.id} style={{background:T.c2,borderRadius:12,border:"2px solid "+cl+"33",overflow:"hidden"}}>
+{ldHouses.filter(h=>(h.client||"No Client")===client).sort((a,b)=>(getHouseCode(a)||"ZZZ").localeCompare(getHouseCode(b)||"ZZZ")).map(h=>{const code=h.cd||(()=>{const prop=findProp(h.name,h.client);return prop&&prop.cd?prop.cd:"";})();const codeColor=getClientColor(code);const colors={PRONTA:"#4ADE80",EM_USO:"#60A5FA",SUJA:"#FFB547",LAVANDERIA:"#00B4D8",CONFERENCIA:"#A78BFA",BLOQUEADA:"#FF6B6B"};const labels={PRONTA:"Ready",EM_USO:"In Use",SUJA:"Dirty",LAVANDERIA:"Lavanderia",CONFERENCIA:"Check",BLOQUEADA:"Blocked"};const cl=colors[h.status||"PRONTA"]||"#888";const totalItems=(h.sections||[]).reduce((s,sec)=>s+sec.items.length,0);return <div key={h.id} style={{background:T.c2,borderRadius:12,border:"2px solid "+cl+"33",overflow:"hidden"}}>
 <div style={{padding:"14px 16px 10px"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
 <div><div style={{fontSize:16,fontWeight:800}}>{code&&<span style={{color:codeColor,fontSize:12,marginRight:6}}>{code}</span>}{h.name}</div></div>
@@ -2137,12 +2163,12 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 
 <Card style={{padding:14}}>
 <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>1️⃣ Select Dirty Houses</div>
-{ldHouses.filter(h=>h.status==="SUJA").map(h=>{const sel=(ldConf.ids||[]).includes(h.id);const code=h.cd||(()=>{const prop=findProp(h.name,h.client);return prop&&prop.cd?prop.cd:"";})();const codeColor=getClientColor(code);return <div key={h.id} onClick={()=>{const ids=sel?(ldConf.ids||[]).filter(x=>x!==h.id):[...(ldConf.ids||[]),h.id];setLdConf({...ldConf,ids});}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
+{ldHouses.filter(h=>h.status==="SUJA").sort((a,b)=>(getHouseCode(a)||"ZZZ").localeCompare(getHouseCode(b)||"ZZZ")).map(h=>{const sel=(ldConf.ids||[]).includes(h.id);const code=h.cd||(()=>{const prop=findProp(h.name,h.client);return prop&&prop.cd?prop.cd:"";})();const codeColor=getClientColor(code);return <div key={h.id} onClick={()=>{const ids=sel?(ldConf.ids||[]).filter(x=>x!==h.id):[...(ldConf.ids||[]),h.id];const newConf={...ldConf,ids};if(!sel&&h.weight&&!ldConf["w_"+h.id]){newConf["w_"+h.id]=String(h.weight);}setLdConf(newConf);}} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
 <div><div style={{fontSize:12,fontWeight:600}}>{code&&<span style={{color:codeColor,fontSize:10,marginRight:5}}>{code}</span>}{h.name}</div><div style={{fontSize:9,color:T.dm}}>{h.client||""}{h.deadline?" · Deadline: "+fmD(h.deadline):""}</div></div>
 <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sel?T.ac:"#8899AA"),background:sel?T.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12}}>{sel?"V":""}</div>
 </div>})}
 {ldHouses.filter(h=>h.status==="SUJA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:16}}>No dirty houses</div>}
-{ldHouses.filter(h=>h.status==="SUJA").length>1&&!(ldConf.ids||[]).length&&<button onClick={()=>setLdConf({...ldConf,ids:ldHouses.filter(h=>h.status==="SUJA").map(h=>h.id)})} style={bt(T.ac+"15",T.ac,{padding:"6px 14px",fontSize:9,width:"100%"})}>Select All ({ldHouses.filter(h=>h.status==="SUJA").length})</button>}
+{ldHouses.filter(h=>h.status==="SUJA").length>1&&!(ldConf.ids||[]).length&&<button onClick={()=>{const dirty=ldHouses.filter(h=>h.status==="SUJA");const newConf={...ldConf,ids:dirty.map(h=>h.id)};dirty.forEach(h=>{if(h.weight&&!newConf["w_"+h.id])newConf["w_"+h.id]=String(h.weight);});setLdConf(newConf);}} style={bt(T.ac+"15",T.ac,{padding:"6px 14px",fontSize:9,width:"100%"})}>Select All ({ldHouses.filter(h=>h.status==="SUJA").length})</button>}
 </Card>
 
 {(ldConf.ids||[]).length>0&&<Card style={{padding:14}}>
@@ -2154,7 +2180,7 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 <div style={{fontSize:11,fontWeight:700,marginBottom:6}}>⚖️ Weight per House</div>
 {(ldConf.ids||[]).map(hid=>{const h=ldHouses.find(x=>x.id===hid);const hCode=h&&h.cd?h.cd:(()=>{const prop=findProp(h?h.name:"",h?h.client:"");return prop&&prop.cd?prop.cd:"";})();return <div key={hid} style={{display:"flex",gap:9,alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+T.bd+"44"}}>
 <span style={{fontSize:11,fontWeight:600,flex:1}}>{hCode&&<span style={{color:getClientColor(hCode),fontWeight:700,marginRight:4,fontSize:10}}>{hCode}</span>}{h?h.name:"?"} <span style={{color:T.dm,fontWeight:400,fontSize:9}}>{h?h.client:""}</span></span>
-<input type="number" step="0.1" placeholder="lb" defaultValue={ldConf["w_"+hid]||(h&&h.weight?h.weight:"")} onBlur={e=>setLdConf({...ldConf,["w_"+hid]:e.target.value})} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...inp,fontSize:12,width:70,padding:"6px 8px",textAlign:"center"}}/>
+<input type="number" step="0.1" placeholder="lb" value={ldConf["w_"+hid]!==undefined?ldConf["w_"+hid]:(h&&h.weight?h.weight:"")} onChange={e=>setLdConf({...ldConf,["w_"+hid]:e.target.value})} style={{...inp,fontSize:12,width:70,padding:"6px 8px",textAlign:"center"}}/>
 <span style={{fontSize:10,color:T.gr,fontWeight:600,minWidth:50}}>${ldCalcCost(parseFloat(ldConf["w_"+hid])||(h?h.weight:0)||0)}</span>
 </div>})}
 <div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:T.ac+"08",border:"1px solid "+T.ac+"22"}}>
@@ -2207,7 +2233,7 @@ if(noProblem){fl("✅ Tudo OK!");}else if(blocked){fl("🚫 "+damaged.length+" p
 setLdSel(null);setLdConf({});}catch(err){fl("❌ Erro: "+err.message);console.error(err);}}} style={bt(T.gr,T.bg,{padding:"12px",borderRadius:8,fontSize:12,flex:1,marginTop:10})}>Finish</button><button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===ldSel.id?{...x,status:"LAVANDERIA"}:x));ldAddLog(ldSel.id,"UNDO_LAVANDERIA");fl("Back to Laundry");setLdSel(null);setLdConf({});});}} style={bt(T.rd+"15",T.rd,{padding:"12px",borderRadius:8,fontSize:12,marginTop:10})}>Back to Laundry</button><button onClick={()=>{setLdSel(null);setLdConf({});}} style={bt(T.dm+"20",T.dm,{padding:"12px",borderRadius:8,fontSize:12,marginTop:10})}>Cancel</button>
 </div>})()}
 </div>:<div>
-{ldHouses.filter(h=>h.status==="CONFERENCIA").map(h=><div key={h.id} style={{display:"flex",marginBottom:4}}><button onClick={()=>{setLdSel(h);setLdConf({});}} style={{flex:1,padding:"12px",borderRadius:"8px 0 0 8px",border:"1px solid "+T.bd,borderRight:"none",background:T.c2,color:T.tx,textAlign:"left",cursor:"pointer",fontSize:12}}><strong>{h.name}</strong></button><button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"LAVANDERIA"}:x));ldAddLog(h.id,"UNDO_LAVANDERIA");fl("Back to Laundry");});}} style={{width:56,padding:"12px 4px",borderRadius:"0 8px 8px 0",border:"1px solid "+T.bd,background:T.rd+"15",color:T.rd,cursor:"pointer",fontSize:9,fontWeight:700}}>Undo</button></div>)}
+{ldHouses.filter(h=>h.status==="CONFERENCIA").sort((a,b)=>(getHouseCode(a)||"ZZZ").localeCompare(getHouseCode(b)||"ZZZ")).map(h=><div key={h.id} style={{display:"flex",marginBottom:4}}><button onClick={()=>{setLdSel(h);setLdConf({});}} style={{flex:1,padding:"12px",borderRadius:"8px 0 0 8px",border:"1px solid "+T.bd,borderRight:"none",background:T.c2,color:T.tx,textAlign:"left",cursor:"pointer",fontSize:12}}><strong>{h.name}</strong></button><button onClick={()=>{keepScroll(()=>{svLdH(ldHouses.map(x=>x.id===h.id?{...x,status:"LAVANDERIA"}:x));ldAddLog(h.id,"UNDO_LAVANDERIA");fl("Back to Laundry");});}} style={{width:56,padding:"12px 4px",borderRadius:"0 8px 8px 0",border:"1px solid "+T.bd,background:T.rd+"15",color:T.rd,cursor:"pointer",fontSize:9,fontWeight:700}}>Undo</button></div>)}
 {ldHouses.filter(h=>h.status==="CONFERENCIA").length===0&&<div style={{textAlign:"center",color:T.dm,padding:20}}>No houses to check</div>}
 </div>}
 </Card>
@@ -3078,7 +3104,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
 <div style={{display:"flex",gap:4}}>
 <button onClick={()=>genTag(props.filter(p=>p.cd),"Tags "+cl)} style={{border:"none",background:"#A78BFA10",color:"#A78BFA",padding:"2px 8px",borderRadius:4,fontSize:9,cursor:"pointer"}}>🏷️ Print Tags</button>
 <button onClick={()=>{askModal("Novo nome para '"+cl+"'",cl,(nn)=>{if(nn&&nn.trim()){uDB(db.map(p=>p.c===cl?{...p,c:nn.trim()}:p));fl("✅ Renomeado!");}});}} style={{border:"none",background:T.bl+"10",color:T.bl,padding:"2px 8px",borderRadius:4,fontSize:9,cursor:"pointer"}}>Renomear</button></div></div>
-{props.sort((a,b)=>(a.cd||"ZZZ").localeCompare(b.cd||"ZZZ")).map((p,pi)=>{const idx=db.indexOf(p);const codeColor=getClientColor(p.cd);return <div key={pi} style={{padding:"8px 10px",borderRadius:8,background:T.c2,marginBottom:4,border:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+{props.sort((a,b)=>(getHouseCode(a)||"ZZZ").localeCompare(getHouseCode(b)||"ZZZ")).map((p,pi)=>{const idx=db.indexOf(p);const codeColor=getClientColor(p.cd);return <div key={pi} style={{padding:"8px 10px",borderRadius:8,background:T.c2,marginBottom:4,border:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
 <div style={{display:"grid",gridTemplateColumns:"55px 1.8fr 2fr .6fr .6fr .6fr 28px 28px 28px",gap:6,alignItems:"center",minWidth:560}}>
 <span style={{fontSize:11,fontWeight:800,color:codeColor}}>{p.cd||"—"}</span>
 <div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",marginBottom:1}}>Nome</div>
