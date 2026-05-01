@@ -382,6 +382,9 @@ const emitirInv=async(id)=>{const inv=sI.find(i=>i.id===id);if(!inv)return;const
 const pagarInv=async(id)=>{const u=sI.map(i=>i.id===id?{...i,status:"paga",pagaAt:new Date().toISOString()}:i);setSI(u);await sv("si3",u);fl("💰 Invoice marcada como paga!");};
 const editInv=(inv)=>{setIN(inv.no);setID(inv.date);setIC(inv.client);setII(inv.items||[]);setEditInvId(inv.id);setVw("invoice");};
 
+const[autoGen,setAutoGen]=useState(null);
+const autoGenPayrolls=()=>{const g=autoGen;if(!g||!g.from||!g.to)return;const selEmps=(g.selected||[]);if(!selEmps.length){fl("Select employees!");return;}const evts=agEvents.filter(ev=>ev.date&&ev.date>=g.from&&ev.date<=g.to&&ev.house);let created=0;selEmps.forEach(emp=>{const empEvts=evts.filter(ev=>(ev.employees||[]).some(e=>norm(e)===norm(emp)));if(!empEvts.length)return;const items=empEvts.map(ev=>{const prop=findProp(ev.house,ev.client);const numEmps=(ev.employees||[]).length||1;const ep=prop?Math.round((prop.ep||0)/numEmps*100)/100:0;const ip=prop?Math.round((prop.ip||0)/numEmps*100)/100:0;return{id:Date.now()+Math.random(),c:ev.client||"",n:ev.house||"",a:prop?prop.a||"":"",date:ev.date,ep,ip,desc:"Cleaning Service"};}).sort((a,b)=>a.date.localeCompare(b.date));const total=items.reduce((s,i)=>s+(i.ep||0),0);const invTotal=items.reduce((s,i)=>s+(i.ip||0),0);const mo=g.from.slice(0,7);const monthIdx=parseInt(mo.slice(5,7))-1;const entry={id:Date.now()+Math.random(),emp,week:fmD(g.from)+" - "+fmD(g.to),wkFrom:g.from,wkTo:g.to,month:MO[monthIdx]||MO[new Date().getMonth()],items,total,invTot:invTotal,profit:invTotal-total,at:new Date().toISOString(),casas:items.length,status:"rascunho"};sP.unshift(entry);created++;});if(created>0){setSP([...sP]);sv("sp3",sP);fl("✅ "+created+" folha(s) gerada(s)!");setAutoGen(null);setVw("history");}else{fl("No events found for selected employees");}};
+const autoGenInvoices=()=>{const g=autoGen;if(!g||!g.from||!g.to)return;const selClients=(g.selected||[]);if(!selClients.length){fl("Select clients!");return;}const evts=agEvents.filter(ev=>ev.date&&ev.date>=g.from&&ev.date<=g.to&&ev.house);let created=0;let nextNo=sI.length>0?Math.max(...sI.map(i=>parseInt(i.no)||0))+1:1;selClients.forEach(client=>{const clientEvts=evts.filter(ev=>norm(ev.client)===norm(client));if(!clientEvts.length)return;const items=clientEvts.map(ev=>{const prop=findProp(ev.house,ev.client);return{id:Date.now()+Math.random(),desc:ev.type==="Deep Clean"?"Deep Cleaning Service":"Cleaning Service",n:ev.house||"",a:prop?prop.a||"":"",date:ev.date,amt:prop?prop.ip||0:0};}).sort((a,b)=>a.date.localeCompare(b.date));const total=items.reduce((s,i)=>s+(i.amt||0),0);const entry={id:Date.now()+Math.random(),no:String(nextNo),date:getLocalDate(),client,items,total,at:new Date().toISOString(),status:"rascunho"};sI.unshift(entry);nextNo++;created++;});if(created>0){setSI([...sI]);sv("si3",sI);fl("✅ "+created+" invoice(s) gerada(s)!");setAutoGen(null);setVw("history");}else{fl("No events found for selected clients");}};
 const delP=async id=>{const u=sP.filter(p=>p.id!==id);setSP(u);await sv("sp3",u);const uf=fin.filter(e=>e.ref!=="po-"+id);setFin(uf);await sv("fn3",uf);};
 const delI=async id=>{const u=sI.filter(i=>i.id!==id);setSI(u);await sv("si3",u);const uf=fin.filter(e=>e.ref!=="si-"+id);setFin(uf);await sv("fn3",uf);};
 const uDB=async n=>{setDb(n);dsv("db3",n);
@@ -532,6 +535,27 @@ return results.length>0?results.map((r,i)=><div key={i} onClick={r.action} style
 </div>):<div style={{textAlign:"center",padding:20,color:T.dm,fontSize:12}}>No results for "{searchQ}"</div>;})()}
 {searchQ.length<2&&<div style={{textAlign:"center",padding:20,color:T.dm,fontSize:12}}>Type 2+ characters to search</div>}
 </div>
+</div>
+</div>}
+
+{autoGen&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",zIndex:99997,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setAutoGen(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:20,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:400,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
+<div style={{fontSize:16,fontWeight:700,marginBottom:16,textAlign:"center"}}>⚡ {autoGen.type==="payroll"?"Gerar Folhas":"Gerar Invoices"}</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+<div><label style={{fontSize:10,fontWeight:600,color:T.dm}}>De</label><input type="date" defaultValue={autoGen.from} onBlur={e=>setAutoGen({...autoGen,from:e.target.value})} style={{...inp,width:"100%",fontSize:13,padding:"10px"}}/></div>
+<div><label style={{fontSize:10,fontWeight:600,color:T.dm}}>Até</label><input type="date" defaultValue={autoGen.to} onBlur={e=>setAutoGen({...autoGen,to:e.target.value})} style={{...inp,width:"100%",fontSize:13,padding:"10px"}}/></div>
+</div>
+<div style={{fontSize:11,fontWeight:700,color:T.dm,marginBottom:8}}>{autoGen.type==="payroll"?"Funcionários:":"Clientes:"}</div>
+<div style={{display:"flex",gap:6,marginBottom:8}}>
+<button onClick={()=>setAutoGen({...autoGen,selected:[...autoGen.list]})} style={{border:"none",background:T.ac+"15",color:T.ac,padding:"4px 10px",borderRadius:6,fontSize:9,cursor:"pointer"}}>Todos</button>
+<button onClick={()=>setAutoGen({...autoGen,selected:[]})} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"4px 10px",borderRadius:6,fontSize:9,cursor:"pointer"}}>Nenhum</button>
+</div>
+{(autoGen.list||[]).map(item=>{const sel=(autoGen.selected||[]).includes(item);return <div key={item} onClick={()=>{const s=sel?(autoGen.selected||[]).filter(x=>x!==item):[...(autoGen.selected||[]),item];setAutoGen({...autoGen,selected:s});}} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.ac:"1px solid "+T.bd,background:sel?T.ac+"08":T.c2,marginBottom:4,cursor:"pointer"}}>
+<div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sel?T.ac:"#8899AA"),background:sel?T.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700}}>{sel&&"✓"}</div>
+<span style={{fontSize:13,fontWeight:600}}>{item}</span>
+</div>})}
+<button onClick={()=>{if(autoGen.type==="payroll")autoGenPayrolls();else autoGenInvoices();}} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:12,border:"none",background:T.or,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>⚡ {autoGen.type==="payroll"?"Gerar Folhas":"Gerar Invoices"} ({(autoGen.selected||[]).length})</button>
+<button onClick={()=>setAutoGen(null)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:10,border:"none",background:T.dm+"15",color:T.dm,fontSize:12,cursor:"pointer"}}>Cancelar</button>
 </div>
 </div>}
 
@@ -741,7 +765,8 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 
 {/* PAYROLL */}
 {vw==="payroll"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-<Card style={{padding:14}}><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>💰 Folha de Pagamento</div>
+<Card style={{padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span style={{fontSize:13,fontWeight:700}}>💰 Folha de Pagamento</span>
+<button onClick={()=>setAutoGen({type:"payroll",from:"",to:"",selected:[],list:em})} style={bt(T.or+"15",T.or,{padding:"5px 12px",fontSize:10})}>⚡ Gerar Folhas</button></div>
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:8}}>
 <div><label style={lb}>Funcionário</label><select value={sE} onChange={e=>{setSE(e.target.value);setPI([]);}} style={{...sel,fontWeight:600,background:sE?T.aD:T.cd}}><option value="">—</option>{em.map(e=><option key={e}>{e}</option>)}</select></div>
 <div><label style={lb}>De</label><DI value={wkFrom} onChange={e=>setWkFrom(e.target.value)} style={inp}/></div><div><label style={lb}>Até</label><DI value={wkTo} onChange={e=>setWkTo(e.target.value)} style={inp}/></div>
@@ -793,7 +818,8 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 </div>
 {estView==="inv"?<div>
 
-<Card style={{padding:14}}><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📄 Invoice</div>
+<Card style={{padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span style={{fontSize:13,fontWeight:700}}>📄 Invoice</span>
+<button onClick={()=>setAutoGen({type:"invoice",from:"",to:"",selected:[],list:cls})} style={bt(T.or+"15",T.or,{padding:"5px 12px",fontSize:10})}>⚡ Gerar Invoices</button></div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8}}>
 <div><label style={lb}>Nº</label><TI value={iN} onChange={e=>setIN(e.target.value)} style={inp}/></div>
 <div><label style={lb}>Data Invoice</label><DI value={iD} onChange={e=>setID(e.target.value)} style={inp}/></div>
