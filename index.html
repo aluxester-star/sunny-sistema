@@ -356,8 +356,10 @@ const addBizDays=(d,n)=>{let r=new Date(d+"T12:00:00");let count=0;while(count<n
 
 const genAutoLot=()=>{const today=getLocalDate();const twoWeeks=addDays(today,14);const turnovers=agEvents.filter(ev=>ev.date&&ev.date>=today&&ev.date<=twoWeeks&&(ev.type==="Turnover"||ev.type==="turnover")&&ev.house);
 const dirtyHouses=ldHouses.filter(h=>h.status==="SUJA");
+const activeLotHouseIds=new Set();ldLots.filter(l=>l.status==="sent"||l.status==="partial").forEach(l=>l.houses.forEach(h=>activeLotHouseIds.add(h.houseId)));
+const seen={};const uniqueDirty=dirtyHouses.filter(h=>{if(activeLotHouseIds.has(h.id))return false;const k=norm(h.name)+"|"+norm(h.client);if(seen[k])return false;seen[k]=true;return true;});
 const suggestions=[];const reserves=[];
-dirtyHouses.forEach(h=>{const prop=findProp(h.name,h.client);const code=h.cd||(prop&&prop.cd?prop.cd:"");
+uniqueDirty.forEach(h=>{const prop=findProp(h.name,h.client);const code=h.cd||(prop&&prop.cd?prop.cd:"");
 const nextCleans=turnovers.filter(ev=>norm(ev.house)===norm(h.name)).sort((a,b)=>a.date.localeCompare(b.date));
 let deadline=null;let nextClean=null;
 if(nextCleans.length>0){nextClean=nextCleans[0].date;deadline=subBizDays(nextClean,2);}else{deadline=addBizDays(today,4);}
@@ -410,6 +412,7 @@ const updLd=ldHouses.map(lh=>{const match=n.find(p=>norm(p.n)===norm(lh.name)&&n
 };const uEM=async n=>{setEm(n);dsv("em3",n);};
 
 const addFin=async()=>{if(!fF.cat||!fF.amt)return;const e={...fF,id:Date.now(),amt:parseFloat(fF.amt),month:fF.date?MO[new Date(fF.date+"T12:00").getMonth()]:"Fevereiro"};const u=[e,...fin];setFin(u);await sv("fn3",u);setFF({type:"entrada",cat:"",desc:"",amt:"",date:fF.date,dateFrom:fF.dateFrom,dateTo:fF.dateTo,centro:"",centroClient:"",centroHouse:""});fl("✅ Lançamento salvo!");};
+const addFinEntry=async(entry)=>{const e={...entry,id:Date.now()+Math.random(),month:entry.date?MO[new Date(entry.date+"T12:00").getMonth()]:MO[new Date().getMonth()]};const u=[e,...fin];setFin(u);await sv("fn3",u);};
 const delFin=async id=>{const u=fin.filter(e=>e.id!==id);setFin(u);await sv("fn3",u);};
 const updateFinEntry=async(id,data)=>{const u=fin.map(e=>e.id===id?{...e,...data}:e);setFin(u);await sv("fn3",u);fl("✅ Atualizado!");};
 const dupFin=async(entry)=>{const n={...entry,id:Date.now()+Math.random(),desc:(entry.desc||"")+" (cópia)",date:getLocalDate()};const u=[n,...fin];setFin(u);await sv("fn3",u);fl("✅ Duplicado!");};
@@ -757,6 +760,105 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 {(()=>{const moInsp=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===fMo);const byEmp={};moInsp.forEach(i=>(i.employees||[]).forEach(e=>{if(!byEmp[e])byEmp[e]={sum:0,cnt:0};byEmp[e].sum+=i.score;byEmp[e].cnt++;}));const ranking=Object.entries(byEmp).map(([e,d])=>({name:e,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>b.avg-a.avg);return ranking.length>0?<Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>🏆 Top Cleaners — {fMo}</div>{ranking.slice(0,5).map((r,i)=><div key={r.name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:i<Math.min(ranking.length,5)-1?"1px solid "+T.bd:"none",fontSize:10}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:18,height:18,borderRadius:4,background:i===0?"#FFD70022":i===1?"#C0C0C022":i===2?"#CD7F3222":T.c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":T.dm}}>{i+1}</span><span style={{fontWeight:600}}>{r.name}</span></div><div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{r.cnt}x</span><span style={{fontWeight:800,fontSize:13,color:r.avg>=95?T.gr:r.avg>=90?T.ac:r.avg>=80?T.or:T.rd}}>{r.avg}</span></div></div>)}</Card>:null;})()}
 
 {(()=>{const moPayrolls=sP.filter(p=>p.month===fMo);if(!moPayrolls.length)return null;const byEmp={};moPayrolls.forEach(p=>{if(!byEmp[p.emp])byEmp[p.emp]={paid:0,houses:0};byEmp[p.emp].paid+=p.total;byEmp[p.emp].houses+=p.casas;});const sorted=Object.entries(byEmp).sort((a,b)=>b[1].paid-a[1].paid);return <Card style={{padding:14}}><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>💰 Pagamentos — {fMo}</div>{sorted.map(([name,d],i)=><div key={name} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:i<sorted.length-1?"1px solid "+T.bd:"none",fontSize:10}}><span style={{fontWeight:600}}>{name}</span><div style={{display:"flex",gap:8}}><span style={{color:T.dm,fontSize:9}}>{d.houses}c</span><span style={{fontWeight:700,color:T.ac}}>${d.paid.toLocaleString("en-US")}</span></div></div>)}</Card>;})()}
+
+{(()=>{const moIdx=MO.indexOf(fMo);const yr=new Date().getFullYear();const moStart=yr+"-"+String(moIdx+1).padStart(2,"0")+"-01";const moEnd=yr+"-"+String(moIdx+1).padStart(2,"0")+"-31";const moEvents=agEvents.filter(ev=>ev.date&&ev.date>=moStart&&ev.date<=moEnd&&ev.house);
+const prevMoIdx=moIdx===0?11:moIdx-1;const prevYr=moIdx===0?yr-1:yr;const prevMoStart=prevYr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-01";const prevMoEnd=prevYr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-31";const prevEvents=agEvents.filter(ev=>ev.date&&ev.date>=prevMoStart&&ev.date<=prevMoEnd&&ev.house);
+const byClient={};let totalRev=0;let totalPay=0;let totalTurnovers=0;
+moEvents.forEach(ev=>{const prop=findProp(ev.house,ev.client);const ip=prop?prop.ip||0:0;const ep=prop?prop.ep||0:0;const numEmp=(ev.employees||[]).length||1;const c=ev.client||"?";if(!byClient[c])byClient[c]={rev:0,pay:0,cnt:0};byClient[c].rev+=ip;byClient[c].pay+=Math.round(ep/numEmp*100)/100;byClient[c].cnt++;totalRev+=ip;totalPay+=Math.round(ep/numEmp*100)/100;totalTurnovers++;});
+let prevRev=0;prevEvents.forEach(ev=>{const prop=findProp(ev.house,ev.client);prevRev+=prop?prop.ip||0:0;});
+const avgWeight=ldHouses.filter(h=>h.weight>0).length>0?ldHouses.filter(h=>h.weight>0).reduce((s,h)=>s+h.weight,0)/ldHouses.filter(h=>h.weight>0).length:20;const estLdWeight=totalTurnovers*avgWeight;const estLdCost=estLdWeight*(ldCfg.priceLb||1.1);
+const fixedCosts=co.fixedCosts||0;const totalExp=totalPay+estLdCost+fixedCosts;const profit=totalRev-totalExp;const margin=totalRev>0?Math.round(profit/totalRev*100):0;
+const realRev=fin.filter(e=>e.month===fMo&&e.type==="entrada").reduce((s,e)=>s+(e.amt||0),0);const realExp=fin.filter(e=>e.month===fMo&&e.type==="saida").reduce((s,e)=>s+(e.amt||0),0);
+const goal=co.monthlyGoal||0;const goalPct=goal>0?Math.min(Math.round(realRev/goal*100),100):0;
+const unpaidInv=sI.filter(i=>i.status!=="paga"&&i.status!=="cancelled");const unpaidTotal=unpaidInv.reduce((s,i)=>s+(i.total||0),0);const overdueInv=unpaidInv.filter(i=>{if(!i.date)return false;const d=Math.round((new Date()-new Date(i.date+"T12:00"))/86400000);return d>15;});
+const houseProfit={};moEvents.forEach(ev=>{const prop=findProp(ev.house,ev.client);if(!prop)return;const ip=prop.ip||0;const ep=prop.ep||0;const numEmp=(ev.employees||[]).length||1;const hw=ldHouses.find(h=>norm(h.name)===norm(ev.house));const w=hw&&hw.weight?hw.weight:avgWeight;const ldc=w*(ldCfg.priceLb||1.1);const k=ev.house;if(!houseProfit[k])houseProfit[k]={rev:0,cost:0,cnt:0,client:ev.client};houseProfit[k].rev+=ip;houseProfit[k].cost+=Math.round(ep/numEmp*100)/100+ldc;houseProfit[k].cnt++;});
+const lowMarginHouses=Object.entries(houseProfit).filter(([k,d])=>{const m=d.rev>0?((d.rev-d.cost)/d.rev*100):0;return m<20&&d.cnt>=2;}).sort((a,b)=>(a[1].rev-a[1].cost)-(b[1].rev-b[1].cost));
+const empLoad={};moEvents.forEach(ev=>{(ev.employees||[]).forEach(e=>{if(!empLoad[e])empLoad[e]={cnt:0,score:[]};empLoad[e].cnt++;});});const moInsp=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===fMo);moInsp.forEach(i=>(i.employees||[]).forEach(e=>{if(empLoad[e])empLoad[e].score.push(i.score);}));
+const maxCapPerEmp=80;const totalCap=Object.keys(empLoad).length*maxCapPerEmp;const totalUsed=Object.values(empLoad).reduce((s,d)=>s+d.cnt,0);const capPct=totalCap>0?Math.round(totalUsed/totalCap*100):0;
+const revChange=prevRev>0?Math.round((totalRev-prevRev)/prevRev*100):0;
+if(!moEvents.length&&!unpaidInv.length)return null;
+return <Card style={{padding:18,border:"1px solid "+T.ac+"33",background:T.ac+"04",gridColumn:"1/-1"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+<span style={{fontSize:16,fontWeight:800}}>📊 Forecast — {fMo}</span>
+<button onClick={()=>{const g=prompt("Monthly revenue goal ($):",co.monthlyGoal||"30000");if(g!==null){const fc=prompt("Fixed monthly costs ($):",co.fixedCosts||"0");setCo({...co,monthlyGoal:parseFloat(g)||0,fixedCosts:parseFloat(fc)||0});sv("co3",{...co,monthlyGoal:parseFloat(g)||0,fixedCosts:parseFloat(fc)||0});fl("Settings saved!");}}} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"6px 12px",borderRadius:8,fontSize:10,cursor:"pointer"}}>⚙️ Settings</button>
+</div>
+
+{goal>0&&<div style={{marginBottom:18,padding:14,borderRadius:10,background:T.bg+"66"}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:14,marginBottom:6}}>
+<span style={{fontWeight:700}}>🎯 META: ${fm(goal)}</span>
+<span style={{color:goalPct>=100?T.gr:goalPct>=70?T.ac:T.or,fontWeight:800,fontSize:16}}>{goalPct}%</span>
+</div>
+<div style={{height:14,borderRadius:7,background:T.bd,overflow:"hidden"}}>
+<div style={{height:"100%",width:goalPct+"%",borderRadius:7,background:goalPct>=100?"#4ADE80":goalPct>=70?"#0094B0":"#FFB547",transition:"width 0.5s"}}/>
+</div>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:T.dm,marginTop:6}}>
+<span>Realizado: <strong style={{color:T.gr}}>${fm(realRev)}</strong></span>
+<span>Faltam: <strong style={{color:T.or}}>${fm(Math.max(0,goal-realRev))}</strong></span>
+</div>
+</div>}
+
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:18}}>
+<div style={{textAlign:"center",padding:14,borderRadius:10,background:T.gr+"12",border:"1px solid "+T.gr+"33"}}>
+<div style={{fontSize:22,fontWeight:800,color:T.gr}}>${fm(totalRev)}</div>
+<div style={{fontSize:10,color:T.dm,marginTop:2}}>RECEITA</div>
+{prevRev>0&&<div style={{fontSize:11,color:revChange>=0?T.gr:T.rd,marginTop:4,fontWeight:700}}>{revChange>=0?"▲":"▼"} {Math.abs(revChange)}% vs {MO[prevMoIdx]}</div>}
+</div>
+<div style={{textAlign:"center",padding:14,borderRadius:10,background:T.rd+"12",border:"1px solid "+T.rd+"33"}}>
+<div style={{fontSize:22,fontWeight:800,color:T.rd}}>${fm(totalExp)}</div>
+<div style={{fontSize:10,color:T.dm,marginTop:2}}>DESPESAS</div>
+<div style={{fontSize:10,color:T.dm,marginTop:4}}>Payroll: ${fm(totalPay)}</div>
+<div style={{fontSize:10,color:T.dm}}>Laundry: ~${fm(estLdCost)}</div>
+{fixedCosts>0&&<div style={{fontSize:10,color:T.dm}}>Fixos: ${fm(fixedCosts)}</div>}
+</div>
+<div style={{textAlign:"center",padding:14,borderRadius:10,background:profit>=0?T.ac+"12":T.rd+"12",border:"1px solid "+(profit>=0?T.ac:T.rd)+"33"}}>
+<div style={{fontSize:22,fontWeight:800,color:profit>=0?T.ac:T.rd}}>${fm(profit)}</div>
+<div style={{fontSize:10,color:T.dm,marginTop:2}}>LUCRO</div>
+<div style={{fontSize:14,fontWeight:700,color:profit>=0?T.ac:T.rd,marginTop:4}}>{margin}%</div>
+</div>
+</div>
+
+{(unpaidTotal>0||lowMarginHouses.length>0)&&<div style={{padding:14,borderRadius:10,background:T.rd+"06",border:"1px solid "+T.rd+"22",marginBottom:18}}>
+<div style={{fontSize:13,fontWeight:700,color:T.rd,marginBottom:8}}>⚠️ Alertas</div>
+{unpaidTotal>0&&<div style={{fontSize:12,padding:"4px 0",color:T.or}}>💵 <strong>${fm(unpaidTotal)}</strong> em invoices não pagas ({unpaidInv.length})</div>}
+{overdueInv.length>0&&<div style={{fontSize:12,padding:"4px 0",color:T.rd}}>🔴 <strong>{overdueInv.length}</strong> invoice(s) com 15+ dias de atraso</div>}
+{lowMarginHouses.length>0&&<div style={{fontSize:12,padding:"4px 0",color:T.or}}>📉 <strong>{lowMarginHouses.length}</strong> casa(s) com margem baixa</div>}
+{lowMarginHouses.slice(0,3).map(([k,d])=>{const m=d.rev>0?Math.round((d.rev-d.cost)/d.rev*100):0;return <div key={k} style={{fontSize:11,padding:"2px 0 2px 20px",color:T.dm}}>• {k}: {m}% margem (Rev ${fm(d.rev/d.cnt)} - Cost ${fm(d.cost/d.cnt)} per clean)</div>})}
+</div>}
+
+<div style={{fontSize:13,fontWeight:700,color:T.dm,marginBottom:8}}>Por Cliente:</div>
+<div style={{display:"grid",gridTemplateColumns:"1.8fr 1fr 1fr 1fr .5fr",gap:4,padding:"6px 0",borderBottom:"2px solid "+T.bd,fontSize:10,color:T.dm}}>
+<span>CLIENTE</span><span style={{textAlign:"right"}}>RECEITA</span><span style={{textAlign:"right"}}>PAYROLL</span><span style={{textAlign:"right"}}>LUCRO</span><span style={{textAlign:"right"}}>#</span>
+</div>
+{Object.entries(byClient).sort((a,b)=>b[1].rev-a[1].rev).map(([c,d])=><div key={c} style={{display:"grid",gridTemplateColumns:"1.8fr 1fr 1fr 1fr .5fr",gap:4,padding:"8px 0",borderBottom:"1px solid "+T.bd+"44",fontSize:12,alignItems:"center"}}>
+<span style={{fontWeight:600}}>{c}</span>
+<span style={{textAlign:"right",color:T.gr,fontWeight:600}}>${fm(d.rev)}</span>
+<span style={{textAlign:"right",color:T.rd}}>${fm(d.pay)}</span>
+<span style={{textAlign:"right",color:d.rev-d.pay>0?T.ac:T.rd,fontWeight:700}}>${fm(d.rev-d.pay)}</span>
+<span style={{textAlign:"right",color:T.dm,fontWeight:600}}>{d.cnt}</span>
+</div>)}
+
+<div style={{fontSize:13,fontWeight:700,color:T.dm,marginTop:18,marginBottom:8}}>Equipe:</div>
+{Object.entries(empLoad).sort((a,b)=>b[1].cnt-a[1].cnt).map(([e,d])=>{const pct=Math.round(d.cnt/maxCapPerEmp*100);const avg=d.score.length?Math.round(d.score.reduce((s,v)=>s+v,0)/d.score.length):0;return <div key={e} style={{marginBottom:10}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:3}}>
+<span style={{fontWeight:600}}>{e}</span>
+<span style={{display:"flex",gap:8}}>
+<span style={{color:T.dm}}>{d.cnt} casas</span>
+{avg>0&&<span style={{color:avg>=90?T.gr:avg>=80?T.or:T.rd,fontWeight:700}}>{avg} pts</span>}
+<span style={{color:pct>=90?T.rd:pct>=70?T.or:T.gr,fontWeight:700}}>{pct}%</span>
+</span>
+</div>
+<div style={{height:8,borderRadius:4,background:T.bd,overflow:"hidden"}}>
+<div style={{height:"100%",width:Math.min(pct,100)+"%",borderRadius:4,background:pct>=90?"#FF6B6B":pct>=70?"#FFB547":"#4ADE80"}}/>
+</div>
+</div>})}
+
+<div style={{marginTop:14,padding:12,borderRadius:8,background:T.bg+"66",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,textAlign:"center"}}>
+<div><div style={{fontSize:16,fontWeight:800,color:T.ac}}>{totalTurnovers}</div><div style={{fontSize:9,color:T.dm}}>Turnovers</div></div>
+<div><div style={{fontSize:16,fontWeight:800,color:T.pu}}>~{Math.round(estLdWeight)}lb</div><div style={{fontSize:9,color:T.dm}}>Lavanderia</div></div>
+<div><div style={{fontSize:16,fontWeight:800,color:T.or}}>{capPct}%</div><div style={{fontSize:9,color:T.dm}}>Capacidade</div></div>
+<div><div style={{fontSize:16,fontWeight:800,color:T.gr}}>+{Math.max(0,totalCap-totalUsed)}</div><div style={{fontSize:9,color:T.dm}}>Pode Crescer</div></div>
+</div>
+</Card>;})()}
 </div>
 
 {(()=>{const byHouse={};sP.forEach(p=>(p.items||[]).forEach(i=>{const k=i.n||i.propName;if(!k)return;if(!byHouse[k])byHouse[k]={pay:0,inv:0,cnt:0,ld:0};byHouse[k].pay+=(i.ep||0);byHouse[k].inv+=(i.ip||0);byHouse[k].cnt++;}));ldLog2.filter(l=>l.cost).forEach(l=>{const h=ldHouses.find(x=>x.id===l.bagId);if(h&&byHouse[h.name])byHouse[h.name].ld+=(l.cost||0);});const sorted=Object.entries(byHouse).filter(([k,d])=>d.cnt>=2).sort((a,b)=>(b[1].inv-b[1].pay-b[1].ld)-(a[1].inv-a[1].pay-a[1].ld)).slice(0,8);return sorted.length>0?<Card style={{padding:14}}><div style={{fontSize:10,fontWeight:700,marginBottom:8}}>💰 Custo Médio por Casa (top 8)</div>
@@ -966,6 +1068,28 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 <button onClick={()=>{const mo=fMo||"Todos";const mFin=fFil;const mIn=mFin.filter(e=>e.type==="entrada");const mOut=mFin.filter(e=>e.type==="saida");const tIn=mIn.reduce((s,e)=>s+e.amt,0);const tOut=mOut.reduce((s,e)=>s+e.amt,0);const byCat={};mOut.forEach(e=>{byCat[e.cat||"Sem categoria"]=(byCat[e.cat||"Sem categoria"]||0)+e.amt;});const byClient={};mOut.filter(e=>e.centroClient).forEach(e=>{const k=e.centroClient;if(!byClient[k])byClient[k]={total:0,houses:{}};byClient[k].total+=e.amt;const h=e.centroHouse||"(geral)";byClient[k].houses[h]=(byClient[k].houses[h]||0)+e.amt;});const byInCat={};mIn.forEach(e=>{byInCat[e.cat||"Sem categoria"]=(byInCat[e.cat||"Sem categoria"]||0)+e.amt;});const w=window.open("","_blank");if(!w)return;const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#222;padding:30px 40px;max-width:900px;margin:0 auto}h1{font-size:22px;margin-bottom:2px}h2{font-size:15px;color:#0094B0;margin:20px 0 8px;border-bottom:2px solid #0094B0;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin:6px 0 16px}th{background:#0A0F1E;color:#fff;padding:6px 10px;text-align:left;font-size:10px}td{padding:5px 10px;border-bottom:1px solid #eee;font-size:11px}.g{color:#22C55E;font-weight:700}.r{color:#EF4444;font-weight:700}.b{color:#0094B0;font-weight:700}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0}.box{padding:14px;border:1px solid #ddd;border-radius:8px;text-align:center}.box .n{font-size:28px;font-weight:800}.box .l{font-size:9px;color:#888;text-transform:uppercase;margin-top:2px}.meta{color:#888;font-size:10px}.bar{height:8px;background:#eee;border-radius:4px;margin:2px 0}.bar-fill{height:8px;border-radius:4px}@media print{body{padding:20px}}";let h="<html><head><title>Financial Report — "+mo+"</title><style>"+css+"</style></head><body>"+pdfBack;h+="<div style='display:flex;justify-content:space-between;align-items:flex-start'><div><h1>"+co.name+"</h1><p class='meta'>"+co.address+" | "+co.phone+"</p></div><div style='text-align:right'><div style='font-size:20px;font-weight:800;color:#0094B0'>Financial Report</div><div class='meta'>"+mo+" | Generated "+new Date().toLocaleDateString("en-US")+"</div></div></div>";h+="<div class='grid'><div class='box'><div class='n g'>$"+tIn.toLocaleString("en-US")+"</div><div class='l'>Revenue</div></div><div class='box'><div class='n r'>$"+tOut.toLocaleString("en-US")+"</div><div class='l'>Expenses</div></div><div class='box'><div class='n' style='color:"+(tIn-tOut>=0?"#22C55E":"#EF4444")+"'>$"+Math.abs(tIn-tOut).toLocaleString("en-US")+"</div><div class='l'>"+(tIn-tOut>=0?"Profit":"Loss")+"</div></div><div class='box'><div class='n b'>"+(tIn?((tIn-tOut)/tIn*100).toFixed(0):0)+"%</div><div class='l'>Margin</div></div></div>";h+="<h2>Revenue by Category</h2><table><tr><th>Category</th><th style='text-align:right'>Amount</th><th style='text-align:right'>%</th></tr>";Object.entries(byInCat).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{h+="<tr><td>"+c+"</td><td class='g' style='text-align:right'>$"+v.toLocaleString("en-US")+"</td><td style='text-align:right'>"+(tIn?(v/tIn*100).toFixed(0):0)+"%</td></tr>";});h+="</table>";h+="<h2>Expenses by Category</h2><table><tr><th>Category</th><th style='text-align:right'>Amount</th><th style='text-align:right'>%</th><th style='width:200px'>Distribution</th></tr>";Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([c,v])=>{const pct=tOut?(v/tOut*100).toFixed(0):0;h+="<tr><td>"+c+"</td><td class='r' style='text-align:right'>$"+v.toLocaleString("en-US")+"</td><td style='text-align:right'>"+pct+"%</td><td><div class='bar'><div class='bar-fill' style='width:"+pct+"%;background:#EF4444'></div></div></td></tr>";});h+="</table>";if(Object.keys(byClient).length>0){h+="<h2>Expenses by Client / Property</h2>";Object.entries(byClient).sort((a,b)=>b[1].total-a[1].total).forEach(([client,d])=>{h+="<h3 style='font-size:13px;margin:14px 0 4px;color:#333'>"+client+" — <span class='r'>$"+d.total.toLocaleString("en-US")+"</span></h3>";h+="<table><tr><th>Property</th><th style='text-align:right'>Amount</th><th style='text-align:right'>%</th></tr>";Object.entries(d.houses).sort((a,b)=>b[1]-a[1]).forEach(([house,amt])=>{h+="<tr><td>"+house+"</td><td class='r' style='text-align:right'>$"+amt.toLocaleString("en-US")+"</td><td style='text-align:right'>"+(d.total?(amt/d.total*100).toFixed(0):0)+"%</td></tr>";});h+="</table>";});}h+="<h2>All Transactions ("+mFin.length+")</h2><table><tr><th>Type</th><th>Category</th><th>Description</th><th>Date</th><th style='text-align:right'>Amount</th></tr>";mFin.slice(0,100).forEach(e=>{h+="<tr><td><span style='color:"+(e.type==="entrada"?"#22C55E":"#EF4444")+";font-weight:700'>"+(e.type==="entrada"?"IN":"OUT")+"</span></td><td>"+(e.cat||"")+"</td><td>"+(e.desc||"—")+"</td><td>"+(e.date?fmD(e.date):"")+"</td><td style='text-align:right;font-weight:700;color:"+(e.type==="entrada"?"#22C55E":"#EF4444")+"'>$"+(e.amt||0).toLocaleString("en-US")+"</td></tr>";});if(mFin.length>100)h+="<tr><td colspan='5' style='text-align:center;color:#888'>... and "+(mFin.length-100)+" more</td></tr>";h+="</table>";h+="<div style='text-align:center;margin-top:30px;padding-top:12px;border-top:2px solid #111'><div style='font-size:18px;font-weight:800;color:#0094B0'>"+co.name+"</div><div class='meta'>"+co.address+" | "+co.phone+"</div></div></body></html>";w.document.write(h);w.document.close();setTimeout(()=>w.print(),600);fl("📄 Relatório financeiro gerado!");}} style={bt(T.gr+"15",T.gr,{padding:"5px 10px",fontSize:9})} title="Relatório Financeiro PDF">📄 Relatório</button>
 {(fSearch||fType!=="todos"||fCat||fF.dateFrom||fF.dateTo)&&<button onClick={()=>{setFSearch("");setFType("todos");setFCat("");setFF({...fF,dateFrom:"",dateTo:""});}} style={bt(T.rd+"12",T.rd,{padding:"5px 8px",fontSize:8})}>✕ Filtros</button>}
 </div>
+
+<Card style={{padding:14}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+<span style={{fontSize:12,fontWeight:700}}>⚡ Quick Entry</span>
+<label style={{border:"none",background:T.ac+"15",color:T.ac,padding:"5px 12px",borderRadius:6,fontSize:10,fontWeight:600,cursor:"pointer"}}>📥 Import CSV<input type="file" accept=".csv,.CSV" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{const text=ev.target.result;const lines=text.split("\n").filter(l=>l.trim());if(lines.length<2){fl("Empty CSV");return;}
+const header=lines[0].toLowerCase();const isBoA=header.includes("description")&&header.includes("amount");const isChase=header.includes("details")&&header.includes("amount");
+const autoMap={"gas":"Transporte","shell":"Transporte","chevron":"Transporte","exxon":"Transporte","bp ":"Transporte","fuel":"Transporte","uber":"Transporte","lyft":"Transporte","home depot":"Produtos","lowes":"Produtos","walmart":"Produtos","target":"Produtos","amazon":"Produtos","cleaning":"Produtos","supply":"Produtos","zelle":"Transferência","deposit":"Pagamento Cliente","venmo":"Transferência","insurance":"Seguro","geico":"Seguro","state farm":"Seguro","progressive":"Seguro","t-mobile":"Telefone","verizon":"Telefone","at&t":"Telefone","sprint":"Telefone","comcast":"Internet","spectrum":"Internet","rent":"Aluguel","lease":"Aluguel","storage":"Armazenamento"};
+const getCat=(desc)=>{const d=desc.toLowerCase();for(const[k,v] of Object.entries(autoMap)){if(d.includes(k))return v;}return"";};
+const entries=[];
+for(let i=1;i<lines.length;i++){const parts=lines[i].split(",").map(s=>s.replace(/"/g,"").trim());if(parts.length<3)continue;let date="",desc="",amt=0;
+if(isBoA){date=parts[0];desc=parts[1]||"";amt=parseFloat(parts[2])||0;}
+else if(isChase){date=parts[1]||parts[0];desc=parts[2]||"";amt=parseFloat(parts[3])||parseFloat(parts[5])||0;}
+else{date=parts[0];desc=parts[1]||"";for(let j=2;j<parts.length;j++){const v=parseFloat(parts[j]);if(v&&v!==0){amt=v;break;}}}
+if(!amt)continue;const dp=date.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);const isoDate=dp?((dp[3].length===2?"20":"")+dp[3]+"-"+dp[1].padStart(2,"0")+"-"+dp[2].padStart(2,"0")):date;
+entries.push({id:Date.now()+Math.random(),type:amt>0?"entrada":"saida",cat:getCat(desc),desc:desc,amt:Math.abs(amt),date:isoDate,month:MO[parseInt((isoDate||"").slice(5,7))-1]||"",week:"",source:"csv"});}
+if(!entries.length){fl("No valid entries found");return;}
+const preview=entries.slice(0,5).map(e=>(e.type==="entrada"?"+ ":"- ")+"$"+e.amt.toFixed(2)+" "+e.desc.slice(0,30)).join("\n");if(confirm("Found "+entries.length+" transactions:\n\n"+preview+(entries.length>5?"\n... and "+(entries.length-5)+" more":"")+"\n\nImport all?")){const newFin=[...fin,...entries];setFin(newFin);sv("fn3",newFin);fl("✅ "+entries.length+" transactions imported!");}};reader.readAsText(f);}}/></label>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:6}}>
+{[["⛽ Gasolina","Transporte"],["🧴 Produtos","Produtos"],["🧺 Lavanderia","Lavanderia"],["📱 Telefone","Telefone"],["🏠 Aluguel","Aluguel"],["🛡️ Seguro","Seguro"],["🔧 Manutenção","Manutenção"],["📦 Outros","Outros"]].map(([label,cat])=><button key={cat} onClick={()=>{const amt=prompt(label+" — Valor ($):");if(amt&&parseFloat(amt)){const desc=prompt("Descrição (opcional):",cat);addFinEntry({type:"saida",cat,desc:desc||cat,amt:parseFloat(amt),date:getLocalDate(),month:fMo||MO[new Date().getMonth()],week:""});fl("✅ $"+parseFloat(amt).toFixed(2)+" "+cat);}}} style={{padding:"10px 8px",borderRadius:8,border:"1px solid "+T.rd+"22",background:T.rd+"06",color:T.tx,fontSize:11,fontWeight:600,cursor:"pointer",textAlign:"center"}}>{label}</button>)}
+</div>
+</Card>
 
 <Card style={{padding:14}}><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>➕ Novo Lançamento</div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:6,marginBottom:6}}>
@@ -2270,7 +2394,7 @@ setLdCalSel(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:12,bord
 <Card style={{padding:14,border:"2px solid "+T.or+"44",background:T.or+"06"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
 <span style={{fontSize:13,fontWeight:700,color:T.or}}>⚡ Auto Lot</span>
-<button onClick={()=>{const result=genAutoLot();setAutoLot(result);if(result.suggestions.length>0){const ids=result.suggestions.map(s=>s.house.id);const weights={};result.suggestions.forEach(s=>{if(s.house.weight)weights["w_"+s.house.id]=String(s.house.weight);});setLdConf({...ldConf,ids,...weights,lotSendDate:result.today,lotReturnDate:result.returnDate});fl(result.suggestions.length+" casas sugeridas"+(result.reserves.length>0?" + "+result.reserves.length+" RESERVE":""));}else{fl("No dirty houses or no agenda events");}}} style={bt(T.or,T.bg,{padding:"8px 16px",fontSize:11,borderRadius:8})}>⚡ Sugerir Lot do Dia</button>
+<button onClick={()=>{const result=genAutoLot();setAutoLot(result);if(result.suggestions.length>0){const ids=[...new Set(result.suggestions.map(s=>s.house.id))];const weights={};result.suggestions.forEach(s=>{if(s.house.weight)weights["w_"+s.house.id]=String(s.house.weight);});setLdConf({ids,lotSendDate:result.today,lotReturnDate:result.returnDate,...weights});fl(result.suggestions.length+" casas sugeridas"+(result.reserves.length>0?" + "+result.reserves.length+" RESERVE":""));}else{fl("No dirty houses or no agenda events");}}} style={bt(T.or,T.bg,{padding:"8px 16px",fontSize:11,borderRadius:8})}>⚡ Sugerir Lot do Dia</button>
 </div>
 {autoLot&&<div>
 {autoLot.suggestions.length>0&&<div style={{marginBottom:10}}>
@@ -2658,7 +2782,7 @@ return <>
 <div style={{display:"flex",gap:3}}>
 <button onClick={()=>{setAgMonth(new Date().getMonth());setAgYear(new Date().getFullYear());setAgSelDay(getLocalDate());}} style={bt(T.ac+"12",T.ac,{padding:"4px 10px",fontSize:8})}>Hoje</button>
 <button onClick={()=>setAgForm({id:Date.now(),title:"",client:"",house:"",employees:[],date:agSelDay||getLocalDate(),time:"08:00",type:"Turnover",notes:""})} style={bt(T.ac,T.bg,{padding:"4px 10px",fontSize:8})}>+ Novo</button>
-<button onClick={()=>{if(!agQuick){const rows=[];for(let i=0;i<5;i++)rows.push({id:Date.now()+i,date:"",client:"",house:"",emp:"",type:"Turnover"});setAgRows(rows);}setAgQuick(!agQuick);}} style={bt(T.or,T.bg,{padding:"4px 10px",fontSize:8})}>{agQuick?"✕ Fechar":"⚡ Semana"}</button>
+<button onClick={()=>{if(!agQuick){const rows=[];for(let i=0;i<10;i++)rows.push({id:Date.now()+i,date:"",client:"",house:"",emp:"",type:"Turnover"});setAgRows(rows);}setAgQuick(!agQuick);}} style={bt(T.or,T.bg,{padding:"4px 10px",fontSize:8})}>{agQuick?"✕ Fechar":"⚡ Semana"}</button>
 </div>
 </div>
 
