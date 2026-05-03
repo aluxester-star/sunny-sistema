@@ -163,7 +163,7 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 <button onClick={()=>{if(!f.house)return;const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}} style={{padding:"12px 30px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:700,background:"#4ADE80",color:"#0A0F1E"}}>Salvar Inspeção</button>
 <button onClick={onCancel} style={{padding:"12px 20px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancel</button>
 </div></div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","report","tax","team","inspect","history","agenda","deepclean","manual","escala","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","tax","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["laundry"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","team","deepclean","escala"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"},cliente:{label:"Cliente",tabs:["deepclean"],color:"#FF8A65"}};
+const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","strategy","report","tax","team","inspect","history","agenda","deepclean","manual","escala","database","laundry"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","tax","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["laundry"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","team","deepclean","escala"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"},cliente:{label:"Cliente",tabs:["deepclean"],color:"#FF8A65"}};
 function App({onLogout,userRole="admin",clientName="",customTabs=null,scanParam=null}){
 const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny_theme")!=="light";}catch(e){return true;}});
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch(e){}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
@@ -452,7 +452,7 @@ const[modal,setModal]=useState(null);
 const askModal=(title,defaultVal,onOk)=>{setModal({title,val:defaultVal||"",onOk});};
 const ModalC=()=>modal?<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:380,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:T.tx}}>{modal.title}</div><input autoFocus value={modal.val} onChange={e=>setModal({...modal,val:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"){modal.onOk(modal.val);setModal(null);}if(e.key==="Escape")setModal(null);}} style={{...inp,width:"100%",fontSize:15,padding:"12px 14px",marginBottom:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.bg}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{modal.onOk(modal.val);setModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>OK</button><button onClick={()=>setModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:13,borderRadius:10})}>Cancel</button></div></div></div>:null;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"manual",l:"Manual",i:"📋"},{id:"escala",l:"Escala",i:"🗓️"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Laundry",i:"🧺"}];
+const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"strategy",l:"Strategy",i:"🎯"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"manual",l:"Manual",i:"📋"},{id:"escala",l:"Escala",i:"🗓️"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Laundry",i:"🧺"}];
 const tabs=customTabs?allTabs.filter(t=>customTabs.includes(t.id)):allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 useEffect(()=>{if(tabs.length>0&&!tabs.find(t=>t.id===vw)){setVw(tabs[0].id);}},[tabs.length]);
 useEffect(()=>{if(sI.length>0&&!iN){const maxNo=sI.reduce((mx,i)=>{const n=parseInt(i.no)||0;return n>mx?n:mx;},0);setIN(String(maxNo+1));}},[sI.length]);
@@ -678,7 +678,7 @@ return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T
 <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
 <div style={{display:"flex",gap:1,padding:"6px 10px",borderBottom:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",background:darkMode?T.bg+"cc":"#fff",alignItems:"center"}}>
 {(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length+lowP.length+lowL.length,deepclean:(()=>{const today=getLocalDate();return dcList.filter(d=>{if(!d.active||!d.lastDone||!d.freqMonths)return false;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);const due=last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");return due<=today;}).length;})()};
-const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database"]]];
+const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","strategy","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database"]]];
 return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 {gi>0&&<div style={{width:2,minWidth:2,height:20,background:T.bd,borderRadius:1,margin:"0 4px",flexShrink:0}}/>}
 {tabs.filter(t=>grp.includes(t.id)).map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"8px 12px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none"}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:16,height:16,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{b}</span>}</button>})}
@@ -3360,6 +3360,128 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
 </div>;})()}
 
 
+{/* STRATEGY */}
+{vw==="strategy"&&(()=>{const SC=co.stratConfig||{};const PROLABORE=SC.prolabore||7000;const RESERVE_PCT=SC.reservePct||15;const TAX_PCT=SC.taxPct||15;const HIRE_COST=SC.hireCost||2000;const GOAL_6MO=SC.goal6mo||80;const GOAL_12MO=SC.goal12mo||80000;const MAX_CAP=SC.maxCap||80;
+const yr=new Date().getFullYear();const curMo=new Date().getMonth();const moName=MO[curMo];
+const moStart=yr+"-"+String(curMo+1).padStart(2,"0")+"-01";const moEnd=yr+"-"+String(curMo+1).padStart(2,"0")+"-31";
+const moEvents=agEvents.filter(ev=>ev.date&&ev.date>=moStart&&ev.date<=moEnd&&ev.house);
+const totalCasas=db.filter(p=>p.n!=="(nova)").length;
+const activeFixed=fixedCosts.filter(c=>c.active!==false);const fixedTotal=activeFixed.reduce((s,c)=>s+(c.amount||0),0);
+let moRev=0;let moPay=0;moEvents.forEach(ev=>{const prop=findProp(ev.house,ev.client);moRev+=prop?prop.ip||0:0;moPay+=prop?Math.round((prop.ep||0)/((ev.employees||[]).length||1)*100)/100:0;});
+const avgW=ldHouses.filter(h=>h.weight>0).length>0?ldHouses.filter(h=>h.weight>0).reduce((s,h)=>s+h.weight,0)/ldHouses.filter(h=>h.weight>0).length:20;
+const estLdCost=Math.round(moEvents.length*avgW*(ldCfg.priceLb||1.1));
+const totalExp=moPay+estLdCost+fixedTotal;const taxes=Math.round(moRev*TAX_PCT/100);const grossProfit=moRev-totalExp;const netProfit=grossProfit-taxes;const afterProlabore=netProfit-PROLABORE;const toReserve=Math.round(afterProlabore>0?afterProlabore*RESERVE_PCT/100:0);
+const realRev=fin.filter(e=>e.month===moName&&e.type==="entrada").reduce((s,e)=>s+(e.amt||0),0);
+const realExp=fin.filter(e=>e.month===moName&&e.type==="saida").reduce((s,e)=>s+(e.amt||0),0);
+const unpaidInv=sI.filter(i=>i.status==="emitida");const unpaidTotal=unpaidInv.reduce((s,i)=>s+(i.total||0),0);
+const empLoad={};moEvents.forEach(ev=>{(ev.employees||[]).forEach(e=>{if(!empLoad[e])empLoad[e]=0;empLoad[e]++;});});const totalEmps=Object.keys(empLoad).length||1;const capUsed=Object.values(empLoad).reduce((s,c)=>s+c,0);const capFree=Math.max(0,totalEmps*MAX_CAP-capUsed);
+const prevMoIdx=curMo===0?11:curMo-1;const prevStart=yr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-01";const prevEnd=yr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-31";let prevRev=0;agEvents.filter(ev=>ev.date&&ev.date>=prevStart&&ev.date<=prevEnd&&ev.house).forEach(ev=>{const prop=findProp(ev.house,ev.client);prevRev+=prop?prop.ip||0:0;});
+const revGrowth=prevRev>0?Math.round((moRev-prevRev)/prevRev*100):0;
+const avgRevPerCasa=totalCasas>0?Math.round(moRev/totalCasas):0;const casasFor80K=avgRevPerCasa>0?Math.ceil(GOAL_12MO/avgRevPerCasa):200;const needHire=capFree<15;
+const costPerTurnover=moEvents.length>0?Math.round(totalExp/moEvents.length):0;const marginPerTurnover=moEvents.length>0?Math.round(grossProfit/moEvents.length):0;
+const reserveIdeal=totalExp*3;
+return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:18,fontWeight:800}}>🎯 Strategy</span>
+<button onClick={()=>{const cfg=co.stratConfig||{};const fields=[["Pro-labore ($/mes)","prolabore",PROLABORE],["Reserva (%)","reservePct",RESERVE_PCT],["Impostos (%)","taxPct",TAX_PCT],["Custo novo funcionario ($/mes)","hireCost",HIRE_COST],["Meta 6 meses (casas)","goal6mo",GOAL_6MO],["Meta 12 meses ($/mes)","goal12mo",GOAL_12MO],["Max casas/funcionario/mes","maxCap",MAX_CAP]];const updated={...cfg};let changed=false;for(const[label,key,def] of fields){const v=prompt(label+":",updated[key]||def);if(v===null)return;const num=parseFloat(v);if(!isNaN(num)){updated[key]=num;changed=true;}}if(changed){setCo({...co,stratConfig:updated});sv("co3",{...co,stratConfig:updated});fl("Settings saved!");}}} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"6px 12px",borderRadius:8,fontSize:10,cursor:"pointer"}}>⚙️ Settings</button>
+</div>
+
+<Card style={{padding:16}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Cash Flow</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:16}}>
+<div style={{padding:12,borderRadius:10,background:T.gr+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>RECEITA</div><div style={{fontSize:20,fontWeight:800,color:T.gr}}>${fm(moRev)}</div>{prevRev>0&&<div style={{fontSize:10,color:revGrowth>=0?T.gr:T.rd,marginTop:2}}>{revGrowth>=0?"up":"dn"} {Math.abs(revGrowth)}%</div>}</div>
+<div style={{padding:12,borderRadius:10,background:T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>DESPESAS</div><div style={{fontSize:20,fontWeight:800,color:T.rd}}>${fm(totalExp)}</div></div>
+<div style={{padding:12,borderRadius:10,background:T.or+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>IMPOSTOS</div><div style={{fontSize:20,fontWeight:800,color:T.or}}>${fm(taxes)}</div></div>
+<div style={{padding:12,borderRadius:10,background:grossProfit>0?T.ac+"12":T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>LUCRO</div><div style={{fontSize:20,fontWeight:800,color:grossProfit>0?T.ac:T.rd}}>${fm(grossProfit)}</div><div style={{fontSize:9,color:T.dm}}>{moRev>0?Math.round(grossProfit/moRev*100):0}%</div></div>
+</div>
+<div style={{fontSize:12,fontWeight:700,marginBottom:6}}>Despesas:</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+<div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Payroll:</span> <strong style={{color:T.rd}}>${fm(moPay)}</strong></div>
+<div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Lavanderia:</span> <strong style={{color:T.rd}}>~${fm(estLdCost)}</strong></div>
+<div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Fixos:</span> <strong style={{color:T.rd}}>${fm(fixedTotal)}</strong></div>
+</div>
+{unpaidTotal>0&&<div style={{padding:10,borderRadius:8,background:T.or+"08",border:"1px solid "+T.or+"33",marginBottom:10}}>
+<div style={{fontSize:12,fontWeight:700,color:T.or}}>A Receber: ${fm(unpaidTotal)} ({unpaidInv.length} invoices)</div>
+</div>}
+<div style={{padding:10,borderRadius:8,background:T.bg+"66",fontSize:11,color:T.dm}}>
+Realizado: Rev <strong style={{color:T.gr}}>${fm(realRev)}</strong> ({moRev>0?Math.round(realRev/moRev*100):0}%) | Desp <strong style={{color:T.rd}}>${fm(realExp)}</strong>
+</div>
+</Card>
+
+<Card style={{padding:16}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Pro-labore e Distribuicao</div>
+{[["Receita",moRev,T.gr,""],["(-) Custos Operacionais",totalExp,T.rd,"Pay+Laund+Fix"],["(=) Lucro Bruto",grossProfit,grossProfit>0?T.ac:T.rd,""],["(-) Impostos ("+TAX_PCT+"%)",taxes,T.or,""],["(=) Lucro Liquido",netProfit,netProfit>0?T.ac:T.rd,""],["(-) Pro-labore",PROLABORE,"#A78BFA","fixo mensal"],["(=) Sobra p/ empresa",afterProlabore,afterProlabore>0?T.gr:T.rd,""],["(-) Reserva ("+RESERVE_PCT+"%)",toReserve,"#60A5FA",""],["(=) Disponivel",afterProlabore-toReserve,afterProlabore-toReserve>0?T.gr:T.rd,""]].map(([label,val,clr,note],i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",borderRadius:6,background:i%2===0?T.bg+"44":"transparent",fontSize:13}}>
+<span style={{fontWeight:label.startsWith("(=")?700:400}}>{label}{note&&<span style={{fontSize:9,color:T.dm,marginLeft:6}}>{note}</span>}</span>
+<span style={{fontWeight:700,color:clr,fontSize:15}}>{val<0?"-":""}${fm(Math.abs(val))}</span>
+</div>)}
+{afterProlabore<0&&<div style={{padding:12,borderRadius:8,background:T.rd+"08",border:"1px solid "+T.rd+"33",fontSize:12,color:T.rd,marginTop:8}}>Pro-labore de ${fm(PROLABORE)} esta acima do possivel. Max recomendado: ${fm(Math.max(0,netProfit))}</div>}
+<div style={{padding:12,borderRadius:8,background:T.bg+"66",marginTop:10}}>
+<div style={{fontSize:12,fontWeight:700,color:T.dm,marginBottom:4}}>Reserva de Emergencia</div>
+<div style={{fontSize:12}}>Ideal (3 meses): <strong>${fm(reserveIdeal)}</strong> | Atual: <strong style={{color:T.rd}}>$0</strong></div>
+<div style={{height:8,borderRadius:4,background:T.bd,marginTop:4}}><div style={{height:"100%",width:"0%",background:T.rd,borderRadius:4}}/></div>
+<div style={{fontSize:10,color:T.dm,marginTop:4}}>Guardar ${fm(toReserve)}/mes = {reserveIdeal>0&&toReserve>0?Math.ceil(reserveIdeal/toReserve):"-"} meses para atingir</div>
+</div>
+</Card>
+
+<Card style={{padding:16}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>KPIs</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+<div style={{padding:12,borderRadius:10,background:T.ac+"12",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:T.ac}}>{totalCasas}</div><div style={{fontSize:10,color:T.dm}}>CASAS</div></div>
+<div style={{padding:12,borderRadius:10,background:T.gr+"12",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:T.gr}}>{moEvents.length}</div><div style={{fontSize:10,color:T.dm}}>TURNOVERS</div></div>
+<div style={{padding:12,borderRadius:10,background:T.pu+"12",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:T.pu}}>${avgRevPerCasa}</div><div style={{fontSize:10,color:T.dm}}>REV/CASA</div></div>
+<div style={{padding:12,borderRadius:10,background:T.or+"12",textAlign:"center"}}><div style={{fontSize:24,fontWeight:800,color:T.or}}>${marginPerTurnover}</div><div style={{fontSize:10,color:T.dm}}>LUCRO/TURN</div></div>
+</div>
+<div style={{fontSize:12,fontWeight:700,color:T.dm,marginBottom:6}}>Equipe ({totalEmps} funcionarios):</div>
+{Object.entries(empLoad).sort((a,b)=>b[1]-a[1]).map(([e,cnt])=>{const pct=Math.round(cnt/MAX_CAP*100);return <div key={e} style={{marginBottom:6}}>
+<div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:2}}><span style={{fontWeight:600}}>{e}</span><span style={{color:pct>85?T.rd:pct>60?T.or:T.gr,fontWeight:700}}>{cnt} casas ({pct}%)</span></div>
+<div style={{height:8,borderRadius:4,background:T.bd}}><div style={{height:"100%",width:Math.min(pct,100)+"%",borderRadius:4,background:pct>85?"#FF6B6B":pct>60?"#FFB547":"#4ADE80"}}/></div>
+</div>})}
+<div style={{fontSize:11,color:T.dm,marginTop:4}}>Capacidade total: {Math.round(capUsed/(totalEmps*MAX_CAP)*100)}% | Pode crescer +{capFree} casas</div>
+</Card>
+
+<Card style={{padding:16}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Plano de Crescimento</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+<div style={{padding:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.ac+"06"}}>
+<div style={{fontSize:10,color:T.dm}}>META 6 MESES</div>
+<div style={{fontSize:24,fontWeight:800,color:T.ac}}>{GOAL_6MO} casas</div>
+<div style={{fontSize:11,color:T.dm}}>Hoje: {totalCasas} | Faltam: {Math.max(0,GOAL_6MO-totalCasas)}</div>
+<div style={{height:8,borderRadius:4,background:T.bd,marginTop:6}}><div style={{height:"100%",width:Math.min(Math.round(totalCasas/GOAL_6MO*100),100)+"%",borderRadius:4,background:T.ac}}/></div>
+<div style={{fontSize:10,color:T.dm,marginTop:4}}>{Math.ceil(Math.max(0,GOAL_6MO-totalCasas)/6)} casas novas/mes</div>
+</div>
+<div style={{padding:14,borderRadius:10,border:"2px solid "+T.or+"44",background:T.or+"06"}}>
+<div style={{fontSize:10,color:T.dm}}>META 12 MESES</div>
+<div style={{fontSize:24,fontWeight:800,color:T.or}}>${fm(GOAL_12MO)}/mes</div>
+<div style={{fontSize:11,color:T.dm}}>Hoje: ${fm(moRev)}</div>
+<div style={{height:8,borderRadius:4,background:T.bd,marginTop:6}}><div style={{height:"100%",width:Math.min(Math.round(moRev/GOAL_12MO*100),100)+"%",borderRadius:4,background:T.or}}/></div>
+<div style={{fontSize:10,color:T.dm,marginTop:4}}>~{casasFor80K} casas necessarias</div>
+</div>
+</div>
+{capFree>15?<div style={{padding:12,borderRadius:8,background:T.gr+"08",border:"1px solid "+T.gr+"33",fontSize:12,marginBottom:6}}><strong style={{color:T.gr}}>Equipe aguenta +{capFree} casas.</strong> Nao precisa contratar agora.</div>
+:<div style={{padding:12,borderRadius:8,background:T.rd+"08",border:"1px solid "+T.rd+"33",fontSize:12,marginBottom:6}}><strong style={{color:T.rd}}>Equipe proxima do limite.</strong> Contratar: +${fm(HIRE_COST)}/mes</div>}
+<div style={{padding:12,borderRadius:8,background:T.ac+"06",border:"1px solid "+T.ac+"22",fontSize:12}}>
+<strong>Proximos passos:</strong>
+<div style={{fontSize:11,color:T.dm,marginTop:4}}>1. Contatar 5 property managers/semana</div>
+<div style={{fontSize:11,color:T.dm}}>2. Preco sugerido: ${fm(avgRevPerCasa)}/casa</div>
+<div style={{fontSize:11,color:T.dm}}>3. Oferecer add-on: Deep Clean, Restocking</div>
+<div style={{fontSize:11,color:T.dm}}>4. {!needHire?"Usar capacidade atual":"Contratar 1 funcionario"}</div>
+</div>
+</Card>
+
+<Card style={{padding:16}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:14,fontWeight:700}}>CEO Report</span>
+<button onClick={()=>{const w=window.open("","_blank");if(!w)return;let h="<html><head><title>CEO Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333;font-size:12px}h1{font-size:20px;color:#0094B0;margin-bottom:4px}h2{font-size:14px;color:#0094B0;margin:20px 0 8px;border-bottom:2px solid #0094B0;padding-bottom:4px}.g{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:10px 0}.b{padding:12px;border:1px solid #ddd;border-radius:8px;text-align:center}.b .n{font-size:20px;font-weight:800}.b .l{font-size:8px;color:#888}.r{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px}@media print{body{padding:20px}}</style></head><body>"+pdfBack+pdfHeader("CEO Report - "+moName+" "+yr);
+h+="<div class='g'><div class='b'><div class='n' style='color:#4ADE80'>$"+fm(moRev)+"</div><div class='l'>RECEITA</div></div><div class='b'><div class='n' style='color:#FF6B6B'>$"+fm(totalExp)+"</div><div class='l'>DESPESAS</div></div><div class='b'><div class='n' style='color:#0094B0'>$"+fm(grossProfit)+"</div><div class='l'>LUCRO</div></div><div class='b'><div class='n'>"+(moRev>0?Math.round(grossProfit/moRev*100):0)+"%</div><div class='l'>MARGEM</div></div></div>";
+h+="<h2>Distribuicao</h2><div class='r'><span>Lucro Bruto</span><strong>$"+fm(grossProfit)+"</strong></div><div class='r'><span>Impostos ("+TAX_PCT+"%)</span><strong>-$"+fm(taxes)+"</strong></div><div class='r'><span>Pro-labore</span><strong>-$"+fm(PROLABORE)+"</strong></div><div class='r'><span>Reserva ("+RESERVE_PCT+"%)</span><strong>-$"+fm(toReserve)+"</strong></div><div class='r' style='border-bottom:2px solid #333'><span><strong>Disponivel</strong></span><strong>$"+fm(afterProlabore-toReserve)+"</strong></div>";
+h+="<h2>Operacional</h2><div class='r'><span>Turnovers</span><strong>"+moEvents.length+"</strong></div><div class='r'><span>Casas</span><strong>"+totalCasas+"</strong></div><div class='r'><span>Equipe</span><strong>"+totalEmps+" ("+Math.round(capUsed/(totalEmps*MAX_CAP)*100)+"%)</strong></div><div class='r'><span>A receber</span><strong>$"+fm(unpaidTotal)+"</strong></div>";
+h+="<h2>Crescimento</h2><div class='r'><span>Meta 6m</span><strong>"+GOAL_6MO+" casas (faltam "+(GOAL_6MO-totalCasas)+")</strong></div><div class='r'><span>Meta 12m</span><strong>$"+fm(GOAL_12MO)+"/mes</strong></div><div class='r'><span>Capacidade livre</span><strong>+"+capFree+" casas</strong></div>";
+h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeout(()=>w.print(),500);}} style={bt(T.ac,T.bg,{padding:"12px 24px",fontSize:13,borderRadius:8})}>Gerar PDF</button>
+</div>
+</Card>
+
+</div>;})()}
+
 {/* DATABASE */}
 {vw==="database"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <Card><div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Employees ({em.length})</div>
@@ -3422,7 +3544,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
 </div>
 
 <div className="np" style={{position:"fixed",bottom:0,left:0,right:0,background:darkMode?"linear-gradient(180deg,transparent,#0A0F1Eee 20%,#0A0F1E)":"linear-gradient(180deg,transparent,#F5F7FAee 20%,#F5F7FA)",padding:"10px 10px 8px",zIndex:90,display:"flex",justifyContent:"center",gap:4}}>
-{[{k:"N",l:"Folha",i:"💰",g:"payroll"},{k:"I",l:"Invoice",i:"📄",g:"invoice"},{k:"D",l:"Home",i:"📊",g:"dashboard"},{k:"F",l:"Finance",i:"💲",g:"finance"},{k:"L",l:"Laundry",i:"👕",g:"laundry"}].map(a=><button key={a.k} onClick={()=>setVw(a.g)} style={{padding:"6px 12px",borderRadius:8,border:vw===a.g?"1.5px solid "+T.ac:"1px solid "+T.bd+"44",background:vw===a.g?darkMode?T.ac+"18":"#E0F7FA":darkMode?T.bg+"cc":"#ffffffcc",color:vw===a.g?T.ac:T.dm,fontSize:11,fontWeight:vw===a.g?700:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:3,transition:"all 0.15s",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"}}><span style={{fontSize:12}}>{a.i}</span><span>{a.l}</span></button>)}
+{[{k:"N",l:"Folha",i:"💰",g:"payroll"},{k:"I",l:"Invoice",i:"📄",g:"invoice"},{k:"D",l:"Home",i:"📊",g:"dashboard"},{k:"S",l:"Strategy",i:"🎯",g:"strategy"},{k:"F",l:"Finance",i:"💲",g:"finance"},{k:"L",l:"Laundry",i:"👕",g:"laundry"}].map(a=><button key={a.k} onClick={()=>setVw(a.g)} style={{padding:"6px 12px",borderRadius:8,border:vw===a.g?"1.5px solid "+T.ac:"1px solid "+T.bd+"44",background:vw===a.g?darkMode?T.ac+"18":"#E0F7FA":darkMode?T.bg+"cc":"#ffffffcc",color:vw===a.g?T.ac:T.dm,fontSize:11,fontWeight:vw===a.g?700:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:3,transition:"all 0.15s",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"}}><span style={{fontSize:12}}>{a.i}</span><span>{a.l}</span></button>)}
 </div>
 <div style={{height:52}}/>
 
