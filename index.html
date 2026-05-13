@@ -221,7 +221,7 @@ const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Lavanderia"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[customFinCats,setCustomFinCats]=useState([]);
-const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[userListModal,setUserListModal]=useState(null);const[manualData,setManualData]=useState({});const[manualFilter,setManualFilter]=useState("");const[manualEdit,setManualEdit]=useState(null);const[escData,setEscData]=useState({startDate:"2026-03-01",teams:[{id:"A",name:"Dupla A",members:[]},{id:"B",name:"Dupla B",members:[]}],bonusDays:[],scores:{}});const[escMonth,setEscMonth]=useState(new Date().getMonth());const[escYear,setEscYear]=useState(new Date().getFullYear());const[escView,setEscView]=useState("calendar");const[escCalView,setEscCalView]=useState("month");const[escWeekStart,setEscWeekStart]=useState(0);const[escDayDetail,setEscDayDetail]=useState(null);const[escEdit,setEscEdit]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
+const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[userListModal,setUserListModal]=useState(null);const[manualData,setManualData]=useState({});const[manualFilter,setManualFilter]=useState("");const[manualEdit,setManualEdit]=useState(null);const[manualSub,setManualSub]=useState("casas");const[sops,setSops]=useState([]);const[sopEdit,setSopEdit]=useState(null);const[sopChat,setSopChat]=useState([]);const[sopLoading,setSopLoading]=useState(false);const[escData,setEscData]=useState({startDate:"2026-03-01",teams:[{id:"A",name:"Dupla A",members:[]},{id:"B",name:"Dupla B",members:[]}],bonusDays:[],scores:{}});const[escMonth,setEscMonth]=useState(new Date().getMonth());const[escYear,setEscYear]=useState(new Date().getFullYear());const[escView,setEscView]=useState("calendar");const[escCalView,setEscCalView]=useState("month");const[escWeekStart,setEscWeekStart]=useState(0);const[escDayDetail,setEscDayDetail]=useState(null);const[escEdit,setEscEdit]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",ssn:"",bday:"",startDate:"",notes:""});
@@ -260,6 +260,7 @@ try{const r=await FB.get("est_cnt");if(r&&r.value)setEstCount(parseInt(r.value)|
 try{const r=await FB.get("ld_cfg2");if(r&&r.value)setLdCfg({priceLb:1.35,fixedFee:0,...JSON.parse(r.value)});}catch{}
 try{const r=await FB.get("ld_cat");if(r&&r.value)setLdCatalog(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("cdsc");if(r&&r.value)setCustomDSC(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("sops3");if(r&&r.value)setSops(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_lead2");if(r&&r.value)setLdLeadDays(JSON.parse(r.value));}catch{}
@@ -3200,6 +3201,11 @@ return <div>
 
 {/* MANUAL */}
 {vw==="manual"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
+{[["casas","🏠 Casas"],["sops","📚 SOPs"],["ai","🤖 AI"]].map(([k,l])=><button key={k} onClick={()=>setManualSub(k)} style={{padding:"10px",borderRadius:8,border:manualSub===k?"2px solid "+T.ac:"1px solid "+T.bd,background:manualSub===k?T.ac+"12":"transparent",color:manualSub===k?T.ac:T.dm,fontSize:12,fontWeight:manualSub===k?700:500,cursor:"pointer"}}>{l}</button>)}
+</div>
+
+{manualSub==="casas"&&<div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>📋 Manual das Casas</span>
 <div style={{display:"flex",gap:4}}>
@@ -3237,6 +3243,61 @@ return <div>
 </div>
 </div></div>})}</div>
 </Card>})}
+</div>}
+
+{manualSub==="sops"&&<div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<span style={{fontSize:16,fontWeight:800}}>📚 SOPs & Procedimentos</span>
+<button onClick={()=>setSopEdit({id:Date.now(),title:"",category:"Limpeza",content:"",isNew:true})} style={bt(T.ac,T.bg,{padding:"8px 14px",fontSize:10,borderRadius:8})}>+ Novo SOP</button>
+</div>
+{["Limpeza","Lavanderia","Inspeção","Atendimento","Administrativo","RH","Segurança","Outros"].map(cat=>{const catSops=sops.filter(s=>s.category===cat);if(!catSops.length)return null;return <Card key={cat} style={{padding:0,overflow:"hidden",marginBottom:6}}>
+<div style={{padding:"10px 16px",background:T.ac+"08"}}><span style={{fontSize:13,fontWeight:700,color:T.ac}}>{cat} ({catSops.length})</span></div>
+<div style={{padding:"0 12px"}}>{catSops.map(s=><div key={s.id} style={{padding:"10px 4px",borderBottom:"1px solid "+T.bd,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div style={{flex:1}}>
+<div style={{fontSize:13,fontWeight:700}}>{s.title}</div>
+<div style={{fontSize:10,color:T.dm,marginTop:2}}>{(s.content||"").slice(0,100)}...</div>
+</div>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>setSopEdit({...s})} style={bt(T.ac+"15",T.ac,{padding:"5px 10px",fontSize:9})}>✏️</button>
+<button onClick={()=>{if(confirm("Deletar \""+s.title+"\"?")){const u=sops.filter(x=>x.id!==s.id);setSops(u);sv("sops3",u);fl("Deleted!");}}} style={bt(T.rd+"15",T.rd,{padding:"5px 8px",fontSize:9})}>🗑</button>
+</div>
+</div>)}</div>
+</Card>})}
+{!sops.length&&<div style={{textAlign:"center",padding:40,color:T.dm}}><div style={{fontSize:40,marginBottom:8}}>📚</div><div style={{fontSize:14}}>Nenhum SOP cadastrado</div><div style={{fontSize:11,marginTop:4}}>Clique em "+ Novo SOP" para criar</div></div>}
+</div>}
+
+{manualSub==="ai"&&<div>
+<div style={{fontSize:16,fontWeight:800,marginBottom:12}}>🤖 Perguntar ao Manual</div>
+<div>
+<div style={{maxHeight:400,overflowY:"auto",marginBottom:12,padding:8,borderRadius:10,background:T.bg+"66"}}>
+{sopChat.length===0&&<div style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>Faça uma pergunta sobre os procedimentos...</div>}
+{sopChat.map((msg,i)=><div key={i} style={{display:"flex",justifyContent:msg.role==="user"?"flex-end":"flex-start",marginBottom:8}}>
+<div style={{maxWidth:"85%",padding:"10px 14px",borderRadius:12,background:msg.role==="user"?T.ac:T.c2,color:msg.role==="user"?"#fff":T.tx,fontSize:12,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.content}</div>
+</div>)}
+{sopLoading&&<div style={{display:"flex",justifyContent:"flex-start",marginBottom:8}}><div style={{padding:"10px 14px",borderRadius:12,background:T.c2,fontSize:12,color:T.dm}}>Pensando...</div></div>}
+</div>
+<div style={{display:"flex",gap:6}}>
+<input id="sopQ" type="text" placeholder="Ex: Como limpar banheiro com mofo?" onKeyDown={e=>{if(e.key==="Enter"){document.getElementById("sopAskBtn").click();}}} style={{...inp,flex:1,fontSize:13,padding:"12px 14px"}}/>
+<button id="sopAskBtn" onClick={async()=>{var qEl=document.getElementById("sopQ");var q=qEl.value.trim();if(!q)return;qEl.value="";var newChat=[...sopChat,{role:"user",content:q}];setSopChat(newChat);setSopLoading(true);try{var sopCtx=sops.map(function(s){return"["+s.category+"] "+s.title+":\n"+s.content;}).join("\n\n---\n\n");var housesCtx=db.filter(function(p){return p.n!=="(nova)";}).map(function(p){var m=manualData[p.n]||{};var lh=ldHouses.find(function(h){return norm(h.name)===norm(p.n);});var sections="";if(lh&&lh.sections){lh.sections.forEach(function(sec){if(sec.items&&sec.items.length){sections+="\n  "+sec.name+": "+sec.items.map(function(it){return it.qty+"x "+(it.catName||it.name)+(it.size?" ("+it.size+")":"");}).join(", ");}});}return p.n+" ("+p.c+")"+(p.a?" - "+p.a:"")+(p.cd?" ["+p.cd+"]":"")+(m.doorCode?"\n  Door: "+m.doorCode:"")+(m.gateCode?"\n  Gate: "+m.gateCode:"")+(m.storageCode?"\n  Storage: "+m.storageCode:"")+(m.notes?"\n  Notes: "+m.notes:"")+(sections?"\n  Enxoval:"+sections:"");}).join("\n\n");var catCtx=ldCatalog.length>0?"Catálogo de Enxoval:\n"+ldCatalog.map(function(c){return c.code+" - "+c.type+" "+c.name+(c.size?" ("+c.size+")":"")+(c.description?" - "+c.description:"");}).join("\n"):"";var fullCtx="SOPs:\n"+sopCtx+"\n\n===\n\nCASAS DA EMPRESA:\n"+housesCtx+(catCtx?"\n\n===\n\n"+catCtx:"");var sysPrompt="Você é o assistente interno da empresa "+co.name+". Responda com base nos SOPs, dados das casas e catálogo de enxoval fornecidos. Se não encontrar a informação, diga. Português, claro e direto.\n\n"+fullCtx;var resp=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:sysPrompt,messages:newChat.map(function(m){return{role:m.role,content:m.content};})})});var data=await resp.json();var answer=data.content&&data.content[0]?data.content[0].text:"Erro.";setSopChat([...newChat,{role:"assistant",content:answer}]);}catch(err){setSopChat([...newChat,{role:"assistant",content:"Erro: "+err.message}]);}setSopLoading(false);}} style={bt(T.ac,T.bg,{padding:"12px 18px",fontSize:13,fontWeight:700,borderRadius:8})}>Enviar</button>
+</div>
+<button onClick={()=>setSopChat([])} style={{marginTop:6,border:"none",background:"transparent",color:T.dm,fontSize:10,cursor:"pointer"}}>Limpar conversa</button>
+</div>
+</div>}
+
+{sopEdit&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setSopEdit(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.bd,width:"100%",maxWidth:600,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 16px 48px rgba(0,0,0,0.4)"}}>
+<div style={{fontSize:15,fontWeight:800,marginBottom:14}}>{sopEdit.isNew?"Novo SOP":"Editar SOP"}</div>
+<div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div><label style={lb}>Título</label><input type="text" defaultValue={sopEdit.title||""} onBlur={e=>setSopEdit({...sopEdit,title:e.target.value})} placeholder="Ex: Procedimento de Limpeza de Banheiro" style={{...inp,width:"100%",fontSize:13,padding:"10px"}}/></div>
+<div><label style={lb}>Categoria</label><select value={sopEdit.category||"Limpeza"} onChange={e=>setSopEdit({...sopEdit,category:e.target.value})} style={{...sel,width:"100%",fontSize:12,padding:"10px"}}>{["Limpeza","Lavanderia","Inspeção","Atendimento","Administrativo","RH","Segurança","Outros"].map(c=><option key={c}>{c}</option>)}</select></div>
+<div><label style={lb}>Conteúdo</label><textarea defaultValue={sopEdit.content||""} onBlur={e=>setSopEdit({...sopEdit,content:e.target.value})} placeholder="Escreva o procedimento passo a passo..." style={{...inp,width:"100%",minHeight:200,resize:"vertical",fontSize:12,lineHeight:1.6}} rows={10}/></div>
+<button onClick={async()=>{if(!sopEdit.title){fl("Título obrigatório!");return;}setSopLoading(true);try{var resp=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"Você é consultor de processos de uma empresa de limpeza residencial.",messages:[{role:"user",content:"Empresa: "+co.name+". Escreva um SOP profissional e detalhado sobre: \""+sopEdit.title+"\". Categoria: "+sopEdit.category+". Inclua: objetivo, materiais necessários, passo a passo numerado, dicas importantes, e o que NÃO fazer. Português, tom profissional mas acessível."+(sopEdit.content?" Use como base: "+sopEdit.content:"")}]})});var data=await resp.json();var text=data.content&&data.content[0]?data.content[0].text:"";if(text)setSopEdit({...sopEdit,content:text});fl("SOP gerado!");}catch(err){fl("Erro: "+err.message);}setSopLoading(false);}} style={bt(T.pu+"15",T.pu,{padding:"10px",fontSize:11,width:"100%"})}>{sopLoading?"Gerando...":"🤖 Gerar SOP com AI"}</button>
+</div>
+<div style={{display:"flex",gap:8,marginTop:16}}>
+<button onClick={()=>{if(!sopEdit.title){fl("Título obrigatório!");return;}var entry={id:sopEdit.id||Date.now(),title:sopEdit.title,category:sopEdit.category||"Outros",content:sopEdit.content||"",updatedAt:new Date().toISOString()};var exists=sops.find(function(s){return s.id===entry.id;});var u=exists?sops.map(function(s){return s.id===entry.id?entry:s;}):[entry,...sops];setSops(u);sv("sops3",u);setSopEdit(null);fl("✅ SOP salvo!");}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>💾 Salvar</button>
+<button onClick={()=>setSopEdit(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:10})}>Cancel</button>
+</div>
+</div></div>}
 
 {manualEdit&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.15s ease"}} onClick={()=>setManualEdit(null)}>
 <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.bd,width:"100%",maxWidth:480,boxShadow:"0 16px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}>
