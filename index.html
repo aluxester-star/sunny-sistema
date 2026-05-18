@@ -41,7 +41,12 @@ const FB_TPL_MANAGER={id:"manager_v1",audience:"manager",allowAnon:false,questio
   {id:"q9",type:"text",t:{pt:"Sugestões de melhoria de processo?",en:"Process improvement suggestions?",es:"¿Sugerencias de mejora de proceso?"}},
   {id:"q10",type:"text",t:{pt:"Algo que precisa ser escalado para o owner?",en:"Anything to escalate to the owner?",es:"¿Algo que necesita ser escalado al dueño?"}}
 ]};
-const FB_TEMPLATES={cleaner_fixo:FB_TPL_CLEANER,manager:FB_TPL_MANAGER};
+const FB_TPL_CLIENT={id:"client_nps_v1",audience:"client",allowAnon:false,questions:[
+  {id:"q1",type:"nps",t:{pt:"De 0 a 10, quanto você recomendaria a Sunny Cleaning para um amigo?",en:"From 0 to 10, how likely are you to recommend Sunny Cleaning to a friend?",es:"De 0 a 10, ¿qué tan probable es que recomiendes Sunny Cleaning a un amigo?"},required:true},
+  {id:"q2",type:"text",t:{pt:"O que motivou sua nota?",en:"What motivated your score?",es:"¿Qué motivó tu calificación?"},required:true},
+  {id:"q3",type:"text",t:{pt:"O que poderíamos fazer melhor?",en:"What could we do better?",es:"¿Qué podríamos mejorar?"}}
+]};
+const FB_TEMPLATES={cleaner_fixo:FB_TPL_CLEANER,manager:FB_TPL_MANAGER,client:FB_TPL_CLIENT};
 const FB_UI_TEXT={
   loading:{pt:"Carregando...",en:"Loading...",es:"Cargando..."},
   invalidToken:{pt:"Link inválido ou expirado",en:"Invalid or expired link",es:"Enlace inválido o expirado"},
@@ -55,7 +60,8 @@ const FB_UI_TEXT={
   thanks:{pt:"Muito obrigado!",en:"Thank you very much!",es:"¡Muchas gracias!"},
   thanksMsg:{pt:"Sua resposta foi registrada. Tudo de bom!",en:"Your response has been recorded. All the best!",es:"Tu respuesta fue registrada. ¡Todo lo mejor!"},
   fillRequired:{pt:"Por favor responda as perguntas obrigatórias (*)",en:"Please answer the required questions (*)",es:"Por favor responde las preguntas obligatorias (*)"},
-  ratingLabel:{pt:["Muito ruim","Ruim","Ok","Bom","Excelente"],en:["Very bad","Bad","Ok","Good","Excellent"],es:["Muy malo","Malo","Ok","Bueno","Excelente"]}
+  ratingLabel:{pt:["Muito ruim","Ruim","Ok","Bom","Excelente"],en:["Very bad","Bad","Ok","Good","Excellent"],es:["Muy malo","Malo","Ok","Bueno","Excelente"]},
+  npsLabel:{pt:["Nada provável","","","","","","","","","","Muito provável"],en:["Not at all","","","","","","","","","","Very likely"],es:["Nada probable","","","","","","","","","","Muy probable"]}
 };
 
 function FeedbackPublicPage({token}){
@@ -87,16 +93,17 @@ function FeedbackPublicPage({token}){
   
   const submit=async()=>{
     if(!tpl)return;
-    const missing=tpl.questions.filter(q=>q.required&&!answers[q.id]);
+    const missing=tpl.questions.filter(q=>q.required&&(answers[q.id]===undefined||answers[q.id]===""));
     if(missing.length){alert(t("fillRequired"));return;}
     setSubmitting(true);
     try{
       const r=await FB.get("fb_campaigns");
       const all=r&&r.value?JSON.parse(r.value):{};
       const updated={...all,[campaign.id]:{...campaign,respondedAt:new Date().toISOString(),answers,anonymous:tpl.allowAnon?anon:false,lang}};
-      await FB.set("fb_campaigns",JSON.stringify(updated));
+      const result=await FB.set("fb_campaigns",JSON.stringify(updated));
+      if(!result)throw new Error("Save returned null");
       setDone(true);
-    }catch(e){alert("Erro: "+e.message);}
+    }catch(e){alert("Erro ao salvar: "+e.message+"\n\nTente novamente. Se persistir, contate o suporte.");}
     setSubmitting(false);
   };
   
@@ -129,6 +136,16 @@ function FeedbackPublicPage({token}){
               <div>{n}</div>
               <div style={{fontSize:8,marginTop:2,fontWeight:500}}>{FB_UI_TEXT.ratingLabel[lang][n-1]}</div>
             </button>)}
+          </div>}
+          {q.type==="nps"&&<div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:9,color:"#707A8A",marginBottom:6,padding:"0 2px"}}>
+              <span>{FB_UI_TEXT.npsLabel[lang][0]}</span>
+              <span>{FB_UI_TEXT.npsLabel[lang][10]}</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(11,1fr)",gap:3}}>
+              {[0,1,2,3,4,5,6,7,8,9,10].map(n=>{const color=n>=9?"#10B981":n>=7?"#EAB308":"#FF6B6B";return <button key={n} onClick={()=>setAnswers(p=>({...p,[q.id]:n}))} style={{padding:"12px 2px",borderRadius:6,border:val===n?"2px solid "+color:"1px solid #1A2545",background:val===n?color+"22":"#0A0F1E",color:val===n?color:"#707A8A",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{n}</button>;})}
+            </div>
+            {val!==undefined&&val!==""&&<div style={{textAlign:"center",marginTop:8,fontSize:11,fontWeight:700,color:val>=9?"#10B981":val>=7?"#EAB308":"#FF6B6B"}}>{val>=9?"🟢 "+(lang==="en"?"Promoter":lang==="es"?"Promotor":"Promotor"):val>=7?"🟡 "+(lang==="en"?"Passive":lang==="es"?"Neutro":"Neutro"):"🔴 "+(lang==="en"?"Detractor":lang==="es"?"Detractor":"Detrator")}</div>}
           </div>}
           {q.type==="choice"&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
             {q.options.map(opt=><button key={opt.v} onClick={()=>setAnswers(p=>({...p,[q.id]:opt.v}))} style={{padding:"12px 16px",borderRadius:8,border:val===opt.v?"2px solid #00B4D8":"1px solid #1A2545",background:val===opt.v?"rgba(0,180,216,0.15)":"#0A0F1E",color:val===opt.v?"#00B4D8":"#E8EBF0",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>{val===opt.v?"✓ ":""}{tt(opt.l)}</button>)}
@@ -456,7 +473,7 @@ const[customFinCats,setCustomFinCats]=useState([]);
 const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[userListModal,setUserListModal]=useState(null);const[manualData,setManualData]=useState({});const[manualFilter,setManualFilter]=useState("");const[manualEdit,setManualEdit]=useState(null);const[manualSub,setManualSub]=useState("casas");const[sops,setSops]=useState([]);const[sopEdit,setSopEdit]=useState(null);const[sopChat,setSopChat]=useState([]);const[sopLoading,setSopLoading]=useState(false);const[sopCatExpanded,setSopCatExpanded]=useState({Limpeza:true,Lavanderia:true,"Inspeção":true,"Manutenção":true,Atendimento:true,"RH/Treinamento":true,Administrativo:true});const[sopAiMode,setSopAiMode]=useState(null);const[escData,setEscData]=useState({startDate:"2026-03-01",teams:[{id:"A",name:"Dupla A",members:[]},{id:"B",name:"Dupla B",members:[]}],bonusDays:[],scores:{}});const[escMonth,setEscMonth]=useState(new Date().getMonth());const[escYear,setEscYear]=useState(new Date().getFullYear());const[escView,setEscView]=useState("calendar");const[escCalView,setEscCalView]=useState("month");const[escWeekStart,setEscWeekStart]=useState(0);const[escDayDetail,setEscDayDetail]=useState(null);const[escEdit,setEscEdit]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
-const[fbCampaigns,setFbCampaigns]=useState({});const[fbSub,setFbSub]=useState("dashboard");const[fbSelected,setFbSelected]=useState(null);
+const[fbCampaigns,setFbCampaigns]=useState({});const[fbSub,setFbSub]=useState("dashboard");const[fbSelected,setFbSelected]=useState(null);const[fbClientPicker,setFbClientPicker]=useState(null);
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",role:"Cleaner",ssn:"",bday:"",startDate:"",notes:""});
 const[empRoles,setEmpRoles]=useState([]);const[teamSub,setTeamSub]=useState("list");const[roleForm,setRoleForm]=useState(null);const[quickEmpModal,setQuickEmpModal]=useState(null);const[inclSporadics,setInclSporadics]=useState(false);
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
@@ -1032,13 +1049,17 @@ return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T
 </div></div>}
 
 <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
-<div style={{display:"flex",gap:1,padding:"6px 10px",borderBottom:"1px solid "+T.bd,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",background:darkMode?T.bg+"cc":"#fff",alignItems:"center"}}>
+<div style={{position:"relative",borderBottom:"1px solid "+T.bd,background:darkMode?T.bg+"cc":"#fff"}}>
+<button id="navScrollLeft" onClick={()=>{const el=document.getElementById("navTabsScroll");if(el)el.scrollBy({left:-220,behavior:"smooth"});}} style={{position:"absolute",left:0,top:0,bottom:0,width:32,zIndex:5,border:"none",background:"linear-gradient(90deg,"+(darkMode?T.bg:"#fff")+",transparent)",color:T.ac,cursor:"pointer",fontSize:18,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"flex-start",paddingLeft:6,fontFamily:"inherit"}}>◀</button>
+<div id="navTabsScroll" style={{display:"flex",gap:1,padding:"6px 32px",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",alignItems:"center"}}>
 {(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length+lowP.length+lowL.length,deepclean:(()=>{const today=getLocalDate();return dcList.filter(d=>{if(!d.active||!d.lastDone||!d.freqMonths)return false;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);const due=last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");return due<=today;}).length;})()};
-const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","strategy","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database"]]];
+const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","strategy","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database","feedback"]]];
 return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 {gi>0&&<div style={{width:2,minWidth:2,height:20,background:T.bd,borderRadius:1,margin:"0 4px",flexShrink:0}}/>}
-{tabs.filter(t=>grp.includes(t.id)).map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"8px 12px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none"}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:16,height:16,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{b}</span>}</button>})}
+{tabs.filter(t=>grp.includes(t.id)).map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"8px 12px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none",flexShrink:0}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:16,height:16,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{b}</span>}</button>;})}
 </React.Fragment>);})()}
+</div>
+<button id="navScrollRight" onClick={()=>{const el=document.getElementById("navTabsScroll");if(el)el.scrollBy({left:220,behavior:"smooth"});}} style={{position:"absolute",right:0,top:0,bottom:0,width:32,zIndex:5,border:"none",background:"linear-gradient(270deg,"+(darkMode?T.bg:"#fff")+",transparent)",color:T.ac,cursor:"pointer",fontSize:18,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6,fontFamily:"inherit"}}>▶</button>
 </div>
 <div style={{maxWidth:1020,margin:"0 auto",padding:"12px 8px",paddingBottom:60}}>
 
@@ -3955,6 +3976,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
   const respRate=monthList.length?Math.round(respondedThisMonth.length/monthList.length*100):0;
   const fixedCleaners=empProfiles.filter(e=>{const role=empRoles.find(r=>r.name===(e.role||"Cleaner"));return role&&role.feedback==="cleaner_fixo"&&!role.sporadic&&e.type==="Fixo";});
   const managers=empProfiles.filter(e=>{const role=empRoles.find(r=>r.name===(e.role||"Cleaner"));return role&&role.feedback==="manager";});
+  const activeClients=(()=>{const set=new Set();db.forEach(p=>{if(p.c&&p.n!=="(nova)")set.add(p.c);});return Array.from(set).sort();})();
   const alreadyCampaigns=monthList;
   const cleanersWithoutCampaign=fixedCleaners.filter(c=>!alreadyCampaigns.find(camp=>camp.audience==="cleaner_fixo"&&camp.personId===c.id));
   const managersWithoutCampaign=managers.filter(m=>!alreadyCampaigns.find(camp=>camp.audience==="manager"&&camp.personId===m.id));
@@ -3977,13 +3999,44 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     fl("✅ "+created+" pesquisa(s) gerada(s) para "+curMonth);
   };
   
+  const generateClientNPS=async(selectedClients)=>{
+    const targets=selectedClients||activeClients;
+    if(targets.length===0){fl("Nenhum cliente selecionado");return;}
+    const newCampaigns={...fbCampaigns};
+    let created=0;
+    let skipped=0;
+    targets.forEach(clientName=>{
+      const exists=alreadyCampaigns.find(camp=>camp.audience==="client"&&camp.personName===clientName);
+      if(exists){skipped++;return;}
+      const id="fb_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+      newCampaigns[id]={id,token:genToken(),audience:"client",personId:"client_"+clientName.replace(/\s+/g,"_"),personName:clientName,month:curMonth,createdAt:new Date().toISOString(),respondedAt:null,answers:null};
+      created++;
+    });
+    if(created===0){fl("Todos os clientes selecionados já têm pesquisa neste mês");return;}
+    await saveCampaigns(newCampaigns);
+    fl("✅ "+created+" pesquisa(s) NPS criada(s)"+(skipped>0?" · "+skipped+" já existia(m)":""));
+  };
+  
+  const refazerCamp=async(camp)=>{
+    if(!confirm("Refazer pesquisa de "+camp.personName+"?\n\nO link antigo continuará válido mas será criada uma nova pesquisa em branco."))return;
+    const newCampaigns={...fbCampaigns};
+    const id="fb_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+    newCampaigns[id]={id,token:genToken(),audience:camp.audience,personId:camp.personId,personName:camp.personName,month:curMonth,createdAt:new Date().toISOString(),respondedAt:null,answers:null};
+    await saveCampaigns(newCampaigns);
+    fl("🔄 Nova pesquisa gerada para "+camp.personName);
+  };
+  
   const buildMsg=(camp,lang)=>{
     const url=baseUrl+"?f="+camp.token;
-    const audLabel=camp.audience==="cleaner_fixo"?"cleaner":"manager";
-    const msgs={
-      pt:"Olá "+camp.personName+"!\n\nA Sunny gostaria de ouvir sua opinião sobre o trabalho neste mês. Leva só 2-3 minutos:\n\n"+url+"\n\nObrigado!",
-      en:"Hello "+camp.personName+"!\n\nSunny would like to hear your feedback about work this month. Takes 2-3 minutes:\n\n"+url+"\n\nThank you!",
-      es:"Hola "+camp.personName+"!\n\nSunny quisiera conocer tu opinión sobre el trabajo este mes. Toma 2-3 minutos:\n\n"+url+"\n\n¡Gracias!"
+    const isClient=camp.audience==="client";
+    const msgs=isClient?{
+      pt:"Oi "+camp.personName+"!\n\nSua opinião nos ajuda a melhorar. Leva só 30 segundos:\n\n👉 "+url+"\n\nObrigado!\n"+co.name,
+      en:"Hi "+camp.personName+"!\n\nYour feedback helps us improve. Just 30 seconds:\n\n👉 "+url+"\n\nThank you!\n"+co.name,
+      es:"Hola "+camp.personName+"!\n\nTu opinión nos ayuda a mejorar. Solo 30 segundos:\n\n👉 "+url+"\n\n¡Gracias!\n"+co.name
+    }:{
+      pt:"Olá "+camp.personName+"!\n\nA "+co.name+" gostaria de ouvir sua opinião sobre o trabalho neste mês. Leva só 2-3 minutos:\n\n👉 "+url+"\n\nObrigado!",
+      en:"Hello "+camp.personName+"!\n\n"+co.name+" would like to hear your feedback about work this month. Takes 2-3 minutes:\n\n👉 "+url+"\n\nThank you!",
+      es:"Hola "+camp.personName+"!\n\n"+co.name+" quisiera conocer tu opinión sobre el trabajo este mes. Toma 2-3 minutos:\n\n👉 "+url+"\n\n¡Gracias!"
     };
     return msgs[lang]||msgs.pt;
   };
@@ -3995,13 +4048,49 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
   // Analytics
   const cleanerResp=respondedThisMonth.filter(c=>c.audience==="cleaner_fixo");
   const managerResp=respondedThisMonth.filter(c=>c.audience==="manager");
+  const clientResp=respondedThisMonth.filter(c=>c.audience==="client");
   const avgCleanerRating=(()=>{const r=cleanerResp.filter(c=>c.answers&&c.answers.q1).map(c=>c.answers.q1);return r.length?(r.reduce((s,n)=>s+n,0)/r.length).toFixed(1):null;})();
   const avgManagerRating=(()=>{const r=managerResp.filter(c=>c.answers&&c.answers.q1).map(c=>c.answers.q1);return r.length?(r.reduce((s,n)=>s+n,0)/r.length).toFixed(1):null;})();
+  const nps=(()=>{const r=clientResp.filter(c=>c.answers&&typeof c.answers.q1==="number").map(c=>c.answers.q1);if(!r.length)return null;const prom=r.filter(n=>n>=9).length;const det=r.filter(n=>n<=6).length;return Math.round((prom-det)/r.length*100);})();
   const alerts=[];
   cleanerResp.forEach(c=>{const a=c.answers||{};if(a.q1<=2)alerts.push({type:"critical",who:c.anonymous?"Cleaner (anônimo)":c.personName,msg:"Score baixo: "+a.q1+"/5",id:c.id});if(a.q6==="nao")alerts.push({type:"critical",who:c.anonymous?"Cleaner (anônimo)":c.personName,msg:"Não pretende continuar",id:c.id});else if(a.q6==="duvida")alerts.push({type:"warning",who:c.anonymous?"Cleaner (anônimo)":c.personName,msg:"Tem dúvidas em continuar",id:c.id});if(a.q2==="nao")alerts.push({type:"warning",who:c.anonymous?"Cleaner (anônimo)":c.personName,msg:"Não cumpre horário",id:c.id});});
   managerResp.forEach(c=>{const a=c.answers||{};if(a.q1<=2)alerts.push({type:"critical",who:c.personName,msg:"Moral baixo da equipe: "+a.q1+"/5",id:c.id});});
+  clientResp.forEach(c=>{const a=c.answers||{};if(typeof a.q1==="number"&&a.q1<=6)alerts.push({type:"critical",who:c.personName,msg:"Cliente detrator: "+a.q1+"/10",id:c.id});});
   
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {fbClientPicker&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setFbClientPicker(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.pu+"60",width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 16px 48px rgba(0,0,0,0.4)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:14,fontWeight:800,color:T.pu}}>🏢 Gerar NPS de Clientes</span>
+          <button onClick={()=>setFbClientPicker(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+        </div>
+        <div style={{fontSize:11,color:T.dm,marginBottom:14}}>Selecione quais clientes vão receber a pesquisa este mês ({curMonth}).</div>
+        <div style={{display:"flex",gap:6,marginBottom:10}}>
+          <button onClick={()=>setFbClientPicker({selected:[...activeClients]})} style={{border:"none",background:T.ac+"15",color:T.ac,padding:"5px 12px",borderRadius:6,fontSize:10,cursor:"pointer",fontWeight:600}}>Todos</button>
+          <button onClick={()=>setFbClientPicker({selected:[]})} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"5px 12px",borderRadius:6,fontSize:10,cursor:"pointer",fontWeight:600}}>Nenhum</button>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:340,overflowY:"auto",paddingRight:4}}>
+          {activeClients.map(cli=>{
+            const sel=(fbClientPicker.selected||[]).includes(cli);
+            const housesCount=db.filter(p=>p.c===cli&&p.n!=="(nova)").length;
+            const alreadyGenerated=alreadyCampaigns.find(c=>c.audience==="client"&&c.personName===cli);
+            return <div key={cli} onClick={()=>{if(alreadyGenerated)return;const s=sel?(fbClientPicker.selected||[]).filter(x=>x!==cli):[...(fbClientPicker.selected||[]),cli];setFbClientPicker({selected:s});}} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:sel?"2px solid "+T.pu:"1px solid "+T.bd,background:sel?T.pu+"08":T.c2,cursor:alreadyGenerated?"not-allowed":"pointer",opacity:alreadyGenerated?0.5:1}}>
+              <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sel?T.pu:"#8899AA"),background:sel?T.pu:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700}}>{sel&&"✓"}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600}}>{cli}</div>
+                <div style={{fontSize:10,color:T.dm,marginTop:2}}>{housesCount} casa{housesCount!==1?"s":""}</div>
+              </div>
+              {alreadyGenerated&&<span style={{padding:"3px 8px",borderRadius:5,fontSize:9,fontWeight:700,background:T.gr+"15",color:T.gr}}>✓ já gerado</span>}
+            </div>;
+          })}
+          {activeClients.length===0&&<div style={{padding:20,textAlign:"center",color:T.dm,fontSize:11}}>Nenhum cliente ativo encontrado</div>}
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button onClick={async()=>{const sel=fbClientPicker.selected||[];await generateClientNPS(sel);setFbClientPicker(null);}} disabled={(fbClientPicker.selected||[]).length===0} style={bt(T.pu,"#fff",{flex:1,padding:"12px",fontSize:12,fontWeight:700,borderRadius:8,opacity:(fbClientPicker.selected||[]).length===0?0.4:1,cursor:(fbClientPicker.selected||[]).length===0?"not-allowed":"pointer"})}>Gerar {(fbClientPicker.selected||[]).length} pesquisa{(fbClientPicker.selected||[]).length!==1?"s":""}</button>
+          <button onClick={()=>setFbClientPicker(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:8})}>Cancel</button>
+        </div>
+      </div>
+    </div>}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
       <div style={{fontSize:18,fontWeight:800}}>💬 Feedback</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
@@ -4011,7 +4100,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     
     {fbSub==="dashboard"&&<>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
-        {[{l:"Enviadas (mês)",v:monthList.length,cl:T.ac},{l:"Respondidas",v:respondedThisMonth.length,cl:T.gr,s:respRate+"%"},{l:"Pendentes",v:pendingThisMonth.length,cl:T.or},{l:"Score Cleaners",v:avgCleanerRating||"—",cl:avgCleanerRating?(avgCleanerRating>=4?T.gr:avgCleanerRating>=3?T.or:T.rd):T.dm,s:cleanerResp.length+" resp."},{l:"Score Managers",v:avgManagerRating||"—",cl:avgManagerRating?(avgManagerRating>=4?T.gr:avgManagerRating>=3?T.or:T.rd):T.dm,s:managerResp.length+" resp."}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"12px 14px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",fontWeight:600,marginBottom:4}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl}}>{s.v}</div>{s.s&&<div style={{fontSize:10,color:T.dm,marginTop:2}}>{s.s}</div>}</div>)}
+        {[{l:"Enviadas (mês)",v:monthList.length,cl:T.ac},{l:"Respondidas",v:respondedThisMonth.length,cl:T.gr,s:respRate+"%"},{l:"Pendentes",v:pendingThisMonth.length,cl:T.or},{l:"Score Cleaners",v:avgCleanerRating||"—",cl:avgCleanerRating?(avgCleanerRating>=4?T.gr:avgCleanerRating>=3?T.or:T.rd):T.dm,s:cleanerResp.length+" resp."},{l:"Score Managers",v:avgManagerRating||"—",cl:avgManagerRating?(avgManagerRating>=4?T.gr:avgManagerRating>=3?T.or:T.rd):T.dm,s:managerResp.length+" resp."},{l:"NPS Clientes",v:nps!==null?nps:"—",cl:nps!==null?(nps>=50?T.gr:nps>=0?T.or:T.rd):T.dm,s:clientResp.length+" resp."}].map((s,i)=><div key={i} style={{background:T.cd,borderRadius:10,padding:"12px 14px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",fontWeight:600,marginBottom:4}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:s.cl}}>{s.v}</div>{s.s&&<div style={{fontSize:10,color:T.dm,marginTop:2}}>{s.s}</div>}</div>)}
       </div>
       
       {alerts.length>0&&<Card><div style={{fontSize:13,fontWeight:700,marginBottom:10,color:T.rd}}>🚨 Alertas ({alerts.length})</div>
@@ -4026,9 +4115,9 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {respondedThisMonth.slice(0,10).map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",borderBottom:"1px solid "+T.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:12,fontWeight:600}}>{c.anonymous?"🔒 "+(c.audience==="cleaner_fixo"?"Cleaner anônimo":"Manager anônimo"):c.personName}</div>
-            <div style={{fontSize:10,color:T.dm}}>{c.audience==="cleaner_fixo"?"Cleaner":"Manager"} · {(c.respondedAt||"").slice(0,10)}</div>
+            <div style={{fontSize:10,color:T.dm}}>{c.audience==="cleaner_fixo"?"🧹 Cleaner":c.audience==="manager"?"👔 Manager":"🏢 Cliente"} · {(c.respondedAt||"").slice(0,10)}</div>
           </div>
-          {c.answers&&c.answers.q1&&<div style={{fontSize:18,fontWeight:800,color:c.answers.q1>=4?T.gr:c.answers.q1>=3?T.or:T.rd}}>{c.answers.q1}/5</div>}
+          {c.answers&&typeof c.answers.q1==="number"&&<div style={{fontSize:18,fontWeight:800,color:c.audience==="client"?(c.answers.q1>=9?T.gr:c.answers.q1>=7?T.or:T.rd):(c.answers.q1>=4?T.gr:c.answers.q1>=3?T.or:T.rd)}}>{c.answers.q1}/{c.audience==="client"?10:5}</div>}
         </div>)}
       </Card>}
       
@@ -4037,20 +4126,29 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     
     {fbSub==="send"&&<>
       <Card>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700}}>Pesquisas de {curMonth}</div>
-            <div style={{fontSize:11,color:T.dm,marginTop:2}}>{fixedCleaners.length} cleaner(s) fixo(s) · {managers.length} manager(s)</div>
-          </div>
-          <button onClick={generateMonthly} disabled={cleanersWithoutCampaign.length===0&&managersWithoutCampaign.length===0} style={bt(T.ac,T.bg,{padding:"10px 18px",fontSize:12,borderRadius:8,fontWeight:700,opacity:(cleanersWithoutCampaign.length===0&&managersWithoutCampaign.length===0)?0.4:1})}>{cleanersWithoutCampaign.length===0&&managersWithoutCampaign.length===0?"✓ Todas geradas":"⚡ Gerar pesquisas do mês"}</button>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>⚡ Gerar Pesquisas — {curMonth}</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:8}}>
+          <button onClick={generateMonthly} style={bt(T.ac+"15",T.ac,{padding:"14px",fontSize:12,borderRadius:10,fontWeight:700,textAlign:"left",border:"1px solid "+T.ac+"40"})}>
+            <div style={{fontSize:22,marginBottom:4}}>🧹👔</div>
+            <div>Equipe (Cleaners + Managers)</div>
+            <div style={{fontSize:10,fontWeight:400,marginTop:4,opacity:0.7}}>{cleanersWithoutCampaign.length+managersWithoutCampaign.length} pendente(s) · {fixedCleaners.length+managers.length} no total</div>
+          </button>
+          <button onClick={()=>{if(activeClients.length===0){fl("Nenhum cliente ativo. Cadastre casas com clientes em Base primeiro.");return;}setFbClientPicker({selected:[...activeClients]});}} style={bt(T.pu+"15",T.pu,{padding:"14px",fontSize:12,borderRadius:10,fontWeight:700,textAlign:"left",border:"1px solid "+T.pu+"40"})}>
+            <div style={{fontSize:22,marginBottom:4}}>🏢</div>
+            <div>Clientes (NPS)</div>
+            <div style={{fontSize:10,fontWeight:400,marginTop:4,opacity:0.7}}>{activeClients.length} cliente(s) ativo(s)</div>
+          </button>
         </div>
-        {fixedCleaners.length===0&&managers.length===0&&<div style={{padding:20,textAlign:"center",color:T.dm,fontSize:12}}>Cadastre cleaners fixos e managers em Equipe primeiro</div>}
+        {fixedCleaners.length===0&&managers.length===0&&activeClients.length===0&&<div style={{padding:14,textAlign:"center",color:T.dm,fontSize:11,marginTop:10,background:T.bg,borderRadius:6}}>Cadastre cleaners fixos, managers em Equipe ou casas com clientes em Base primeiro</div>}
       </Card>
+      
+      {monthList.length>0&&<div style={{fontSize:11,color:T.dm,fontWeight:600,marginTop:6,marginBottom:-4}}>Pesquisas geradas ({monthList.length})</div>}
       
       {monthList.map(camp=>{
         const resp=camp.respondedAt;
-        const audLabel=camp.audience==="cleaner_fixo"?"🧹 Cleaner":"👔 Manager";
-        return <Card key={camp.id} style={{padding:14,borderLeft:"3px solid "+(resp?T.gr:T.or)}}>
+        const audLabel=camp.audience==="cleaner_fixo"?"🧹 Cleaner":camp.audience==="manager"?"👔 Manager":"🏢 Cliente";
+        const audColor=camp.audience==="client"?T.pu:T.ac;
+        return <Card key={camp.id} style={{padding:14,borderLeft:"3px solid "+(resp?T.gr:audColor)}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
             <div style={{flex:1,minWidth:180}}>
               <div style={{fontSize:13,fontWeight:700}}>{camp.personName}</div>
@@ -4060,19 +4158,22 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
             </div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {!resp&&<>
-                <button onClick={()=>copyMsg(camp,"pt")} style={bt(T.ac+"15",T.ac,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 PT</button>
-                <button onClick={()=>copyMsg(camp,"en")} style={bt(T.ac+"15",T.ac,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 EN</button>
-                <button onClick={()=>copyMsg(camp,"es")} style={bt(T.ac+"15",T.ac,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 ES</button>
-                <button onClick={()=>copyLink(camp)} style={bt(T.pu+"15",T.pu,{padding:"6px 10px",fontSize:10,borderRadius:5})}>🔗 link</button>
+                <button onClick={()=>copyMsg(camp,"pt")} style={bt(audColor+"15",audColor,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 PT</button>
+                <button onClick={()=>copyMsg(camp,"en")} style={bt(audColor+"15",audColor,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 EN</button>
+                <button onClick={()=>copyMsg(camp,"es")} style={bt(audColor+"15",audColor,{padding:"6px 10px",fontSize:10,borderRadius:5})}>📋 ES</button>
+                <button onClick={()=>copyLink(camp)} style={bt(T.pu+"15",T.pu,{padding:"6px 10px",fontSize:10,borderRadius:5})}>🔗</button>
               </>}
-              {resp&&<button onClick={()=>{setFbSelected(camp);setFbSub("responses");}} style={bt(T.gr+"15",T.gr,{padding:"6px 10px",fontSize:10,borderRadius:5})}>Ver →</button>}
+              {resp&&<>
+                <button onClick={()=>{setFbSelected(camp);setFbSub("responses");}} style={bt(T.gr+"15",T.gr,{padding:"6px 10px",fontSize:10,borderRadius:5})}>Ver →</button>
+                <button onClick={()=>refazerCamp(camp)} style={bt(T.or+"15",T.or,{padding:"6px 10px",fontSize:10,borderRadius:5})} title="Gerar nova pesquisa para esta pessoa">🔄 Refazer</button>
+              </>}
               <button onClick={()=>delCamp(camp)} style={bt(T.rd+"10",T.rd,{padding:"6px 10px",fontSize:10,borderRadius:5})}>🗑</button>
             </div>
           </div>
         </Card>;
       })}
       
-      {monthList.length===0&&<Card style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>Clique em "⚡ Gerar pesquisas do mês" acima</Card>}
+      {monthList.length===0&&<Card style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>Use os botões acima para gerar pesquisas</Card>}
     </>}
     
     {fbSub==="responses"&&<>
@@ -4082,9 +4183,9 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {fbList.filter(c=>c.respondedAt).map(c=><div key={c.id} onClick={()=>setFbSelected(c)} style={{padding:"12px 14px",borderBottom:"1px solid "+T.bd,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:12,fontWeight:600}}>{c.anonymous?"🔒 "+(c.audience==="cleaner_fixo"?"Cleaner anônimo":"Manager anônimo"):c.personName}</div>
-            <div style={{fontSize:10,color:T.dm,marginTop:2}}>{c.audience==="cleaner_fixo"?"Cleaner":"Manager"} · {c.month} · respondido em {(c.respondedAt||"").slice(0,10)}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>{c.audience==="cleaner_fixo"?"🧹 Cleaner":c.audience==="manager"?"👔 Manager":"🏢 Cliente"} · {c.month} · respondido em {(c.respondedAt||"").slice(0,10)}</div>
           </div>
-          {c.answers&&c.answers.q1&&<div style={{fontSize:18,fontWeight:800,color:c.answers.q1>=4?T.gr:c.answers.q1>=3?T.or:T.rd}}>{c.answers.q1}/5</div>}
+          {c.answers&&typeof c.answers.q1==="number"&&<div style={{fontSize:18,fontWeight:800,color:c.audience==="client"?(c.answers.q1>=9?T.gr:c.answers.q1>=7?T.or:T.rd):(c.answers.q1>=4?T.gr:c.answers.q1>=3?T.or:T.rd)}}>{c.answers.q1}/{c.audience==="client"?10:5}</div>}
         </div>)}
       </Card>}
       
@@ -4096,7 +4197,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
             <button onClick={()=>setFbSelected(null)} style={bt(T.c2,T.dm,{padding:"6px 12px",fontSize:11})}>← Voltar</button>
             <div style={{flex:1,textAlign:"center"}}>
               <div style={{fontSize:14,fontWeight:800}}>{fbSelected.anonymous?"🔒 "+(fbSelected.audience==="cleaner_fixo"?"Cleaner anônimo":"Manager anônimo"):fbSelected.personName}</div>
-              <div style={{fontSize:10,color:T.dm}}>{fbSelected.audience==="cleaner_fixo"?"Cleaner Fixo":"Manager"} · {fbSelected.month} · {(fbSelected.respondedAt||"").slice(0,10)}</div>
+              <div style={{fontSize:10,color:T.dm}}>{fbSelected.audience==="cleaner_fixo"?"🧹 Cleaner Fixo":fbSelected.audience==="manager"?"👔 Manager":"🏢 Cliente NPS"} · {fbSelected.month} · {(fbSelected.respondedAt||"").slice(0,10)}</div>
             </div>
             <div style={{width:60}}></div>
           </div>
@@ -4105,6 +4206,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
             const displayVal=()=>{
               if(v===undefined||v===null||v==="")return <span style={{color:T.dm,fontStyle:"italic"}}>(em branco)</span>;
               if(q.type==="rating")return <span style={{fontSize:22,fontWeight:800,color:v>=4?T.gr:v>=3?T.or:T.rd}}>{v}/5</span>;
+              if(q.type==="nps"){const label=v>=9?"🟢 Promotor":v>=7?"🟡 Neutro":"🔴 Detrator";const cor=v>=9?T.gr:v>=7?T.or:T.rd;return <span><span style={{fontSize:22,fontWeight:800,color:cor}}>{v}/10</span><span style={{marginLeft:10,fontSize:11,color:cor,fontWeight:700}}>{label}</span></span>;}
               if(q.type==="choice"){const opt=q.options.find(o=>o.v===v);return <span style={{fontWeight:600,color:T.tx}}>{opt?opt.l.pt:v}</span>;}
               return <span style={{color:T.tx,whiteSpace:"pre-wrap"}}>{v}</span>;
             };
