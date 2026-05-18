@@ -7,12 +7,15 @@
 <script>
 window.__SCAN__=null;
 window.__FB_TOKEN__=null;
+window.__FB_LANG__=null;
 try{
   var sp=new URLSearchParams(window.location.search);
   var sc=sp.get("s")||sp.get("scan");
   if(sc){window.__SCAN__=sc;history.replaceState(null,"",location.pathname);}
   var fb=sp.get("f");
   if(fb){window.__FB_TOKEN__=fb;}
+  var fbl=sp.get("lang");
+  if(fbl&&["pt","en","es"].indexOf(fbl)>=0){window.__FB_LANG__=fbl;}
 }catch(e){}
 </script>
 
@@ -65,10 +68,15 @@ const FB_UI_TEXT={
 };
 
 function FeedbackPublicPage({token}){
+  const detectLang=()=>{
+    if(window.__FB_LANG__)return window.__FB_LANG__;
+    try{const b=(navigator.language||navigator.userLanguage||"pt").toLowerCase().slice(0,2);if(b==="en"||b==="es"||b==="pt")return b;}catch(e){}
+    return "pt";
+  };
   const[loading,setLoading]=useState(true);
   const[campaign,setCampaign]=useState(null);
   const[answers,setAnswers]=useState({});
-  const[lang,setLang]=useState("pt");
+  const[lang,setLang]=useState(detectLang());
   const[anon,setAnon]=useState(false);
   const[submitting,setSubmitting]=useState(false);
   const[done,setDone]=useState(false);
@@ -4027,7 +4035,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
   };
   
   const buildMsg=(camp,lang)=>{
-    const url=baseUrl+"?f="+camp.token;
+    const url=baseUrl+"?f="+camp.token+"&lang="+lang;
     const isClient=camp.audience==="client";
     const msgs=isClient?{
       pt:"Oi "+camp.personName+"!\n\nSua opinião nos ajuda a melhorar. Leva só 30 segundos:\n\n👉 "+url+"\n\nObrigado!\n"+co.name,
