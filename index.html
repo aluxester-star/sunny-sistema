@@ -8,6 +8,7 @@
 window.__SCAN__=null;
 window.__FB_TOKEN__=null;
 window.__FB_LANG__=null;
+window.__CAD_TOKEN__=null;
 try{
   var sp=new URLSearchParams(window.location.search);
   var sc=sp.get("s")||sp.get("scan");
@@ -16,6 +17,8 @@ try{
   if(fb){window.__FB_TOKEN__=fb;}
   var fbl=sp.get("lang");
   if(fbl&&["pt","en","es"].indexOf(fbl)>=0){window.__FB_LANG__=fbl;}
+  var cad=sp.get("cad");
+  if(cad){window.__CAD_TOKEN__=cad;}
 }catch(e){}
 </script>
 
@@ -27,20 +30,20 @@ const FB={get:async(k)=>{try{const doc=await db.collection("sunny").doc(k).get()
 const FB_TPL_CLEANER={id:"cleaner_fixo_v1",audience:"cleaner_fixo",allowAnon:true,questions:[
   {id:"q1",type:"rating",t:{pt:"Como você se sente trabalhando neste mês?",en:"How are you feeling at work this month?",es:"¿Cómo te sientes en el trabajo este mes?"},required:true},
   {id:"q2",type:"choice",options:[{v:"sim",l:{pt:"Sim, no tempo",en:"Yes, on time",es:"Sí, a tiempo"}},{v:"apertado",l:{pt:"Apertado",en:"Tight",es:"Justo"}},{v:"nao",l:{pt:"Não, atrasado",en:"No, behind",es:"No, atrasado"}}],t:{pt:"Está conseguindo cumprir as casas no tempo?",en:"Are you meeting the schedule on time?",es:"¿Estás cumpliendo con las casas a tiempo?"},required:true},
-  {id:"q3",type:"text",t:{pt:"Algum cliente ou casa que está difícil?",en:"Any difficult client or house?",es:"¿Algún cliente o casa difícil?"}},
-  {id:"q4",type:"text",t:{pt:"Tem equipamento ou produto que precisa?",en:"Any equipment or product you need?",es:"¿Algún equipo o producto que necesites?"}},
+  {id:"q3",type:"text",suggestions:"clientes_casas",t:{pt:"Algum cliente ou casa que está difícil?",en:"Any difficult client or house?",es:"¿Algún cliente o casa difícil?"}},
+  {id:"q4",type:"text",suggestions:"equipamento",t:{pt:"Tem equipamento ou produto que precisa?",en:"Any equipment or product you need?",es:"¿Algún equipo o producto que necesites?"}},
   {id:"q5",type:"text",t:{pt:"Alguma sugestão de melhoria?",en:"Any improvement suggestion?",es:"¿Alguna sugerencia de mejora?"}},
   {id:"q6",type:"choice",options:[{v:"sim",l:{pt:"Sim, com certeza",en:"Yes, definitely",es:"Sí, definitivamente"}},{v:"duvida",l:{pt:"Tenho dúvidas",en:"I have doubts",es:"Tengo dudas"}},{v:"nao",l:{pt:"Não pretendo",en:"No, I don't intend to",es:"No pretendo"}}],t:{pt:"Pretende continuar conosco nos próximos meses?",en:"Do you plan to continue with us in the coming months?",es:"¿Planeas continuar con nosotros en los próximos meses?"},required:true}
 ]};
 const FB_TPL_MANAGER={id:"manager_v1",audience:"manager",allowAnon:false,questions:[
   {id:"q1",type:"rating",t:{pt:"Como está o moral da equipe este mês?",en:"How is the team morale this month?",es:"¿Cómo está la moral del equipo este mes?"},required:true},
-  {id:"q2",type:"text",t:{pt:"Quais cleaners se destacaram este mês?",en:"Which cleaners stood out this month?",es:"¿Qué cleaners se destacaron este mes?"}},
-  {id:"q3",type:"text",t:{pt:"Quais cleaners estão com dificuldades?",en:"Which cleaners are struggling?",es:"¿Qué cleaners están con dificultades?"}},
-  {id:"q4",type:"text",t:{pt:"Problemas operacionais recorrentes?",en:"Recurring operational problems?",es:"¿Problemas operativos recurrentes?"}},
-  {id:"q5",type:"text",t:{pt:"Casas com problema persistente?",en:"Houses with persistent issues?",es:"¿Casas con problemas persistentes?"}},
-  {id:"q6",type:"text",t:{pt:"Clientes difíceis ou em risco?",en:"Difficult clients or at risk?",es:"¿Clientes difíciles o en riesgo?"}},
-  {id:"q7",type:"text",t:{pt:"Equipamento ou produto faltando?",en:"Missing equipment or product?",es:"¿Falta de equipo o producto?"}},
-  {id:"q8",type:"text",t:{pt:"Suas próprias dificuldades?",en:"Your own challenges?",es:"¿Tus propias dificultades?"}},
+  {id:"q2",type:"text",suggestions:"cleaners",t:{pt:"Quais cleaners se destacaram este mês?",en:"Which cleaners stood out this month?",es:"¿Qué cleaners se destacaron este mes?"}},
+  {id:"q3",type:"text",suggestions:"cleaners",t:{pt:"Quais cleaners estão com dificuldades?",en:"Which cleaners are struggling?",es:"¿Qué cleaners están con dificultades?"}},
+  {id:"q4",type:"text",suggestions:"problemas",t:{pt:"Problemas operacionais recorrentes?",en:"Recurring operational problems?",es:"¿Problemas operativos recurrentes?"}},
+  {id:"q5",type:"text",suggestions:"casas",t:{pt:"Casas com problema persistente?",en:"Houses with persistent issues?",es:"¿Casas con problemas persistentes?"}},
+  {id:"q6",type:"text",suggestions:"clientes",t:{pt:"Clientes difíceis ou em risco?",en:"Difficult clients or at risk?",es:"¿Clientes difíciles o en riesgo?"}},
+  {id:"q7",type:"text",suggestions:"equipamento",t:{pt:"Equipamento ou produto faltando?",en:"Missing equipment or product?",es:"¿Falta de equipo o producto?"}},
+  {id:"q8",type:"text",suggestions:"dificuldades",t:{pt:"Suas próprias dificuldades?",en:"Your own challenges?",es:"¿Tus propias dificultades?"}},
   {id:"q9",type:"text",t:{pt:"Sugestões de melhoria de processo?",en:"Process improvement suggestions?",es:"¿Sugerencias de mejora de proceso?"}},
   {id:"q10",type:"text",t:{pt:"Algo que precisa ser escalado para o owner?",en:"Anything to escalate to the owner?",es:"¿Algo que necesita ser escalado al dueño?"}}
 ]};
@@ -81,6 +84,9 @@ function FeedbackPublicPage({token}){
   const[submitting,setSubmitting]=useState(false);
   const[done,setDone]=useState(false);
   const[error,setError]=useState(null);
+  const[expandedSugs,setExpandedSugs]=useState({});
+  const[sugData,setSugData]=useState({cleaners:[],casas:[],clientes:[],problemas:[],equipamento:[],dificuldades:[]});
+  const[learnedTerms,setLearnedTerms]=useState({});
   
   useEffect(()=>{(async()=>{
     try{
@@ -91,9 +97,53 @@ function FeedbackPublicPage({token}){
       if(!found){setError("invalid");setLoading(false);return;}
       if(found.respondedAt){setError("done");setLoading(false);return;}
       setCampaign(found);
+      // Carregar sugestões reais do sistema
+      try{
+        const ep=await FB.get("ep3");
+        const db3=await FB.get("db3");
+        const ltR=await FB.get("fb_learned");
+        const empList=ep&&ep.value?JSON.parse(ep.value):[];
+        const dbList=db3&&db3.value?JSON.parse(db3.value):[];
+        const learned=ltR&&ltR.value?JSON.parse(ltR.value):{};
+        setLearnedTerms(learned);
+        const cleaners=empList.filter(p=>p.name&&p.type==="Fixo").map(p=>p.name).sort();
+        const casas=[...new Set(dbList.filter(p=>p.n&&p.n!=="(nova)").map(p=>p.n))].sort();
+        const clientes=[...new Set(dbList.filter(p=>p.c).map(p=>p.c))].sort();
+        const problemasBase={pt:["Atraso na escala","Falta de comunicação","Cleaner não apareceu","Casa não estava liberada","Chave/código errado","Suprimentos acabando","Roteiro mal planejado","Hóspede ainda na casa","Conflito entre equipe","Falta de transporte"],en:["Schedule delays","Communication issues","Cleaner no-show","House not ready","Wrong key/code","Supplies running out","Poor route planning","Guest still in house","Team conflict","Lack of transport"],es:["Retrasos en agenda","Problemas de comunicación","Cleaner no se presentó","Casa no liberada","Llave/código incorrecto","Suministros acabando","Mala planificación de ruta","Huésped aún en casa","Conflicto en equipo","Falta de transporte"]};
+        const equipamentoBase={pt:["Aspirador","Vassoura/Rodo","Pano de microfibra","Produto multiuso","Desinfetante","Limpa-vidros","Saco de lixo","Luvas","Máscara","Álcool em gel"],en:["Vacuum","Broom/Mop","Microfiber cloth","All-purpose cleaner","Disinfectant","Glass cleaner","Trash bags","Gloves","Mask","Hand sanitizer"],es:["Aspiradora","Escoba/Trapeador","Paño microfibra","Producto multiuso","Desinfectante","Limpiavidrios","Bolsas de basura","Guantes","Mascarilla","Alcohol en gel"]};
+        const dificuldadesBase={pt:["Sobrecarga de casas","Falta de transporte","Horário apertado","Conflito com colega","Conflito com cliente","Pagamento atrasado","Falta de treinamento","Equipamento ruim","Estresse físico","Distância entre casas"],en:["Too many houses","Lack of transport","Tight schedule","Coworker conflict","Client conflict","Late payment","Lack of training","Bad equipment","Physical stress","Distance between houses"],es:["Sobrecarga de casas","Falta de transporte","Horario apretado","Conflicto con colega","Conflicto con cliente","Pago atrasado","Falta de capacitación","Equipo malo","Estrés físico","Distancia entre casas"]};
+        setSugData({cleaners,casas,clientes,problemas:problemasBase,equipamento:equipamentoBase,dificuldades:dificuldadesBase});
+      }catch(e){}
     }catch(e){setError("invalid");}
     setLoading(false);
   })();},[token]);
+  
+  const getSuggestions=(type)=>{
+    if(!type)return [];
+    const base=sugData[type];
+    let list=[];
+    if(Array.isArray(base)){list=base;}
+    else if(base&&typeof base==="object"){list=base[lang]||base.pt||[];}
+    const learned=(learnedTerms[type]||[]);
+    return [...new Set([...list,...learned])];
+  };
+  
+  const getSuggestionsForQ=(q)=>{
+    if(!q.suggestions)return [];
+    if(q.suggestions==="clientes_casas"){return [...getSuggestions("clientes"),...getSuggestions("casas")];}
+    return getSuggestions(q.suggestions);
+  };
+  
+  const parseSelected=(val)=>{if(!val||typeof val!=="string")return [];return val.split(/[,;\n]/).map(s=>s.trim()).filter(Boolean);};
+  
+  const toggleChip=(qId,chip)=>{
+    setAnswers(p=>{
+      const cur=parseSelected(p[qId]);
+      const has=cur.find(s=>s.toLowerCase()===chip.toLowerCase());
+      const newList=has?cur.filter(s=>s.toLowerCase()!==chip.toLowerCase()):[...cur,chip];
+      return {...p,[qId]:newList.join(", ")};
+    });
+  };
   
   const tpl=campaign?FB_TEMPLATES[campaign.audience]:null;
   const t=(k)=>FB_UI_TEXT[k]?(FB_UI_TEXT[k][lang]||FB_UI_TEXT[k].pt):"";
@@ -110,6 +160,30 @@ function FeedbackPublicPage({token}){
       const updated={...all,[campaign.id]:{...campaign,respondedAt:new Date().toISOString(),answers,anonymous:tpl.allowAnon?anon:false,lang}};
       const result=await FB.set("fb_campaigns",JSON.stringify(updated));
       if(!result)throw new Error("Save returned null");
+      // Auto-aprendizado: salvar termos novos para futuras sugestões
+      try{
+        const learned={...learnedTerms};
+        let changed=false;
+        tpl.questions.forEach(q=>{
+          if(!q.suggestions)return;
+          const val=answers[q.id];
+          if(!val||typeof val!=="string")return;
+          const selected=parseSelected(val);
+          const knownList=getSuggestionsForQ(q).map(x=>x.toLowerCase());
+          selected.forEach(term=>{
+            if(term.length<3||term.length>60)return;
+            if(knownList.indexOf(term.toLowerCase())>=0)return;
+            const cat=q.suggestions==="clientes_casas"?"clientes_casas_learned":q.suggestions;
+            if(!learned[cat])learned[cat]=[];
+            const lower=term.toLowerCase();
+            if(!learned[cat].find(x=>x.toLowerCase()===lower)){
+              learned[cat].push(term);
+              changed=true;
+            }
+          });
+        });
+        if(changed){await FB.set("fb_learned",JSON.stringify(learned));}
+      }catch(e){}
       setDone(true);
     }catch(e){alert("Erro ao salvar: "+e.message+"\n\nTente novamente. Se persistir, contate o suporte.");}
     setSubmitting(false);
@@ -158,7 +232,27 @@ function FeedbackPublicPage({token}){
           {q.type==="choice"&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
             {q.options.map(opt=><button key={opt.v} onClick={()=>setAnswers(p=>({...p,[q.id]:opt.v}))} style={{padding:"12px 16px",borderRadius:8,border:val===opt.v?"2px solid #00B4D8":"1px solid #1A2545",background:val===opt.v?"rgba(0,180,216,0.15)":"#0A0F1E",color:val===opt.v?"#00B4D8":"#E8EBF0",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>{val===opt.v?"✓ ":""}{tt(opt.l)}</button>)}
           </div>}
-          {q.type==="text"&&<textarea value={val||""} onChange={e=>setAnswers(p=>({...p,[q.id]:e.target.value}))} placeholder="..." rows={3} style={{width:"100%",padding:"10px 12px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:13,outline:"none",fontFamily:"inherit",resize:"vertical",minHeight:60}}/>}
+          {q.type==="text"&&(()=>{
+            const sugs=getSuggestionsForQ(q);
+            if(sugs.length===0){return <textarea value={val||""} onChange={e=>setAnswers(p=>({...p,[q.id]:e.target.value}))} placeholder="..." rows={3} style={{width:"100%",padding:"10px 12px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:13,outline:"none",fontFamily:"inherit",resize:"vertical",minHeight:60}}/>;}
+            const selected=parseSelected(val);
+            const isExpanded=expandedSugs[q.id];
+            const visibleSugs=isExpanded?sugs:sugs.slice(0,6);
+            const sugLabels={pt:{title:"Sugestões (toque para adicionar):",more:"Ver mais",less:"Ver menos",selected:"Selecionados:",custom:"Digite aqui (ou use sugestões abaixo):"},en:{title:"Suggestions (tap to add):",more:"See more",less:"See less",selected:"Selected:",custom:"Type here (or use suggestions below):"},es:{title:"Sugerencias (toque para añadir):",more:"Ver más",less:"Ver menos",selected:"Seleccionados:",custom:"Escribe aquí (o usa las sugerencias):"}};
+            const lbl=sugLabels[lang]||sugLabels.pt;
+            return <div>
+              <textarea value={val||""} onChange={e=>setAnswers(p=>({...p,[q.id]:e.target.value}))} placeholder={lbl.custom} rows={2} style={{width:"100%",padding:"10px 12px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:13,outline:"none",fontFamily:"inherit",resize:"vertical",minHeight:50,marginBottom:10}}/>
+              {selected.length>0&&<div style={{marginBottom:10}}>
+                <div style={{fontSize:9,color:"#707A8A",marginBottom:5,fontWeight:600}}>{lbl.selected}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>{selected.map((s,si)=><span key={si} onClick={()=>toggleChip(q.id,s)} style={{padding:"5px 10px 5px 11px",borderRadius:14,background:"rgba(0,180,216,0.18)",color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer",border:"1px solid rgba(0,180,216,0.4)",display:"inline-flex",alignItems:"center",gap:6}}>{s}<span style={{fontSize:13,opacity:0.7}}>✕</span></span>)}</div>
+              </div>}
+              <div style={{fontSize:9,color:"#707A8A",marginBottom:5,fontWeight:600}}>{lbl.title}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {visibleSugs.map((s,si)=>{const sel=selected.find(x=>x.toLowerCase()===s.toLowerCase());if(sel)return null;return <span key={si} onClick={()=>toggleChip(q.id,s)} style={{padding:"5px 11px",borderRadius:14,background:"#111833",color:"#A0AABC",fontSize:11,cursor:"pointer",border:"1px solid #1A2545",transition:"all 0.15s"}}>+ {s}</span>;})}
+                {sugs.length>6&&<span onClick={()=>setExpandedSugs(p=>({...p,[q.id]:!isExpanded}))} style={{padding:"5px 11px",borderRadius:14,background:"transparent",color:"#00B4D8",fontSize:11,cursor:"pointer",border:"1px dashed rgba(0,180,216,0.4)",fontWeight:600}}>{isExpanded?"▲ "+lbl.less:"▼ "+lbl.more+" ("+(sugs.length-6)+")"}</span>}
+              </div>
+            </div>;
+          })()}
         </div>;
       })}
       
@@ -176,11 +270,139 @@ function FeedbackPublicPage({token}){
   </div>;
 }
 
+// =============== CADASTRO PUBLICO DE FUNCIONARIO ===============
+const CAD_UI_TEXT={
+  loading:{pt:"Carregando...",en:"Loading...",es:"Cargando..."},
+  invalid:{pt:"Link inválido ou expirado",en:"Invalid or expired link",es:"Enlace inválido o expirado"},
+  alreadySent:{pt:"Você já preencheu este cadastro. Obrigado!",en:"You already filled this registration. Thank you!",es:"Ya completaste este registro. ¡Gracias!"},
+  approved:{pt:"Cadastro já aprovado!",en:"Registration already approved!",es:"¡Registro ya aprobado!"},
+  title:{pt:"Cadastro de Funcionário",en:"Employee Registration",es:"Registro de Empleado"},
+  intro:{pt:"Preencha seus dados para começar a trabalhar conosco. Leva 3 minutos.",en:"Fill in your details to start working with us. Takes 3 minutes.",es:"Completa tus datos para empezar a trabajar con nosotros. Toma 3 minutos."},
+  thanks:{pt:"Cadastro enviado!",en:"Registration sent!",es:"¡Registro enviado!"},
+  thanksMsg:{pt:"Recebemos seus dados. Em breve entraremos em contato com o próximo passo.",en:"We received your details. We'll contact you soon with next steps.",es:"Recibimos tus datos. Pronto te contactaremos con los próximos pasos."},
+  fields:{
+    name:{pt:"Nome completo *",en:"Full name *",es:"Nombre completo *"},
+    phone:{pt:"Telefone *",en:"Phone *",es:"Teléfono *"},
+    email:{pt:"Email *",en:"Email *",es:"Email *"},
+    address:{pt:"Endereço completo *",en:"Full address *",es:"Dirección completa *"},
+    ssn:{pt:"SSN ou ITIN",en:"SSN or ITIN",es:"SSN o ITIN"},
+    bday:{pt:"Data de nascimento",en:"Date of birth",es:"Fecha de nacimiento"},
+    startDate:{pt:"Data de início (se sabe)",en:"Start date (if known)",es:"Fecha de inicio (si la sabes)"},
+    notes:{pt:"Observações (opcional)",en:"Notes (optional)",es:"Observaciones (opcional)"}
+  },
+  submit:{pt:"Enviar Cadastro",en:"Submit Registration",es:"Enviar Registro"},
+  sending:{pt:"Enviando...",en:"Sending...",es:"Enviando..."},
+  fillRequired:{pt:"Preencha os campos obrigatórios (*)",en:"Fill the required fields (*)",es:"Completa los campos obligatorios (*)"},
+  privacy:{pt:"🔒 Seus dados são confidenciais e usados apenas para fins trabalhistas.",en:"🔒 Your data is confidential and used only for employment purposes.",es:"🔒 Tus datos son confidenciales y se usan solo para fines laborales."}
+};
+
+function EmpRegisterPublicPage({token}){
+  const detectLang=()=>{
+    try{const b=(navigator.language||navigator.userLanguage||"pt").toLowerCase().slice(0,2);if(b==="en"||b==="es"||b==="pt")return b;}catch(e){}
+    return "pt";
+  };
+  const[loading,setLoading]=useState(true);
+  const[invite,setInvite]=useState(null);
+  const[lang,setLang]=useState(detectLang());
+  const[form,setForm]=useState({name:"",phone:"",email:"",address:"",ssn:"",bday:"",startDate:"",notes:""});
+  const[submitting,setSubmitting]=useState(false);
+  const[done,setDone]=useState(false);
+  const[error,setError]=useState(null);
+  
+  const t=(k)=>CAD_UI_TEXT[k]?(CAD_UI_TEXT[k][lang]||CAD_UI_TEXT[k].pt):"";
+  const lt=(k)=>CAD_UI_TEXT.fields[k]?(CAD_UI_TEXT.fields[k][lang]||CAD_UI_TEXT.fields[k].pt):"";
+  
+  useEffect(()=>{(async()=>{
+    try{
+      const r=await FB.get("emp_invites");
+      if(!r||!r.value){setError("invalid");setLoading(false);return;}
+      const all=JSON.parse(r.value);
+      const found=Object.values(all).find(i=>i.token===token);
+      if(!found){setError("invalid");setLoading(false);return;}
+      if(found.status==="submitted"||found.submittedAt){setError("submitted");setLoading(false);return;}
+      if(found.status==="approved"){setError("approved");setLoading(false);return;}
+      setInvite(found);
+      // Pré-preencher nome se admin colocou
+      if(found.hint){setForm(p=>({...p,name:found.hint}));}
+    }catch(e){setError("invalid");}
+    setLoading(false);
+  })();},[token]);
+  
+  const submit=async()=>{
+    if(!form.name.trim()||!form.phone.trim()||!form.email.trim()||!form.address.trim()){
+      alert(t("fillRequired"));
+      return;
+    }
+    setSubmitting(true);
+    try{
+      const r=await FB.get("emp_invites");
+      const all=r&&r.value?JSON.parse(r.value):{};
+      const updated={...all,[invite.id]:{...invite,status:"submitted",submittedAt:new Date().toISOString(),data:form,lang}};
+      const result=await FB.set("emp_invites",JSON.stringify(updated));
+      if(!result)throw new Error("Save failed");
+      setDone(true);
+    }catch(e){alert("Erro ao enviar: "+e.message);}
+    setSubmitting(false);
+  };
+  
+  if(loading)return <div style={{minHeight:"100vh",background:"#0A0F1E",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16,fontFamily:"'Inter',sans-serif"}}>{t("loading")}</div>;
+  
+  if(error==="invalid")return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E,#1A2545)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif"}}><div style={{background:"#111833",borderRadius:16,padding:36,textAlign:"center",maxWidth:400,border:"1px solid #1A2545"}}><div style={{fontSize:48,marginBottom:12}}>🔒</div><div style={{fontSize:16,color:"#E8EBF0",fontWeight:600}}>{t("invalid")}</div></div></div>;
+  
+  if(error==="submitted")return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E,#1A2545)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif"}}><div style={{background:"#111833",borderRadius:16,padding:36,textAlign:"center",maxWidth:420,border:"1px solid #1A2545"}}><div style={{fontSize:56,marginBottom:14}}>✅</div><div style={{fontSize:20,color:"#4ADE80",fontWeight:800,marginBottom:8}}>{t("alreadySent")}</div></div></div>;
+  
+  if(error==="approved")return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E,#1A2545)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif"}}><div style={{background:"#111833",borderRadius:16,padding:36,textAlign:"center",maxWidth:420,border:"1px solid #1A2545"}}><div style={{fontSize:56,marginBottom:14}}>🎉</div><div style={{fontSize:20,color:"#4ADE80",fontWeight:800,marginBottom:8}}>{t("approved")}</div></div></div>;
+  
+  if(done)return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E,#1A2545)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif"}}><div style={{background:"#111833",borderRadius:16,padding:36,textAlign:"center",maxWidth:420,border:"1px solid #1A2545"}}><div style={{fontSize:56,marginBottom:14}}>🎉</div><div style={{fontSize:20,color:"#4ADE80",fontWeight:800,marginBottom:8}}>{t("thanks")}</div><div style={{fontSize:13,color:"#E8EBF0",lineHeight:1.5}}>{t("thanksMsg")}</div><div style={{marginTop:24,fontSize:11,color:"#707A8A"}}>Sunny Cleaning Services</div></div></div>;
+  
+  const inpS={width:"100%",padding:"11px 13px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:13,outline:"none",fontFamily:"inherit"};
+  const lbS={fontSize:10,color:"#A0AABC",marginBottom:5,display:"block",fontWeight:600};
+  
+  return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E,#0D1B30,#0A0F1E)",padding:"30px 16px",fontFamily:"'Inter',-apple-system,sans-serif",color:"#E8EBF0"}}>
+    <div style={{maxWidth:560,margin:"0 auto"}}>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:6,marginBottom:14}}>
+        {[["pt","🇧🇷 PT"],["en","🇺🇸 EN"],["es","🇪🇸 ES"]].map(([k,l])=><button key={k} onClick={()=>setLang(k)} style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+(lang===k?"#00B4D8":"#1A2545"),background:lang===k?"rgba(0,180,216,0.15)":"#111833",color:lang===k?"#00B4D8":"#707A8A",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
+      </div>
+      
+      <div style={{textAlign:"center",marginBottom:24}}>
+        <div style={{fontSize:14,fontWeight:700,color:"#00B4D8",letterSpacing:1,marginBottom:4}}>SUNNY CLEANING</div>
+        <div style={{fontSize:22,fontWeight:800,color:"#E8EBF0",marginBottom:8}}>👋 {t("title")}</div>
+        <div style={{fontSize:13,color:"#A0AABC",lineHeight:1.5}}>{t("intro")}</div>
+      </div>
+      
+      <div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:12,padding:20,marginBottom:14}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr",gap:14}}>
+          <div><label style={lbS}>{lt("name")}</label><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inpS} placeholder="João Silva"/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div><label style={lbS}>{lt("phone")}</label><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} style={inpS} placeholder="(813) 000-0000" type="tel"/></div>
+            <div><label style={lbS}>{lt("email")}</label><input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} style={inpS} placeholder="email@email.com" type="email"/></div>
+          </div>
+          <div><label style={lbS}>{lt("address")}</label><input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} style={inpS} placeholder="Rua, Cidade, Estado, ZIP"/></div>
+          <div><label style={lbS}>{lt("ssn")}</label><input value={form.ssn} onChange={e=>setForm({...form,ssn:e.target.value})} style={{...inpS,letterSpacing:1}} placeholder="XXX-XX-XXXX"/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div><label style={lbS}>{lt("bday")}</label><input value={form.bday} onChange={e=>setForm({...form,bday:e.target.value})} style={inpS} type="date"/></div>
+            <div><label style={lbS}>{lt("startDate")}</label><input value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})} style={inpS} type="date"/></div>
+          </div>
+          <div><label style={lbS}>{lt("notes")}</label><textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} style={{...inpS,minHeight:60,resize:"vertical"}} rows={3} placeholder="..."/></div>
+        </div>
+      </div>
+      
+      <div style={{padding:"10px 14px",background:"rgba(0,180,216,0.06)",borderRadius:8,marginBottom:14,fontSize:11,color:"#A0AABC",border:"1px dashed rgba(0,180,216,0.2)"}}>{t("privacy")}</div>
+      
+      <button onClick={submit} disabled={submitting} style={{width:"100%",padding:"15px",background:submitting?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:800,cursor:submitting?"wait":"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(0,180,216,0.25)"}}>{submitting?t("sending"):t("submit")}</button>
+      
+      <div style={{textAlign:"center",fontSize:10,color:"#707A8A",marginTop:20}}>Sunny Cleaning Services · {new Date().getFullYear()}</div>
+    </div>
+  </div>;
+}
+
 function LoginScreen({onLogin}){const[email,setEmail]=useState("");const[pass,setPass]=useState("");const[err,setErr]=useState("");const[loading,setLoading]=useState(false);const handleLogin=async(e)=>{e.preventDefault();setErr("");setLoading(true);try{await auth.signInWithEmailAndPassword(email,pass);onLogin();}catch(error){if(error.code==="auth/wrong-password"||error.code==="auth/invalid-credential")setErr("Email ou senha incorretos");else if(error.code==="auth/user-not-found")setErr("Usu\u00e1rio n\u00e3o encontrado");else if(error.code==="auth/too-many-requests")setErr("Muitas tentativas.");else setErr("Erro ao entrar.");}setLoading(false);};return <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0A0F1E 0%,#111833 40%,#0D1B30 70%,#0A0F1E 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}><div style={{background:"#111833",border:"1px solid #1A2545",borderRadius:20,padding:"44px 40px",maxWidth:400,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",animation:"popIn 0.3s ease"}}><div style={{marginBottom:28}}><SunnyLogo h={70}/><div style={{fontSize:14,fontWeight:700,color:"#00B4D8",marginTop:8}}>Sunny Cleaning Services</div><div style={{fontSize:11,color:"#707A8A",marginTop:4}}>Sistema de Gest\u00e3o</div></div><div><div style={{marginBottom:14,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}}/></div><div style={{marginBottom:20,textAlign:"left"}}><label style={{fontSize:11,color:"#707A8A",marginBottom:4,display:"block"}}>Senha</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} style={{width:"100%",padding:"12px 14px",background:"#0A0F1E",border:"1px solid #1A2545",borderRadius:8,color:"#E8EBF0",fontSize:14,outline:"none"}} onKeyDown={e=>{if(e.key==="Enter")handleLogin(e);}}/></div>{err&&<div style={{color:"#FF6B6B",fontSize:12,marginBottom:14,padding:"8px 12px",background:"rgba(255,107,107,0.1)",borderRadius:6}}>{err}</div>}<button onClick={handleLogin} disabled={loading} style={{width:"100%",padding:"13px",background:loading?"#1A2545":"linear-gradient(135deg,#00B4D8,#0094B0)",border:"none",borderRadius:8,color:"#fff",fontSize:15,fontWeight:700,cursor:loading?"wait":"pointer"}}>{loading?"Entrando...":"Entrar"}</button></div><div style={{fontSize:10,color:"#707A8A",marginTop:20}}>Acesso restrito</div></div></div>;}
 function AppWrapper(){const[user,setUser]=useState(null);const[checking,setChecking]=useState(true);const[role,setRole]=useState("admin");const[clientName,setClientName]=useState("");const[customTabs,setCustomTabs]=useState(null);
 const fbToken=window.__FB_TOKEN__;
-useEffect(()=>{if(fbToken)return;const unsub=auth.onAuthStateChanged(async u=>{setUser(u);if(u){try{const r=await FB.get("users");if(r&&r.value){const users=JSON.parse(r.value);const key=u.email.replace(/\./g,"_");const val=users[key]||"admin";if(typeof val==="object"&&val.tabs){setRole(val.role||"custom");setCustomTabs(val.tabs);if(val.client)setClientName(val.client);}else if(typeof val==="string"&&val.startsWith("cliente:")){setRole("cliente");setClientName(val.split(":").slice(1).join(":"));}else{setRole(val);}}}catch{setRole("admin");}}setChecking(false);});return()=>unsub();},[fbToken]);
+const cadToken=window.__CAD_TOKEN__;
+useEffect(()=>{if(fbToken||cadToken)return;const unsub=auth.onAuthStateChanged(async u=>{setUser(u);if(u){try{const r=await FB.get("users");if(r&&r.value){const users=JSON.parse(r.value);const key=u.email.replace(/\./g,"_");const val=users[key]||"admin";if(typeof val==="object"&&val.tabs){setRole(val.role||"custom");setCustomTabs(val.tabs);if(val.client)setClientName(val.client);}else if(typeof val==="string"&&val.startsWith("cliente:")){setRole("cliente");setClientName(val.split(":").slice(1).join(":"));}else{setRole(val);}}}catch{setRole("admin");}}setChecking(false);});return()=>unsub();},[fbToken,cadToken]);
 if(fbToken)return <FeedbackPublicPage token={fbToken}/>;
+if(cadToken)return <EmpRegisterPublicPage token={cadToken}/>;
 if(checking)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#00B4D8",fontSize:16}}>Verificando acesso...</div>;if(!user)return <LoginScreen onLogin={()=>{}}/>;return <App onLogout={()=>auth.signOut()} userRole={role} clientName={clientName} customTabs={customTabs} scanParam={window.__SCAN__} userEmail={user.email||""}/>;}
 const D=[{c:"Josh Green",n:"Endless Summer",a:"14137 Thacher Ave, Largo",ip:210,ep:110},{c:"Josh Green",n:"Insta-Worth",a:"1468 Marjohn Ave, Clearwater",ip:210,ep:100},{c:"Josh Green",n:"Jungle Villa",a:"700 25th St SW, Largo",ip:250,ep:110},{c:"Josh Green",n:"Tranquil Top Floor (Madeira)",a:"155 Medallion Blvd #G, Madeira Beach",ip:110,ep:45},{c:"Josh Green",n:"St Pete 3bd Heated Pool (Yellow)",a:"2580 57th Ave N, St. Petersburg",ip:300,ep:90},{c:"Josh Green",n:"Boho (Orange)",a:"3406 Keene Park Dr, Largo",ip:190,ep:90},{c:"Josh Green",n:"Heated Pool Home (Belleair)",a:"1774 Belleair Rd, Clearwater",ip:285,ep:110},{c:"Josh Green",n:"ClearWater Heated pool (Oasis)",a:"1678 Wildwood Road, Clearwater",ip:245,ep:100},{c:"Josh Green",n:"The Palm Haven",a:"12311 Julia St, Seminole",ip:280,ep:110},{c:"Josh Green",n:"Pink Waves Pool",a:"11221 Sol Vista Dr, Largo",ip:250,ep:110},{c:"Josh Green",n:"Putter Course",a:"10047 Nassau Ct, Seminole",ip:250,ep:100},{c:"Josh Green",n:"ClearWater Pickleball",a:"2237 Lawton Drive, Clearwater",ip:320,ep:110},{c:"Josh Green",n:"Iconic",a:"1484 Bugle Lane, Clearwater",ip:240,ep:100},{c:"Josh Green",n:"7bd Jungle Villa",a:"2217 Lawton Drive, Clearwater",ip:475,ep:125},{c:"Josh Green",n:"5bd Heated Pool Home",a:"14465 86th Ave N, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Waterfront Heated Pool Home",a:"835 Seacrest Dr, Largo",ip:380,ep:140},{c:"Josh Green",n:"Paradise Oasis",a:"1085 Hickory Drive, Largo",ip:280,ep:100},{c:"Josh Green",n:"Clearwater Aqua!",a:"1475 Viewtop Drive, Clearwater",ip:250,ep:110},{c:"Josh Green",n:"Surfs Up",a:"11088, 112th Street North, Largo",ip:260,ep:110},{c:"Josh Green",n:"Luxe Palms",a:"1078 Damrosch St, Largo",ip:320,ep:110},{c:"Josh Green",n:"St Pete Sun",a:"7289 61st Ave, St Pete",ip:210,ep:110},{c:"Josh Green",n:"Poinsettia",a:"13045 Poinsettia Ave, Seminole FL",ip:440,ep:170},{c:"Josh Green",n:"Coastal Charm",a:"83rd Place North 14311, Seminole",ip:420,ep:160},{c:"Josh Green",n:"Southview",a:"1758 Southview Rd, Largo",ip:250,ep:110},
 {c:"Travis Fieldman",n:"Unit A",a:"2610 North Highland Ave, Tampa FL #A",ip:180,ep:85},{c:"Travis Fieldman",n:"Unit B",a:"2610 North Highland Ave, Tampa FL #B",ip:180,ep:85},
@@ -481,9 +703,10 @@ const[customFinCats,setCustomFinCats]=useState([]);
 const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[userListModal,setUserListModal]=useState(null);const[manualData,setManualData]=useState({});const[manualFilter,setManualFilter]=useState("");const[manualEdit,setManualEdit]=useState(null);const[manualSub,setManualSub]=useState("casas");const[sops,setSops]=useState([]);const[sopEdit,setSopEdit]=useState(null);const[sopChat,setSopChat]=useState([]);const[sopLoading,setSopLoading]=useState(false);const[sopCatExpanded,setSopCatExpanded]=useState({Limpeza:true,Lavanderia:true,"Inspeção":true,"Manutenção":true,Atendimento:true,"RH/Treinamento":true,Administrativo:true});const[sopAiMode,setSopAiMode]=useState(null);const[escData,setEscData]=useState({startDate:"2026-03-01",teams:[{id:"A",name:"Dupla A",members:[]},{id:"B",name:"Dupla B",members:[]}],bonusDays:[],scores:{}});const[escMonth,setEscMonth]=useState(new Date().getMonth());const[escYear,setEscYear]=useState(new Date().getFullYear());const[escView,setEscView]=useState("calendar");const[escCalView,setEscCalView]=useState("month");const[escWeekStart,setEscWeekStart]=useState(0);const[escDayDetail,setEscDayDetail]=useState(null);const[escEdit,setEscEdit]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
 const[lF,setLF]=useState({t:"",s:"",q:"",m:"",cond:"Good"});const[lpP,setLpP]=useState("");const[lpF,setLpF]=useState({t:"",s:"",q:""});
 const[empProfiles,setEmpProfiles]=useState([]);
-const[fbCampaigns,setFbCampaigns]=useState({});const[fbSub,setFbSub]=useState("dashboard");const[fbSelected,setFbSelected]=useState(null);const[fbClientPicker,setFbClientPicker]=useState(null);
+const[fbCampaigns,setFbCampaigns]=useState({});const[fbSub,setFbSub]=useState("dashboard");const[fbSelected,setFbSelected]=useState(null);const[fbClientPicker,setFbClientPicker]=useState(null);const[fbAiInsight,setFbAiInsight]=useState("");const[fbAiLoading,setFbAiLoading]=useState(false);
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",role:"Cleaner",ssn:"",bday:"",startDate:"",notes:""});
 const[empRoles,setEmpRoles]=useState([]);const[teamSub,setTeamSub]=useState("list");const[roleForm,setRoleForm]=useState(null);const[quickEmpModal,setQuickEmpModal]=useState(null);const[inclSporadics,setInclSporadics]=useState(false);
+const[empInvites,setEmpInvites]=useState({});const[empInviteModal,setEmpInviteModal]=useState(null);const[empPendingReview,setEmpPendingReview]=useState(null);
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
 const[showSSN,setShowSSN]=useState({});
 const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(null);const[invTab,setInvTab]=useState("todos");const[hfPay,setHfPay]=useState({emp:"",mo:""});const[hfInv,setHfInv]=useState({client:"",mo:""});
@@ -521,6 +744,7 @@ try{const r=await FB.get("ld_cat");if(r&&r.value)setLdCatalog(JSON.parse(r.value
 try{const r=await FB.get("cdsc");if(r&&r.value)setCustomDSC(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("sops3");if(r&&r.value)setSops(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("fb_campaigns");if(r&&r.value)setFbCampaigns(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("emp_invites");if(r&&r.value)setEmpInvites(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("emp_roles");if(r&&r.value){setEmpRoles(JSON.parse(r.value));}else{const defaults=[{id:"r_cleaner",name:"Cleaner",icon:"🧹",color:"#00B4D8",feedback:"cleaner_fixo",inPayroll:true,sporadic:false},{id:"r_manager",name:"Manager",icon:"👔",color:"#A855F7",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_supervisor",name:"Supervisor",icon:"🎯",color:"#3B82F6",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_qi",name:"Quality Inspector",icon:"🔍",color:"#10B981",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_trainer",name:"Trainer",icon:"🎓",color:"#EAB308",feedback:"",inPayroll:true,sporadic:false},{id:"r_sporadic",name:"Cleaner Esporádico",icon:"⚡",color:"#F97316",feedback:"",inPayroll:false,sporadic:true},{id:"r_external",name:"Ajudante Externo",icon:"🤝",color:"#6B7280",feedback:"",inPayroll:false,sporadic:true}];setEmpRoles(defaults);await FB.set("emp_roles",JSON.stringify(defaults));}}catch{}
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
@@ -1993,6 +2217,7 @@ return fl2.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",pad
 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
 <button onClick={()=>setTeamSub("list")} style={bt(teamSub==="list"?T.ac:T.c2,teamSub==="list"?T.bg:T.dm,{padding:"7px 14px",fontSize:11,fontWeight:600,borderRadius:6})}>👷 Equipe</button>
 <button onClick={()=>setTeamSub("roles")} style={bt(teamSub==="roles"?T.ac:T.c2,teamSub==="roles"?T.bg:T.dm,{padding:"7px 14px",fontSize:11,fontWeight:600,borderRadius:6})}>⚙️ Funções</button>
+{(()=>{const pending=Object.values(empInvites).filter(i=>i.status==="submitted").length;return <button onClick={()=>setTeamSub("invites")} style={bt(teamSub==="invites"?T.or:T.c2,teamSub==="invites"?T.bg:T.dm,{padding:"7px 14px",fontSize:11,fontWeight:600,borderRadius:6,position:"relative"})}>📨 Cadastros{pending>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:18,height:18,borderRadius:9,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{pending}</span>}</button>;})()}
 </div>
 
 {teamSub==="list"&&<>
@@ -2168,6 +2393,195 @@ return(
       })}
       {empRoles.length===0&&<div style={{padding:30,textAlign:"center",color:T.dm,fontSize:12}}>Nenhuma função cadastrada</div>}
     </Card>
+  </>;
+})()}
+
+{teamSub==="invites"&&(()=>{
+  const genToken=()=>{const c="abcdefghjkmnpqrstuvwxyz23456789";let s="";for(let i=0;i<24;i++)s+=c.charAt(Math.floor(Math.random()*c.length));return s;};
+  const baseUrl=window.location.origin+window.location.pathname;
+  const saveInvites=async(updated)=>{setEmpInvites(updated);await FB.set("emp_invites",JSON.stringify(updated));};
+  
+  const allInvites=Object.values(empInvites).sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+  const pending=allInvites.filter(i=>i.status==="submitted");
+  const waiting=allInvites.filter(i=>i.status==="pending"||!i.status);
+  const approved=allInvites.filter(i=>i.status==="approved");
+  const rejected=allInvites.filter(i=>i.status==="rejected");
+  
+  const generateInvite=async()=>{
+    const id="inv_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+    const inv={id,token:genToken(),hint:empInviteModal.hint||"",createdAt:new Date().toISOString(),status:"pending"};
+    const updated={...empInvites,[id]:inv};
+    await saveInvites(updated);
+    setEmpInviteModal({...empInviteModal,generated:inv});
+  };
+  
+  const buildMsg=(inv,lang)=>{
+    const url=baseUrl+"?cad="+inv.token;
+    const msgs={
+      pt:(inv.hint?"Olá "+inv.hint+"!":"Olá!")+"\n\nBem-vindo(a) à "+co.name+"! Para iniciar o processo, preencha seus dados neste link (leva 3 minutos):\n\n👉 "+url+"\n\nQualquer dúvida, me chame.\n\n"+co.name,
+      en:(inv.hint?"Hello "+inv.hint+"!":"Hello!")+"\n\nWelcome to "+co.name+"! To start the process, please fill in your details using this link (takes 3 minutes):\n\n👉 "+url+"\n\nAny questions, let me know.\n\n"+co.name,
+      es:(inv.hint?"Hola "+inv.hint+"!":"Hola!")+"\n\n¡Bienvenido(a) a "+co.name+"! Para iniciar el proceso, completa tus datos en este enlace (toma 3 minutos):\n\n👉 "+url+"\n\nCualquier duda, avísame.\n\n"+co.name
+    };
+    return msgs[lang]||msgs.pt;
+  };
+  
+  const copyMsg=(inv,lang)=>{navigator.clipboard.writeText(buildMsg(inv,lang)).then(()=>fl("📋 Mensagem copiada ("+lang.toUpperCase()+")"));};
+  const copyLink=(inv)=>{navigator.clipboard.writeText(baseUrl+"?cad="+inv.token).then(()=>fl("🔗 Link copiado"));};
+  
+  const approveSubmitted=async(inv)=>{
+    if(!inv.data)return;
+    const d=inv.data;
+    const newEmp={id:Date.now(),name:d.name,phone:d.phone||"",email:d.email||"",address:d.address||"",type:empPendingReview.type||"Fixo",role:empPendingReview.role||"Cleaner",ssn:d.ssn||"",bday:d.bday||"",startDate:d.startDate||"",notes:d.notes||""};
+    const updatedEmp=[...empProfiles,newEmp];
+    await uEP(updatedEmp);
+    if(!em.includes(d.name)){await uEM([...em,d.name]);}
+    const updated={...empInvites,[inv.id]:{...inv,status:"approved",approvedAt:new Date().toISOString(),approvedRole:empPendingReview.role||"Cleaner",approvedType:empPendingReview.type||"Fixo"}};
+    await saveInvites(updated);
+    setEmpPendingReview(null);
+    fl("✅ "+d.name+" aprovado e cadastrado!");
+  };
+  
+  const rejectSubmitted=async(inv)=>{
+    if(!confirm("Rejeitar cadastro de "+(inv.data?.name||"este candidato")+"?\n\nA pessoa não será adicionada à equipe."))return;
+    const updated={...empInvites,[inv.id]:{...inv,status:"rejected",rejectedAt:new Date().toISOString()}};
+    await saveInvites(updated);
+    setEmpPendingReview(null);
+    fl("Cadastro rejeitado");
+  };
+  
+  const delInvite=async(inv)=>{
+    if(!confirm("Deletar este link/cadastro permanentemente?"))return;
+    const updated={...empInvites};delete updated[inv.id];
+    await saveInvites(updated);
+    fl("Deletado");
+  };
+  
+  return <>
+    {/* Modal: gerar novo link */}
+    {empInviteModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEmpInviteModal(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:480,boxShadow:"0 16px 48px rgba(0,0,0,0.4)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <span style={{fontSize:14,fontWeight:800,color:T.ac}}>📨 Gerar Link de Cadastro</span>
+          <button onClick={()=>setEmpInviteModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+        </div>
+        {!empInviteModal.generated&&<>
+          <div style={{fontSize:11,color:T.dm,marginBottom:14}}>Gere um link único que o candidato vai usar para preencher os dados.</div>
+          <div style={{marginBottom:14}}>
+            <label style={lb}>Nome do candidato (opcional, ajuda a lembrar quem é)</label>
+            <input value={empInviteModal.hint||""} onChange={e=>setEmpInviteModal({...empInviteModal,hint:e.target.value})} style={{...inp,width:"100%"}} placeholder="Ex: Maria Silva" autoFocus/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={generateInvite} style={bt(T.ac,T.bg,{flex:1,padding:"11px",fontSize:12,fontWeight:700,borderRadius:8})}>⚡ Gerar Link</button>
+            <button onClick={()=>setEmpInviteModal(null)} style={bt(T.dm+"15",T.dm,{padding:"11px 18px",fontSize:12,borderRadius:8})}>Cancel</button>
+          </div>
+        </>}
+        {empInviteModal.generated&&<>
+          <div style={{padding:"12px 14px",background:T.gr+"10",borderRadius:8,marginBottom:14,border:"1px solid "+T.gr+"40"}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.gr,marginBottom:6}}>✅ Link gerado!</div>
+            <div style={{fontSize:10,color:T.dm}}>Use os botões abaixo para copiar a mensagem pronta para WhatsApp.</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
+            <button onClick={()=>copyMsg(empInviteModal.generated,"pt")} style={bt(T.ac+"15",T.ac,{padding:"10px",fontSize:11,fontWeight:700,borderRadius:6})}>📋 PT</button>
+            <button onClick={()=>copyMsg(empInviteModal.generated,"en")} style={bt(T.ac+"15",T.ac,{padding:"10px",fontSize:11,fontWeight:700,borderRadius:6})}>📋 EN</button>
+            <button onClick={()=>copyMsg(empInviteModal.generated,"es")} style={bt(T.ac+"15",T.ac,{padding:"10px",fontSize:11,fontWeight:700,borderRadius:6})}>📋 ES</button>
+          </div>
+          <button onClick={()=>copyLink(empInviteModal.generated)} style={bt(T.pu+"15",T.pu,{padding:"10px",fontSize:11,fontWeight:700,borderRadius:6,width:"100%",marginBottom:10})}>🔗 Copiar só o link</button>
+          <button onClick={()=>setEmpInviteModal(null)} style={bt(T.dm+"15",T.dm,{padding:"10px",fontSize:12,borderRadius:6,width:"100%"})}>Fechar</button>
+        </>}
+      </div>
+    </div>}
+    
+    {/* Modal: revisar cadastro pendente */}
+    {empPendingReview&&(()=>{const d=empPendingReview.data||{};return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEmpPendingReview(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.or+"60",width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 16px 48px rgba(0,0,0,0.4)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <span style={{fontSize:14,fontWeight:800,color:T.or}}>📨 Revisar Cadastro</span>
+          <button onClick={()=>setEmpPendingReview(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+        </div>
+        <div style={{fontSize:10,color:T.dm,marginBottom:14}}>Enviado em {(empPendingReview.submittedAt||"").slice(0,16).replace("T"," ")} · idioma: {(empPendingReview.lang||"pt").toUpperCase()}</div>
+        <div style={{background:T.bg,border:"1px solid "+T.bd,borderRadius:10,padding:14,marginBottom:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {[["Nome",d.name],["Telefone",d.phone],["Email",d.email],["Endereço",d.address,true],["SSN/ITIN",d.ssn],["Nascimento",d.bday],["Data início",d.startDate]].map(([k,v,wide])=><div key={k} style={{gridColumn:wide?"1/3":"auto"}}>
+              <div style={{fontSize:9,color:T.dm,textTransform:"uppercase",fontWeight:600,marginBottom:2}}>{k}</div>
+              <div style={{fontSize:12,color:T.tx,fontWeight:v?500:400,fontStyle:v?"normal":"italic"}}>{v||"(em branco)"}</div>
+            </div>)}
+          </div>
+          {d.notes&&<div style={{marginTop:10,paddingTop:10,borderTop:"1px solid "+T.bd}}>
+            <div style={{fontSize:9,color:T.dm,textTransform:"uppercase",fontWeight:600,marginBottom:2}}>Observações</div>
+            <div style={{fontSize:11,color:T.tx,whiteSpace:"pre-wrap"}}>{d.notes}</div>
+          </div>}
+        </div>
+        
+        <div style={{padding:"12px 14px",background:T.ac+"08",borderRadius:8,marginBottom:14,border:"1px dashed "+T.ac+"30"}}>
+          <div style={{fontSize:11,fontWeight:700,color:T.ac,marginBottom:8}}>⚙️ Definir cargo antes de aprovar</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div><label style={lb}>Type (vínculo)</label><select value={empPendingReview.type||"Fixo"} onChange={e=>setEmpPendingReview({...empPendingReview,type:e.target.value})} style={{...sel,width:"100%"}}><option>Fixo</option><option>Solo Cleaner</option><option>Prestador</option></select></div>
+            <div><label style={lb}>Função</label><select value={empPendingReview.role||"Cleaner"} onChange={e=>setEmpPendingReview({...empPendingReview,role:e.target.value})} style={{...sel,width:"100%"}}>{empRoles.map(r=><option key={r.id} value={r.name}>{r.icon} {r.name}</option>)}</select></div>
+          </div>
+        </div>
+        
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>approveSubmitted(empPendingReview)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:13,fontWeight:700,borderRadius:8})}>✅ Aprovar e Cadastrar</button>
+          <button onClick={()=>rejectSubmitted(empPendingReview)} style={bt(T.rd+"15",T.rd,{padding:"12px 18px",fontSize:12,borderRadius:8})}>❌ Rejeitar</button>
+          <button onClick={()=>setEmpPendingReview(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:8})}>Cancel</button>
+        </div>
+      </div>
+    </div>;})()}
+    
+    {/* Conteúdo principal: header + listas */}
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+      <div>
+        <div style={{fontSize:14,fontWeight:800}}>📨 Cadastros de Funcionários</div>
+        <div style={{fontSize:11,color:T.dm,marginTop:2}}>Gere links únicos para candidatos preencherem dados</div>
+      </div>
+      <button onClick={()=>setEmpInviteModal({hint:""})} style={bt(T.ac,T.bg,{padding:"9px 16px",fontSize:11,borderRadius:6,fontWeight:700})}>+ Novo Link</button>
+    </div>
+    
+    {pending.length>0&&<Card style={{borderLeft:"4px solid "+T.or}}>
+      <div style={{fontSize:13,fontWeight:800,color:T.or,marginBottom:10}}>⏳ Aguardando sua revisão ({pending.length})</div>
+      {pending.map(inv=>{const d=inv.data||{};return <div key={inv.id} onClick={()=>setEmpPendingReview({...inv,type:"Fixo",role:"Cleaner"})} style={{padding:"12px 14px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:6,marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13,fontWeight:700,color:T.or}}>{d.name||"(sem nome)"}</div>
+          <div style={{fontSize:10,color:T.dm,marginTop:2}}>{d.phone||"sem tel"} · {d.email||"sem email"}</div>
+          <div style={{fontSize:9,color:T.dm,marginTop:2}}>Enviado em {(inv.submittedAt||"").slice(0,10)}</div>
+        </div>
+        <span style={{fontSize:11,color:T.or,fontWeight:700}}>Revisar →</span>
+      </div>;})}
+    </Card>}
+    
+    {waiting.length>0&&<Card>
+      <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>📤 Links enviados, aguardando preenchimento ({waiting.length})</div>
+      {waiting.map(inv=><div key={inv.id} style={{padding:"10px 12px",borderBottom:"1px solid "+T.bd,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+        <div style={{flex:1,minWidth:160}}>
+          <div style={{fontSize:12,fontWeight:600}}>{inv.hint||"(sem nome)"}</div>
+          <div style={{fontSize:9,color:T.dm,marginTop:2}}>Gerado em {(inv.createdAt||"").slice(0,10)} · token: {inv.token.slice(0,8)}...</div>
+        </div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+          <button onClick={()=>copyMsg(inv,"pt")} style={bt(T.ac+"15",T.ac,{padding:"5px 9px",fontSize:9,borderRadius:5})}>📋 PT</button>
+          <button onClick={()=>copyMsg(inv,"en")} style={bt(T.ac+"15",T.ac,{padding:"5px 9px",fontSize:9,borderRadius:5})}>📋 EN</button>
+          <button onClick={()=>copyMsg(inv,"es")} style={bt(T.ac+"15",T.ac,{padding:"5px 9px",fontSize:9,borderRadius:5})}>📋 ES</button>
+          <button onClick={()=>copyLink(inv)} style={bt(T.pu+"15",T.pu,{padding:"5px 9px",fontSize:9,borderRadius:5})}>🔗</button>
+          <button onClick={()=>delInvite(inv)} style={bt(T.rd+"10",T.rd,{padding:"5px 9px",fontSize:9,borderRadius:5})}>🗑</button>
+        </div>
+      </div>)}
+    </Card>}
+    
+    {(approved.length>0||rejected.length>0)&&<Card>
+      <div style={{fontSize:13,fontWeight:700,marginBottom:10,color:T.dm}}>📁 Histórico ({approved.length+rejected.length})</div>
+      {[...approved,...rejected].sort((a,b)=>(b.approvedAt||b.rejectedAt||"").localeCompare(a.approvedAt||a.rejectedAt||"")).slice(0,20).map(inv=>{const d=inv.data||{};return <div key={inv.id} style={{padding:"8px 12px",borderBottom:"1px solid "+T.bd,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:600}}>{d.name||inv.hint||"(sem nome)"}</div>
+          <div style={{fontSize:9,color:T.dm,marginTop:2}}>{inv.status==="approved"?"✅ Aprovado":"❌ Rejeitado"} em {(inv.approvedAt||inv.rejectedAt||"").slice(0,10)}</div>
+        </div>
+        <button onClick={()=>delInvite(inv)} style={bt(T.rd+"08",T.rd,{padding:"4px 8px",fontSize:9,borderRadius:5})}>🗑</button>
+      </div>;})}
+    </Card>}
+    
+    {allInvites.length===0&&<Card style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>
+      <div style={{fontSize:36,marginBottom:10}}>📨</div>
+      <div>Nenhum cadastro ainda</div>
+      <button onClick={()=>setEmpInviteModal({hint:""})} style={bt(T.ac,T.bg,{padding:"10px 20px",fontSize:12,borderRadius:8,marginTop:14})}>+ Gerar primeiro link</button>
+    </Card>}
   </>;
 })()}
 
@@ -4102,7 +4516,7 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
       <div style={{fontSize:18,fontWeight:800}}>💬 Feedback</div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {[["dashboard","📊 Dashboard"],["send","📤 Enviar"],["responses","📥 Respostas"]].map(([k,l])=><button key={k} onClick={()=>setFbSub(k)} style={bt(fbSub===k?T.ac:T.c2,fbSub===k?T.bg:T.dm,{padding:"7px 14px",borderRadius:6,fontSize:11,fontWeight:600})}>{l}</button>)}
+        {[["dashboard","📊 Dashboard"],["insights","🧠 Insights"],["send","📤 Enviar"],["responses","📥 Respostas"]].map(([k,l])=><button key={k} onClick={()=>setFbSub(k)} style={bt(fbSub===k?T.ac:T.c2,fbSub===k?T.bg:T.dm,{padding:"7px 14px",borderRadius:6,fontSize:11,fontWeight:600})}>{l}</button>)}
       </div>
     </div>
     
@@ -4131,6 +4545,208 @@ return <div style={{display:"flex",flexDirection:"column",gap:10}}>
       
       {monthList.length===0&&<Card style={{textAlign:"center",padding:30}}><div style={{fontSize:36,marginBottom:10}}>💬</div><div style={{fontSize:13,color:T.dm,marginBottom:14}}>Nenhuma pesquisa gerada para {curMonth}</div><button onClick={()=>setFbSub("send")} style={bt(T.ac,T.bg,{padding:"10px 20px",fontSize:12,borderRadius:8})}>Gerar pesquisas →</button></Card>}
     </>}
+    
+    {fbSub==="insights"&&(()=>{
+      const today=new Date();
+      const prevMonth=(()=>{const d=new Date(today.getFullYear(),today.getMonth()-1,15);return d.toISOString().slice(0,7);})();
+      const m2ago=(()=>{const d=new Date(today.getFullYear(),today.getMonth()-2,15);return d.toISOString().slice(0,7);})();
+      const respPrev=fbList.filter(c=>c.respondedAt&&c.month===prevMonth);
+      const respM2=fbList.filter(c=>c.respondedAt&&c.month===m2ago);
+      
+      // Tendências por pessoa (cleaner/manager)
+      const personHistory={};
+      fbList.filter(c=>c.respondedAt&&c.audience!=="client"&&!c.anonymous).forEach(c=>{
+        const key=c.personId+"_"+c.audience;
+        if(!personHistory[key])personHistory[key]={name:c.personName,aud:c.audience,scores:{}};
+        if(c.answers&&typeof c.answers.q1==="number"){personHistory[key].scores[c.month]=c.answers.q1;}
+      });
+      
+      // Detratores (NPS clientes)
+      const detractors=respondedThisMonth.filter(c=>c.audience==="client"&&c.answers&&typeof c.answers.q1==="number"&&c.answers.q1<=6);
+      const neutros=respondedThisMonth.filter(c=>c.audience==="client"&&c.answers&&typeof c.answers.q1==="number"&&c.answers.q1>=7&&c.answers.q1<=8);
+      const promotores=respondedThisMonth.filter(c=>c.audience==="client"&&c.answers&&typeof c.answers.q1==="number"&&c.answers.q1>=9);
+      
+      // Cleaners alertas
+      const cleanersBaixos=cleanerResp.filter(c=>c.answers&&typeof c.answers.q1==="number"&&c.answers.q1<=2);
+      const cleanersMedios=cleanerResp.filter(c=>c.answers&&typeof c.answers.q1==="number"&&c.answers.q1===3);
+      const cleanersQuemSai=cleanerResp.filter(c=>c.answers&&c.answers.q6==="nao");
+      const cleanersDuvida=cleanerResp.filter(c=>c.answers&&c.answers.q6==="duvida");
+      const cleanersNaoCumpre=cleanerResp.filter(c=>c.answers&&c.answers.q2==="nao");
+      
+      // Managers baixos
+      const managersBaixos=managerResp.filter(c=>c.answers&&typeof c.answers.q1==="number"&&c.answers.q1<=3);
+      
+      // Tendências caindo
+      const trendingDown=[];
+      Object.values(personHistory).forEach(p=>{
+        const cur=p.scores[curMonth];
+        const prev=p.scores[prevMonth];
+        if(typeof cur==="number"&&typeof prev==="number"&&cur<prev-0.5){
+          trendingDown.push({name:p.name,aud:p.aud,from:prev,to:cur});
+        }
+      });
+      
+      // Top cleaners do mês
+      const topCleaners=cleanerResp.filter(c=>c.answers&&typeof c.answers.q1==="number"&&c.answers.q1>=4.5&&!c.anonymous).sort((a,b)=>(b.answers.q1||0)-(a.answers.q1||0)).slice(0,5);
+      
+      // Tendência NPS 3 meses
+      const npsForMonth=(m)=>{const r=fbList.filter(c=>c.respondedAt&&c.month===m&&c.audience==="client"&&c.answers&&typeof c.answers.q1==="number").map(c=>c.answers.q1);if(!r.length)return null;const p=r.filter(n=>n>=9).length;const d=r.filter(n=>n<=6).length;return Math.round((p-d)/r.length*100);};
+      const nps3=npsForMonth(m2ago);
+      const nps2=npsForMonth(prevMonth);
+      const npsCur=nps;
+      
+      const avgForMonth=(m,aud)=>{const r=fbList.filter(c=>c.respondedAt&&c.month===m&&c.audience===aud&&c.answers&&typeof c.answers.q1==="number").map(c=>c.answers.q1);return r.length?(r.reduce((s,n)=>s+n,0)/r.length):null;};
+      const clTrend=[avgForMonth(m2ago,"cleaner_fixo"),avgForMonth(prevMonth,"cleaner_fixo"),avgCleanerRating?parseFloat(avgCleanerRating):null];
+      const mgTrend=[avgForMonth(m2ago,"manager"),avgForMonth(prevMonth,"manager"),avgManagerRating?parseFloat(avgManagerRating):null];
+      
+      const askAI=async()=>{
+        if(fbAiLoading)return;
+        setFbAiLoading(true);
+        setFbAiInsight("");
+        try{
+          const last3Months=[m2ago,prevMonth,curMonth];
+          const allResp=fbList.filter(c=>c.respondedAt&&last3Months.indexOf(c.month)>=0);
+          const summary={
+            empresa:co.name,
+            periodo:m2ago+" a "+curMonth,
+            clientes_ativos:activeClients.length,
+            cleaners_fixos:fixedCleaners.length,
+            managers:managers.length,
+            nps_atual:npsCur,
+            nps_anterior:nps2,
+            score_cleaners_atual:avgCleanerRating,
+            score_managers_atual:avgManagerRating,
+            respostas:allResp.map(c=>({
+              tipo:c.audience,
+              pessoa:c.anonymous?"anônimo":c.personName,
+              mes:c.month,
+              q1:c.answers&&c.answers.q1,
+              comentarios:c.answers?Object.keys(c.answers).filter(k=>k!=="q1").map(k=>k+": "+c.answers[k]).join(" | ").slice(0,400):""
+            }))
+          };
+          const prompt="Você é consultor estratégico de uma empresa de cleaning services (short-term rentals). Analise os dados de feedback abaixo e me devolva:\n\n1. **3 RECOMENDAÇÕES URGENTES** (o que fazer essa semana)\n2. **PADRÕES PERIGOSOS** identificados (se houver)\n3. **OPORTUNIDADES** para aproveitar agora\n4. **DIAGNÓSTICO GERAL** do momento da empresa\n\nDados:\n"+JSON.stringify(summary,null,2)+"\n\nResponda em português, com markdown (##, listas, **negrito**). Seja direto e específico, citando nomes e números. Não dê conselhos genéricos.";
+          const resp=await fetch("/api/ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"Você é consultor estratégico sênior de operações.",max_tokens:2000,messages:[{role:"user",content:prompt}]})});
+          const data=await resp.json();
+          if(data.content&&data.content[0]){setFbAiInsight(data.content[0].text);}
+          else if(data.error){setFbAiInsight("❌ Erro: "+(data.error.message||data.error));}
+          else{setFbAiInsight("❌ Resposta inesperada da API");}
+        }catch(e){setFbAiInsight("❌ "+e.message);}
+        setFbAiLoading(false);
+      };
+      
+      const renderMd=(t)=>{if(!t)return null;const lines=t.split("\n");const out=[];let li=null;let items=[];const flush=()=>{if(li){out.push(li==="ol"?<ol key={out.length} style={{paddingLeft:22,margin:"6px 0"}}>{items}</ol>:<ul key={out.length} style={{paddingLeft:22,margin:"6px 0"}}>{items}</ul>);items=[];li=null;}};const ri=s=>{const parts=[];let rem=s;let k=0;while(rem.length){const b=rem.match(/^\*\*(.+?)\*\*/);if(b){parts.push(<strong key={k++}>{b[1]}</strong>);rem=rem.slice(b[0].length);}else{const n=rem.search(/\*\*/);const tt=n===-1?rem:rem.slice(0,n);parts.push(<span key={k++}>{tt}</span>);rem=n===-1?"":rem.slice(tt.length);}}return parts;};lines.forEach((ln,i)=>{const h2=ln.match(/^##\s+(.+)/);const h3=ln.match(/^###\s+(.+)/);const ol=ln.match(/^\d+\.\s+(.+)/);const ul=ln.match(/^[-*]\s+(.+)/);if(h2){flush();out.push(<div key={i} style={{fontSize:14,fontWeight:800,marginTop:12,marginBottom:5,color:T.ac}}>{ri(h2[1])}</div>);}else if(h3){flush();out.push(<div key={i} style={{fontSize:12,fontWeight:700,marginTop:8,marginBottom:3}}>{ri(h3[1])}</div>);}else if(ol){if(li!=="ol"){flush();li="ol";}items.push(<li key={i} style={{marginBottom:3,fontSize:12,lineHeight:1.5}}>{ri(ol[1])}</li>);}else if(ul){if(li!=="ul"){flush();li="ul";}items.push(<li key={i} style={{marginBottom:3,fontSize:12,lineHeight:1.5}}>{ri(ul[1])}</li>);}else if(ln.trim()===""){flush();}else{flush();out.push(<div key={i} style={{marginBottom:3,fontSize:12,lineHeight:1.6}}>{ri(ln)}</div>);}});flush();return out;};
+      
+      return <>
+        {/* AÇÕES URGENTES */}
+        {(detractors.length>0||cleanersBaixos.length>0||cleanersQuemSai.length>0||managersBaixos.length>0)&&<Card style={{borderLeft:"4px solid "+T.rd}}>
+          <div style={{fontSize:14,fontWeight:800,color:T.rd,marginBottom:10}}>🔴 Ações Urgentes — fazer esta semana</div>
+          {detractors.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.rd+"08",borderLeft:"2px solid "+T.rd,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.rd}}>🚨 Cliente detrator: {c.personName} ({c.answers.q1}/10)</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Ligar HOJE. Pergunta "o que aconteceu, como podemos resolver?". {c.answers.q2?"Motivo: "+String(c.answers.q2).slice(0,120):""}</div>
+          </div>)}
+          {cleanersQuemSai.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.rd+"08",borderLeft:"2px solid "+T.rd,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.rd}}>🚨 Cleaner saindo: {c.anonymous?"(anônimo)":c.personName}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Disse "não pretende continuar". Conversa esta semana. Tentar entender e reter.</div>
+          </div>)}
+          {cleanersBaixos.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.rd+"08",borderLeft:"2px solid "+T.rd,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.rd}}>⚠️ Cleaner crítico: {c.anonymous?"(anônimo)":c.personName} ({c.answers.q1}/5)</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Score muito baixo. 1:1 esta semana é obrigatório.</div>
+          </div>)}
+          {managersBaixos.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.rd+"08",borderLeft:"2px solid "+T.rd,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.rd}}>⚠️ Manager com moral baixo: {c.personName} ({c.answers.q1}/5)</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Manager desmotivado contamina equipe. Conversa séria + ajuste estrutural.</div>
+          </div>)}
+        </Card>}
+        
+        {/* ATENÇÃO PRÓXIMOS DIAS */}
+        {(neutros.length>0||cleanersMedios.length>0||cleanersDuvida.length>0||trendingDown.length>0||cleanersNaoCumpre.length>0)&&<Card style={{borderLeft:"4px solid "+T.or}}>
+          <div style={{fontSize:14,fontWeight:800,color:T.or,marginBottom:10}}>🟡 Atenção Próximos Dias</div>
+          {trendingDown.map((t,i)=><div key={i} style={{padding:"10px 12px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:5,marginBottom:5}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.or}}>📉 Tendência caindo: {t.name} ({t.aud==="cleaner_fixo"?"Cleaner":"Manager"})</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>{t.from.toFixed(1)} → {t.to.toFixed(1)} (queda de {(t.from-t.to).toFixed(1)} ponto{Math.abs(t.from-t.to)>1?"s":""}). Investigar antes de virar crítico.</div>
+          </div>)}
+          {neutros.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.or}}>🟡 Cliente neutro: {c.personName} ({c.answers.q1}/10)</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Não vai recomendar. Ligar em 3 dias: "o que poderíamos melhorar?"</div>
+          </div>)}
+          {cleanersDuvida.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.or}}>🤔 Cleaner com dúvidas: {c.anonymous?"(anônimo)":c.personName}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Tem dúvidas em continuar. Conversa para entender e reter.</div>
+          </div>)}
+          {cleanersMedios.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.or}}>📊 Cleaner médio: {c.anonymous?"(anônimo)":c.personName} (3/5)</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Apertado, pode sair se aparecer oferta melhor. Atenção.</div>
+          </div>)}
+          {cleanersNaoCumpre.map(c=><div key={c.id} onClick={()=>{setFbSelected(c);setFbSub("responses");}} style={{padding:"10px 12px",background:T.or+"08",borderLeft:"2px solid "+T.or,borderRadius:5,marginBottom:5,cursor:"pointer"}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.or}}>⏰ Sobrecarga: {c.anonymous?"(anônimo)":c.personName}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Não está cumprindo horário. Revisar rota / quantidade de casas.</div>
+          </div>)}
+        </Card>}
+        
+        {/* OPORTUNIDADES */}
+        {(promotores.length>0||topCleaners.length>0)&&<Card style={{borderLeft:"4px solid "+T.gr}}>
+          <div style={{fontSize:14,fontWeight:800,color:T.gr,marginBottom:10}}>🟢 Oportunidades</div>
+          {promotores.length>0&&<div style={{padding:"10px 12px",background:T.gr+"08",borderLeft:"2px solid "+T.gr,borderRadius:5,marginBottom:5}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.gr}}>⭐ {promotores.length} cliente(s) promotor(es): {promotores.map(p=>p.personName).join(", ")}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Mande mensagem agradecendo + peça referral: "Conhece alguém que precisa de cleaning?"</div>
+          </div>}
+          {topCleaners.length>0&&<div style={{padding:"10px 12px",background:T.gr+"08",borderLeft:"2px solid "+T.gr,borderRadius:5,marginBottom:5}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.gr}}>🏆 Top cleaners: {topCleaners.map(c=>c.personName+" ("+c.answers.q1+"/5)").join(", ")}</div>
+            <div style={{fontSize:10,color:T.dm,marginTop:2}}>Engajados. Reconhecer publicamente, considerar bônus / promoção.</div>
+          </div>}
+        </Card>}
+        
+        {/* TENDÊNCIAS */}
+        <Card>
+          <div style={{fontSize:13,fontWeight:800,marginBottom:12}}>📈 Tendências (3 meses)</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10}}>
+            {[
+              {l:"NPS Clientes",vals:[nps3,nps2,npsCur],unit:""},
+              {l:"Score Cleaners",vals:clTrend,unit:"/5"},
+              {l:"Score Managers",vals:mgTrend,unit:"/5"}
+            ].map((tr,i)=>{
+              const cur=tr.vals[2];
+              const prev=tr.vals[1];
+              const hasPrev=cur!==null&&prev!==null;
+              const diff=hasPrev?cur-prev:0;
+              const trendIcon=hasPrev?(Math.abs(diff)<0.3?"→":diff>0?"↑":"↓"):"—";
+              const trendColor=hasPrev?(Math.abs(diff)<0.3?T.dm:diff>0?T.gr:T.rd):T.dm;
+              return <div key={i} style={{padding:"12px 14px",background:T.bg,borderRadius:8,border:"1px solid "+T.bd}}>
+                <div style={{fontSize:10,color:T.dm,fontWeight:600,textTransform:"uppercase",marginBottom:6}}>{tr.l}</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                  <span style={{fontSize:20,fontWeight:800}}>{cur!==null&&cur!==undefined?(typeof cur==="number"?(tr.unit?cur.toFixed(1):cur):cur):"—"}{tr.unit}</span>
+                  <span style={{fontSize:14,color:trendColor,fontWeight:700}}>{trendIcon}</span>
+                </div>
+                <div style={{display:"flex",gap:6,fontSize:9,color:T.dm,marginTop:6}}>
+                  <span>{m2ago}: {tr.vals[0]!==null&&tr.vals[0]!==undefined?(typeof tr.vals[0]==="number"?(tr.unit?tr.vals[0].toFixed(1):tr.vals[0]):tr.vals[0]):"—"}</span>
+                  <span>•</span>
+                  <span>{prevMonth}: {tr.vals[1]!==null&&tr.vals[1]!==undefined?(typeof tr.vals[1]==="number"?(tr.unit?tr.vals[1].toFixed(1):tr.vals[1]):tr.vals[1]):"—"}</span>
+                </div>
+              </div>;
+            })}
+          </div>
+        </Card>
+        
+        {/* AI ANALYSIS */}
+        <Card>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:800}}>🤖 Análise Estratégica com AI</div>
+              <div style={{fontSize:10,color:T.dm,marginTop:2}}>Claude analisa 3 meses de feedback e devolve recomendações específicas</div>
+            </div>
+            <button onClick={askAI} disabled={fbAiLoading||fbList.filter(c=>c.respondedAt).length===0} style={bt(T.pu,"#fff",{padding:"10px 16px",fontSize:11,borderRadius:8,fontWeight:700,opacity:fbAiLoading?0.6:1,cursor:fbAiLoading?"wait":"pointer"})}>{fbAiLoading?"⏳ Analisando...":"🤖 Analisar tudo (~$0.05)"}</button>
+          </div>
+          {fbAiInsight&&<div style={{background:T.bg,borderRadius:8,padding:14,border:"1px solid "+T.bd,marginTop:10,lineHeight:1.5}}>{renderMd(fbAiInsight)}</div>}
+          {!fbAiInsight&&!fbAiLoading&&fbList.filter(c=>c.respondedAt).length===0&&<div style={{padding:14,textAlign:"center",color:T.dm,fontSize:11,background:T.bg,borderRadius:6}}>Colete pelo menos algumas respostas primeiro</div>}
+        </Card>
+        
+        {detractors.length===0&&cleanersBaixos.length===0&&cleanersQuemSai.length===0&&managersBaixos.length===0&&neutros.length===0&&cleanersMedios.length===0&&cleanersDuvida.length===0&&trendingDown.length===0&&cleanersNaoCumpre.length===0&&promotores.length===0&&topCleaners.length===0&&respondedThisMonth.length===0&&<Card style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>
+          <div style={{fontSize:36,marginBottom:10}}>🧠</div>
+          <div>Insights aparecerão aqui após receber respostas</div>
+          <button onClick={()=>setFbSub("send")} style={bt(T.ac,T.bg,{padding:"10px 20px",fontSize:12,borderRadius:8,marginTop:14})}>Gerar pesquisas →</button>
+        </Card>}
+      </>;
+    })()}
     
     {fbSub==="send"&&<>
       <Card>
