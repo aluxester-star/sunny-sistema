@@ -4860,6 +4860,14 @@ const realExp=fin.filter(e=>e.month===moName&&e.type==="saida").reduce((s,e)=>s+
 const unpaidInv=sI.filter(i=>i.status==="emitida");const unpaidTotal=unpaidInv.reduce((s,i)=>s+(i.total||0),0);
 const empLoad={};moEvents.forEach(ev=>{(ev.employees||[]).forEach(e=>{if(!empLoad[e])empLoad[e]=0;empLoad[e]++;});});const totalEmps=Object.keys(empLoad).length||1;const capUsed=Object.values(empLoad).reduce((s,c)=>s+c,0);const capFree=Math.max(0,totalEmps*MAX_CAP-capUsed);
 const prevMoIdx=curMo===0?11:curMo-1;const prevStart=yr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-01";const prevEnd=yr+"-"+String(prevMoIdx+1).padStart(2,"0")+"-31";let prevRev=0;agEvents.filter(ev=>ev.date&&ev.date>=prevStart&&ev.date<=prevEnd&&ev.house).forEach(ev=>{const prop=findProp(ev.house,ev.client);prevRev+=prop?prop.ip||0:0;});
+const realTaxes=Math.round(realRev*TAX_PCT/100);
+const realProfit=realRev-realExp-realTaxes;
+const realMargin=realRev>0?Math.round(realProfit/realRev*100):0;
+const prevMoName=MO[prevMoIdx];
+const prevRealRev=fin.filter(e=>e.month===prevMoName&&e.type==="entrada").reduce((s,e)=>s+(e.amt||0),0);
+const realRevGrowth=prevRealRev>0?Math.round((realRev-prevRealRev)/prevRealRev*100):0;
+const gapRev=moRev>0?Math.round((moRev-realRev)/moRev*100):0;
+const showGapAlert=Math.abs(gapRev)>10&&moRev>0&&realRev>0;
 const revGrowth=prevRev>0?Math.round((moRev-prevRev)/prevRev*100):0;
 const avgRevPerCasa=totalCasas>0?Math.round(moRev/totalCasas):0;const casasFor80K=avgRevPerCasa>0?Math.ceil(GOAL_12MO/avgRevPerCasa):200;const needHire=capFree<15;
 const costPerTurnover=moEvents.length>0?Math.round(totalExp/moEvents.length):0;const marginPerTurnover=moEvents.length>0?Math.round(grossProfit/moEvents.length):0;
@@ -4875,20 +4883,54 @@ return <div style={{display:"flex",flexDirection:"column",gap:12}}>
 </div>
 
 {strategySub==="kpis"&&<>
-<Card style={{padding:16}}>
-<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Cash Flow</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:16}}>
-<div style={{padding:12,borderRadius:10,background:T.gr+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>RECEITA</div><div style={{fontSize:20,fontWeight:800,color:T.gr}}>${fm(moRev)}</div>{prevRev>0&&<div style={{fontSize:10,color:revGrowth>=0?T.gr:T.rd,marginTop:2}}>{revGrowth>=0?"up":"dn"} {Math.abs(revGrowth)}%</div>}</div>
-<div style={{padding:12,borderRadius:10,background:T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>DESPESAS</div><div style={{fontSize:20,fontWeight:800,color:T.rd}}>${fm(totalExp)}</div></div>
-<div style={{padding:12,borderRadius:10,background:T.or+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>IMPOSTOS</div><div style={{fontSize:20,fontWeight:800,color:T.or}}>${fm(taxes)}</div></div>
-<div style={{padding:12,borderRadius:10,background:grossProfit>0?T.ac+"12":T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>LUCRO</div><div style={{fontSize:20,fontWeight:800,color:grossProfit>0?T.ac:T.rd}}>${fm(grossProfit)}</div><div style={{fontSize:9,color:T.dm}}>{moRev>0?Math.round(grossProfit/moRev*100):0}%</div></div>
+{/* CASH FLOW REAL (do Financeiro) */}
+<Card style={{padding:16,borderLeft:"4px solid "+T.gr}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div style={{fontSize:14,fontWeight:800}}>💰 Cash Flow Real <span style={{fontSize:10,color:T.dm,fontWeight:500}}>· do Financeiro · {moName}</span></div>
+<div style={{fontSize:9,color:T.dm,padding:"3px 8px",background:T.gr+"15",borderRadius:10,fontWeight:700}}>REAL</div>
 </div>
-<div style={{fontSize:12,fontWeight:700,marginBottom:6}}>Despesas:</div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:10}}>
+<div style={{padding:12,borderRadius:10,background:T.gr+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>RECEITA</div><div style={{fontSize:22,fontWeight:800,color:T.gr}}>${fm(realRev)}</div>{prevRealRev>0&&<div style={{fontSize:10,color:realRevGrowth>=0?T.gr:T.rd,marginTop:2,fontWeight:700}}>{realRevGrowth>=0?"↑":"↓"} {Math.abs(realRevGrowth)}%</div>}</div>
+<div style={{padding:12,borderRadius:10,background:T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>DESPESAS</div><div style={{fontSize:22,fontWeight:800,color:T.rd}}>${fm(realExp)}</div></div>
+<div style={{padding:12,borderRadius:10,background:T.or+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>IMPOSTOS</div><div style={{fontSize:22,fontWeight:800,color:T.or}}>${fm(realTaxes)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{TAX_PCT}% est.</div></div>
+<div style={{padding:12,borderRadius:10,background:realProfit>0?T.ac+"12":T.rd+"12",textAlign:"center"}}><div style={{fontSize:10,color:T.dm}}>LUCRO</div><div style={{fontSize:22,fontWeight:800,color:realProfit>0?T.ac:T.rd}}>${fm(realProfit)}</div><div style={{fontSize:9,color:T.dm}}>{realMargin}%</div></div>
+</div>
+{realRev===0&&realExp===0&&<div style={{fontSize:11,color:T.dm,textAlign:"center",padding:"8px 0"}}>Nenhuma transação lançada em {moName} ainda</div>}
+</Card>
+
+{/* CASH FLOW PROJETADO (baseado em agenda) */}
+<Card style={{padding:16,borderLeft:"4px solid "+T.pu}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+<div style={{fontSize:14,fontWeight:800}}>📊 Cash Flow Projetado <span style={{fontSize:10,color:T.dm,fontWeight:500}}>· baseado na agenda · {moName}</span></div>
+<div style={{fontSize:9,color:T.dm,padding:"3px 8px",background:T.pu+"15",borderRadius:10,fontWeight:700}}>POTENCIAL</div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:10}}>
+<div style={{padding:12,borderRadius:10,background:T.gr+"08",textAlign:"center",border:"1px dashed "+T.gr+"30"}}><div style={{fontSize:10,color:T.dm}}>RECEITA</div><div style={{fontSize:22,fontWeight:800,color:T.gr+"BB"}}>${fm(moRev)}</div>{prevRev>0&&<div style={{fontSize:10,color:revGrowth>=0?T.gr:T.rd,marginTop:2,fontWeight:700}}>{revGrowth>=0?"↑":"↓"} {Math.abs(revGrowth)}%</div>}</div>
+<div style={{padding:12,borderRadius:10,background:T.rd+"08",textAlign:"center",border:"1px dashed "+T.rd+"30"}}><div style={{fontSize:10,color:T.dm}}>DESPESAS</div><div style={{fontSize:22,fontWeight:800,color:T.rd+"BB"}}>${fm(totalExp)}</div></div>
+<div style={{padding:12,borderRadius:10,background:T.or+"08",textAlign:"center",border:"1px dashed "+T.or+"30"}}><div style={{fontSize:10,color:T.dm}}>IMPOSTOS</div><div style={{fontSize:22,fontWeight:800,color:T.or+"BB"}}>${fm(taxes)}</div><div style={{fontSize:9,color:T.dm,marginTop:2}}>{TAX_PCT}% est.</div></div>
+<div style={{padding:12,borderRadius:10,background:grossProfit>0?T.ac+"08":T.rd+"08",textAlign:"center",border:"1px dashed "+(grossProfit>0?T.ac:T.rd)+"30"}}><div style={{fontSize:10,color:T.dm}}>LUCRO</div><div style={{fontSize:22,fontWeight:800,color:grossProfit>0?T.ac+"BB":T.rd+"BB"}}>${fm(grossProfit)}</div><div style={{fontSize:9,color:T.dm}}>{moRev>0?Math.round(grossProfit/moRev*100):0}%</div></div>
+</div>
+<div style={{fontSize:12,fontWeight:700,marginBottom:6,color:T.dm}}>Decomposição da despesa projetada:</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:0}}>
 <div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Payroll:</span> <strong style={{color:T.rd}}>${fm(moPay)}</strong></div>
 <div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Lavanderia:</span> <strong style={{color:T.rd}}>~${fm(estLdCost)}</strong></div>
 <div style={{padding:8,borderRadius:6,background:T.bg+"88",fontSize:12}}><span style={{color:T.dm}}>Fixos:</span> <strong style={{color:T.rd}}>${fm(fixedTotal)}</strong></div>
 </div>
+</Card>
+
+{/* ALERTA DE GAP (só se > 10%) */}
+{showGapAlert&&<Card style={{padding:14,borderLeft:"4px solid "+(gapRev>0?T.or:T.gr),background:(gapRev>0?T.or:T.gr)+"06"}}>
+<div style={{display:"flex",alignItems:"center",gap:10}}>
+<div style={{fontSize:28}}>{gapRev>0?"⚠️":"🎉"}</div>
+<div style={{flex:1}}>
+<div style={{fontSize:13,fontWeight:800,color:gapRev>0?T.or:T.gr}}>{gapRev>0?"Gap de "+Math.abs(gapRev)+"% entre Real e Projetado":"Você está "+Math.abs(gapRev)+"% acima do potencial!"}</div>
+<div style={{fontSize:11,color:T.dm,marginTop:2}}>{gapRev>0?"Você está $"+fm(moRev-realRev)+" abaixo do potencial este mês. Possíveis causas: invoices não enviados, pagamentos atrasados, ou agenda com receita superestimada.":"Recebeu $"+fm(realRev-moRev)+" a mais do que a agenda projetava. Receitas extras (deep cleans, jobs avulsos?)."}</div>
+</div>
+</div>
+</Card>}
+
+<Card style={{padding:16}}>
+<div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Informações adicionais</div>
 {unpaidTotal>0&&<div style={{padding:10,borderRadius:8,background:T.or+"08",border:"1px solid "+T.or+"33",marginBottom:10}}>
 <div style={{fontSize:12,fontWeight:700,color:T.or}}>A Receber: ${fm(unpaidTotal)} ({unpaidInv.length} invoices)</div>
 </div>}
