@@ -707,6 +707,7 @@ const[fbCampaigns,setFbCampaigns]=useState({});const[fbSub,setFbSub]=useState("d
 const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"Fixo",role:"Cleaner",ssn:"",bday:"",startDate:"",notes:""});
 const[empRoles,setEmpRoles]=useState([]);const[teamSub,setTeamSub]=useState("list");const[roleForm,setRoleForm]=useState(null);const[quickEmpModal,setQuickEmpModal]=useState(null);const[inclSporadics,setInclSporadics]=useState(false);
 const[empInvites,setEmpInvites]=useState({});const[empInviteModal,setEmpInviteModal]=useState(null);const[empPendingReview,setEmpPendingReview]=useState(null);
+const[strategySub,setStrategySub]=useState("kpis");const[reportConfig,setReportConfig]=useState({client:"",startDate:"",endDate:"",lang:"pt"});const[reportData,setReportData]=useState(null);const[reportAiTexts,setReportAiTexts]=useState({});const[reportGenerating,setReportGenerating]=useState(false);
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
 const[showSSN,setShowSSN]=useState({});
 const[editInvId,setEditInvId]=useState(null);const[editCl,setEditCl]=useState(null);const[invTab,setInvTab]=useState("todos");const[hfPay,setHfPay]=useState({emp:"",mo:""});const[hfInv,setHfInv]=useState({client:"",mo:""});
@@ -4864,11 +4865,16 @@ const avgRevPerCasa=totalCasas>0?Math.round(moRev/totalCasas):0;const casasFor80
 const costPerTurnover=moEvents.length>0?Math.round(totalExp/moEvents.length):0;const marginPerTurnover=moEvents.length>0?Math.round(grossProfit/moEvents.length):0;
 const reserveIdeal=totalExp*3;
 return <div style={{display:"flex",flexDirection:"column",gap:12}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
 <span style={{fontSize:18,fontWeight:800}}>🎯 Strategy</span>
-<button onClick={()=>{const cfg=co.stratConfig||{};const fields=[["Pro-labore ($/mes)","prolabore",PROLABORE],["Reserva (%)","reservePct",RESERVE_PCT],["Impostos (%)","taxPct",TAX_PCT],["Custo novo funcionario ($/mes)","hireCost",HIRE_COST],["Meta 6 meses (casas)","goal6mo",GOAL_6MO],["Meta 12 meses ($/mes)","goal12mo",GOAL_12MO],["Max casas/funcionario/mes","maxCap",MAX_CAP]];const updated={...cfg};let changed=false;for(const[label,key,def] of fields){const v=prompt(label+":",updated[key]||def);if(v===null)return;const num=parseFloat(v);if(!isNaN(num)){updated[key]=num;changed=true;}}if(changed){setCo({...co,stratConfig:updated});sv("co3",{...co,stratConfig:updated});fl("Settings saved!");}}} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"6px 12px",borderRadius:8,fontSize:10,cursor:"pointer"}}>⚙️ Settings</button>
+<div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+<button onClick={()=>setStrategySub("kpis")} style={bt(strategySub==="kpis"?T.ac:T.c2,strategySub==="kpis"?T.bg:T.dm,{padding:"7px 14px",borderRadius:6,fontSize:11,fontWeight:600})}>📊 KPIs</button>
+<button onClick={()=>setStrategySub("reports")} style={bt(strategySub==="reports"?T.ac:T.c2,strategySub==="reports"?T.bg:T.dm,{padding:"7px 14px",borderRadius:6,fontSize:11,fontWeight:600})}>📈 Relatórios</button>
+<button onClick={()=>{const cfg=co.stratConfig||{};const fields=[["Pro-labore ($/mes)","prolabore",PROLABORE],["Reserva (%)","reservePct",RESERVE_PCT],["Impostos (%)","taxPct",TAX_PCT],["Custo novo funcionario ($/mes)","hireCost",HIRE_COST],["Meta 6 meses (casas)","goal6mo",GOAL_6MO],["Meta 12 meses ($/mes)","goal12mo",GOAL_12MO],["Max casas/funcionario/mes","maxCap",MAX_CAP]];const updated={...cfg};let changed=false;for(const[label,key,def] of fields){const v=prompt(label+":",updated[key]||def);if(v===null)return;const num=parseFloat(v);if(!isNaN(num)){updated[key]=num;changed=true;}}if(changed){setCo({...co,stratConfig:updated});sv("co3",{...co,stratConfig:updated});fl("Settings saved!");}}} style={{border:"none",background:T.dm+"15",color:T.dm,padding:"6px 12px",borderRadius:6,fontSize:10,cursor:"pointer"}}>⚙️</button>
+</div>
 </div>
 
+{strategySub==="kpis"&&<>
 <Card style={{padding:16}}>
 <div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Cash Flow</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:16}}>
@@ -4962,6 +4968,741 @@ h+="<h2>Crescimento</h2><div class='r'><span>Meta 6m</span><strong>"+GOAL_6MO+" 
 h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeout(()=>w.print(),500);}} style={bt(T.ac,T.bg,{padding:"12px 24px",fontSize:13,borderRadius:8})}>Gerar PDF</button>
 </div>
 </Card>
+</>}
+
+{strategySub==="reports"&&(()=>{
+  const activeClients=(()=>{const set=new Set();db.forEach(p=>{if(p.c&&p.n!=="(nova)")set.add(p.c);});return Array.from(set).sort();})();
+  
+  // Gerar dados do relatório
+  const generateReportData=()=>{
+    if(!reportConfig.client||!reportConfig.startDate||!reportConfig.endDate){fl("Preencha cliente e período");return;}
+    if(reportConfig.startDate>reportConfig.endDate){fl("Data inicial deve ser antes da final");return;}
+    
+    const lang=reportConfig.lang;
+    const clientHouses=db.filter(p=>p.c===reportConfig.client&&p.n!=="(nova)");
+    const houseNames=clientHouses.map(p=>p.n);
+    
+    const periodEvents=agEvents.filter(ev=>ev.date>=reportConfig.startDate&&ev.date<=reportConfig.endDate&&houseNames.includes(ev.house));
+    const periodInsp=inspections.filter(i=>i.date>=reportConfig.startDate&&i.date<=reportConfig.endDate&&houseNames.includes(i.house));
+    
+    // Performance por casa
+    const housePerf=clientHouses.map(p=>{
+      const evs=periodEvents.filter(ev=>ev.house===p.n);
+      const insp=periodInsp.filter(i=>i.house===p.n);
+      const scores=insp.map(i=>i.score||0).filter(s=>s>0);
+      const avgScore=scores.length?Math.round(scores.reduce((s,n)=>s+n,0)/scores.length):null;
+      const blocked=insp.filter(i=>i.status==="blocked").length;
+      const critFails=insp.reduce((s,i)=>s+(i.criticalFails||0),0);
+      return {name:p.n,turnovers:evs.length,avgScore,blocked,critFails,inspCount:insp.length};
+    });
+    
+    // KPIs gerais
+    const totalTurnovers=periodEvents.length;
+    const allScores=periodInsp.map(i=>i.score||0).filter(s=>s>0);
+    const overallScore=allScores.length?Math.round(allScores.reduce((s,n)=>s+n,0)/allScores.length):null;
+    const totalBlocked=periodInsp.filter(i=>i.status==="blocked").length;
+    const issuesEvited=periodInsp.filter(i=>i.score>=80&&i.criticalFails===0).length;
+    
+    // Distribuição por faixa de score
+    const scoreDist={excellent:periodInsp.filter(i=>i.score>=90).length,good:periodInsp.filter(i=>i.score>=75&&i.score<90).length,attention:periodInsp.filter(i=>i.score>0&&i.score<75).length};
+    
+    // Evolução mensal do score
+    const monthlyScore={};
+    periodInsp.forEach(i=>{if(!i.date||!i.score)return;const mo=i.date.slice(0,7);if(!monthlyScore[mo])monthlyScore[mo]={sum:0,cnt:0};monthlyScore[mo].sum+=i.score;monthlyScore[mo].cnt++;});
+    const monthlyEvolution=Object.entries(monthlyScore).sort().map(([mo,d])=>({month:mo,score:Math.round(d.sum/d.cnt),count:d.cnt}));
+    
+    // Top 10 casas por turnovers
+    const top10Houses=[...housePerf].sort((a,b)=>b.turnovers-a.turnovers).slice(0,10);
+    
+    // NPS do cliente no período
+    const clientNps=Object.values(fbCampaigns).filter(c=>c.respondedAt&&c.audience==="client"&&c.personName===reportConfig.client&&c.month>=reportConfig.startDate.slice(0,7)&&c.month<=reportConfig.endDate.slice(0,7));
+    const npsScores=clientNps.map(c=>c.answers&&c.answers.q1).filter(s=>typeof s==="number");
+    const avgNps=npsScores.length?(npsScores.reduce((s,n)=>s+n,0)/npsScores.length).toFixed(1):null;
+    
+    // Comparação com trimestre anterior
+    const sd=new Date(reportConfig.startDate+"T12:00");
+    const ed=new Date(reportConfig.endDate+"T12:00");
+    const daysDiff=Math.ceil((ed-sd)/(1000*60*60*24));
+    const prevEd=new Date(sd);prevEd.setDate(prevEd.getDate()-1);
+    const prevSd=new Date(prevEd);prevSd.setDate(prevSd.getDate()-daysDiff);
+    const fmtD=(d)=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const prevStart=fmtD(prevSd);
+    const prevEnd=fmtD(prevEd);
+    const prevEvents=agEvents.filter(ev=>ev.date>=prevStart&&ev.date<=prevEnd&&houseNames.includes(ev.house));
+    const prevInsp=inspections.filter(i=>i.date>=prevStart&&i.date<=prevEnd&&houseNames.includes(i.house));
+    const prevScores=prevInsp.map(i=>i.score||0).filter(s=>s>0);
+    const prevAvgScore=prevScores.length?Math.round(prevScores.reduce((s,n)=>s+n,0)/prevScores.length):null;
+    const prevBlocked=prevInsp.filter(i=>i.status==="blocked").length;
+    const hasPrevData=prevEvents.length>0||prevInsp.length>0;
+    
+    // Achievements (conquistas detectadas automaticamente)
+    const achievements=[];
+    // Perfect houses
+    const perfectHouses=housePerf.filter(h=>h.avgScore===100&&h.turnovers>=3);
+    if(perfectHouses.length>0)achievements.push({icon:"🏆",title:lang==="en"?"PERFECT HOUSES":lang==="es"?"CASAS PERFECTAS":"CASAS PERFEITAS",value:perfectHouses.length,sub:lang==="en"?"with 100% score":lang==="es"?"con score 100%":"com score 100%"});
+    // Houses with 95+ avg
+    const elite=housePerf.filter(h=>h.avgScore>=95).length;
+    if(elite>0)achievements.push({icon:"⭐",title:lang==="en"?"ELITE PROPERTIES":lang==="es"?"PROPIEDADES ÉLITE":"PROPRIEDADES ELITE",value:elite,sub:lang==="en"?"scored 95+ avg":lang==="es"?"con score 95+":"com score 95+"});
+    // Zero blocked
+    if(totalBlocked===0)achievements.push({icon:"🛡️",title:lang==="en"?"ZERO BLOCKS":lang==="es"?"CERO BLOQUEOS":"ZERO BLOQUEIOS",value:"0",sub:lang==="en"?"critical issues":lang==="es"?"problemas críticos":"problemas críticos"});
+    // Cleanings count
+    achievements.push({icon:"⚡",title:lang==="en"?"CLEANINGS":lang==="es"?"LIMPIEZAS":"LIMPEZAS",value:totalTurnovers,sub:lang==="en"?"delivered on time":lang==="es"?"entregadas a tiempo":"entregues no prazo"});
+    // Best quote (only if NPS promoter)
+    const promoterComments=clientNps.filter(c=>c.answers&&c.answers.q1>=9).map(c=>c.answers.q2||c.answers.q3).filter(Boolean);
+    const featuredQuote=promoterComments.length>0?promoterComments[0]:null;
+    
+    setReportData({
+      client:reportConfig.client,
+      period:reportConfig.startDate+" a "+reportConfig.endDate,
+      startDate:reportConfig.startDate,
+      endDate:reportConfig.endDate,
+      lang:reportConfig.lang,
+      kpis:{totalTurnovers,overallScore,totalBlocked,issuesEvited,housesCount:clientHouses.length},
+      prevKpis:hasPrevData?{totalTurnovers:prevEvents.length,overallScore:prevAvgScore,totalBlocked:prevBlocked}:null,
+      housePerf,
+      scoreDist,
+      monthlyEvolution,
+      top10Houses,
+      achievements,
+      featuredQuote,
+      nps:{avg:avgNps,count:npsScores.length,comments:clientNps.map(c=>c.answers&&(c.answers.q2||c.answers.q3)).filter(Boolean)}
+    });
+    setReportAiTexts({});
+    fl("✅ Dados carregados! Agora gere os textos com AI.");
+  };
+  
+  // AI gera textos
+  const generateAITexts=async()=>{
+    if(!reportData){fl("Carregue os dados primeiro");return;}
+    setReportGenerating(true);
+    try{
+      const lang=reportData.lang;
+      const langName=lang==="pt"?"português brasileiro":lang==="en"?"English":"español";
+      // Resumo das casas: agrupar por faixa de score em vez de mandar todas
+      const casasResumo={
+        total:reportData.housePerf.length,
+        excelente:reportData.housePerf.filter(h=>h.avgScore>=90).length,
+        boa:reportData.housePerf.filter(h=>h.avgScore>=75&&h.avgScore<90).length,
+        atencao:reportData.housePerf.filter(h=>h.avgScore!==null&&h.avgScore<75).length,
+        sem_inspecao:reportData.housePerf.filter(h=>h.avgScore===null).length,
+        top_casas:reportData.housePerf.slice().sort((a,b)=>(b.avgScore||0)-(a.avgScore||0)).slice(0,3).map(h=>h.name),
+        casas_atencao:reportData.housePerf.filter(h=>h.avgScore!==null&&h.avgScore<75).slice(0,3).map(h=>h.name),
+        casas_bloqueadas:reportData.housePerf.filter(h=>h.blocked>0).slice(0,3).map(h=>({name:h.name,blocked:h.blocked}))
+      };
+      const summary={
+        empresa:co.name,
+        cliente:reportData.client,
+        periodo:reportData.period,
+        casas:reportData.kpis.housesCount,
+        turnovers:reportData.kpis.totalTurnovers,
+        score_medio:reportData.kpis.overallScore,
+        bloqueios:reportData.kpis.totalBlocked,
+        issues_evitados:reportData.kpis.issuesEvited,
+        nps:reportData.nps.avg,
+        comentarios_cliente:reportData.nps.comments.slice(0,2).map(c=>String(c).slice(0,200)),
+        casas_resumo:casasResumo,
+        evolucao_mensal:reportData.monthlyEvolution
+      };
+      const prompt="Você está escrevendo um relatório trimestral executivo de uma empresa de cleaning services para o cliente. Idioma: "+langName+". Tom: profissional, caloroso, executivo (não publicitário). NÃO mencione custos, valores monetários ou nomes de funcionários.\n\nGere 3 textos curtos em JSON puro (sem markdown, sem ```):\n\n{\n  \"resumoExecutivo\": \"2-3 frases citando dados específicos de qualidade\",\n  \"highlights\": \"3-4 frases destacando momentos positivos e problemas evitados\",\n  \"recomendacoes\": \"3-4 recomendações específicas para o próximo trimestre, em itens separados por quebra de linha\"\n}\n\nDados:\n"+JSON.stringify(summary,null,2);
+      
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),55000);
+      
+      const resp=await fetch("/api/ai",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({system:"Você é redator executivo de relatórios corporativos.",max_tokens:1500,messages:[{role:"user",content:prompt}]}),
+        signal:controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if(!resp.ok){
+        const errText=await resp.text();
+        throw new Error("HTTP "+resp.status+": "+errText.slice(0,200));
+      }
+      
+      const data=await resp.json();
+      let text=data.content&&data.content[0]?data.content[0].text:"";
+      text=text.replace(/```json|```/g,"").trim();
+      try{
+        const parsed=JSON.parse(text);
+        setReportAiTexts(parsed);
+        fl("✨ Textos gerados! Você pode editar antes do PDF.");
+      }catch(e){
+        // Tentar extrair JSON do meio do texto
+        const m=text.match(/\{[\s\S]*\}/);
+        if(m){try{const p=JSON.parse(m[0]);setReportAiTexts(p);fl("✨ Textos gerados!");return;}catch(e2){}}
+        setReportAiTexts({resumoExecutivo:text||"(AI não retornou texto)",highlights:"",recomendacoes:""});
+        fl("⚠️ AI gerou texto fora do formato. Edite manualmente.");
+      }
+    }catch(e){
+      if(e.name==="AbortError"){fl("❌ AI demorou demais (timeout). Tente novamente.");}
+      else{fl("❌ Erro AI: "+e.message);}
+      console.error("AI Report Error:",e);
+    }
+    setReportGenerating(false);
+  };
+  
+  // SVG helpers
+  const svgPieChart=(data,size)=>{
+    const total=data.reduce((s,d)=>s+d.value,0);
+    if(total===0)return "";
+    const cx=size/2,cy=size/2,r=size/2-10;
+    let cumAngle=-Math.PI/2;
+    let paths="";
+    data.forEach(d=>{
+      if(d.value===0)return;
+      const angle=(d.value/total)*2*Math.PI;
+      const x1=cx+r*Math.cos(cumAngle);
+      const y1=cy+r*Math.sin(cumAngle);
+      const x2=cx+r*Math.cos(cumAngle+angle);
+      const y2=cy+r*Math.sin(cumAngle+angle);
+      const largeArc=angle>Math.PI?1:0;
+      paths+="<path d='M "+cx+" "+cy+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+largeArc+" 1 "+x2+" "+y2+" Z' fill='"+d.color+"' stroke='#fff' stroke-width='2'/>";
+      cumAngle+=angle;
+    });
+    return "<svg width='"+size+"' height='"+size+"' viewBox='0 0 "+size+" "+size+"'>"+paths+"</svg>";
+  };
+  
+  const svgBarChart=(data,w,h)=>{
+    if(data.length===0)return "";
+    const max=Math.max(...data.map(d=>d.value));
+    const barH=22;
+    const gap=8;
+    const labelW=120;
+    const valueW=40;
+    const chartW=w-labelW-valueW-20;
+    let bars="";
+    data.forEach((d,i)=>{
+      const y=i*(barH+gap)+10;
+      const bw=max>0?(d.value/max)*chartW:0;
+      bars+="<text x='10' y='"+(y+barH/2+4)+"' font-size='11' fill='#333' font-family='Inter,sans-serif'>"+(d.label.length>16?d.label.slice(0,16)+"…":d.label)+"</text>";
+      bars+="<rect x='"+labelW+"' y='"+y+"' width='"+bw+"' height='"+barH+"' fill='#00B4D8' rx='3'/>";
+      bars+="<text x='"+(labelW+bw+6)+"' y='"+(y+barH/2+4)+"' font-size='11' fill='#0094B0' font-weight='700' font-family='Inter,sans-serif'>"+d.value+"</text>";
+    });
+    const totalH=data.length*(barH+gap)+10;
+    return "<svg width='"+w+"' height='"+totalH+"' viewBox='0 0 "+w+" "+totalH+"'>"+bars+"</svg>";
+  };
+  
+  const svgLineChart=(data,w,h,lang)=>{
+    if(data.length<2){return "<div style='text-align:center;color:#999;padding:30px;font-size:11px'>"+(lang==="en"?"Not enough data":lang==="es"?"Datos insuficientes":"Dados insuficientes")+"</div>";}
+    const padL=40,padR=20,padT=20,padB=30;
+    const chartW=w-padL-padR;
+    const chartH=h-padT-padB;
+    const max=100,min=Math.max(0,Math.min(...data.map(d=>d.score))-10);
+    const xStep=chartW/(data.length-1);
+    let pts=[];
+    let circles="";
+    let labels="";
+    data.forEach((d,i)=>{
+      const x=padL+i*xStep;
+      const y=padT+chartH-((d.score-min)/(max-min))*chartH;
+      pts.push(x+","+y);
+      circles+="<circle cx='"+x+"' cy='"+y+"' r='5' fill='#00B4D8' stroke='#fff' stroke-width='2'/>";
+      circles+="<text x='"+x+"' y='"+(y-12)+"' font-size='10' fill='#0094B0' font-weight='700' text-anchor='middle' font-family='Inter,sans-serif'>"+d.score+"</text>";
+      const monthLabel=d.month.slice(5)+"/"+d.month.slice(2,4);
+      labels+="<text x='"+x+"' y='"+(h-10)+"' font-size='10' fill='#666' text-anchor='middle' font-family='Inter,sans-serif'>"+monthLabel+"</text>";
+    });
+    // grid horizontal
+    let grid="";
+    [25,50,75,100].forEach(v=>{const y=padT+chartH-((v-min)/(max-min))*chartH;grid+="<line x1='"+padL+"' y1='"+y+"' x2='"+(w-padR)+"' y2='"+y+"' stroke='#eee' stroke-width='1'/>";grid+="<text x='"+(padL-6)+"' y='"+(y+3)+"' font-size='9' fill='#999' text-anchor='end' font-family='Inter,sans-serif'>"+v+"</text>";});
+    return "<svg width='"+w+"' height='"+h+"' viewBox='0 0 "+w+" "+h+"'>"+grid+"<polyline points='"+pts.join(" ")+"' fill='none' stroke='#00B4D8' stroke-width='2.5'/>"+circles+labels+"</svg>";
+  };
+  
+  const svgNPSGauge=(score,w)=>{
+    const h=w*0.6;
+    const cx=w/2,cy=h-10,r=w/2-20;
+    // Arco de fundo (3 cores)
+    const segments=[{from:-180,to:-126,color:"#FF6B6B"},{from:-126,to:-54,color:"#FFB547"},{from:-54,to:0,color:"#4ADE80"}];
+    let paths="";
+    segments.forEach(s=>{
+      const a1=s.from*Math.PI/180;
+      const a2=s.to*Math.PI/180;
+      const x1=cx+r*Math.cos(a1);
+      const y1=cy+r*Math.sin(a1);
+      const x2=cx+r*Math.cos(a2);
+      const y2=cy+r*Math.sin(a2);
+      paths+="<path d='M "+x1+" "+y1+" A "+r+" "+r+" 0 0 1 "+x2+" "+y2+"' fill='none' stroke='"+s.color+"' stroke-width='20' stroke-linecap='round'/>";
+    });
+    // Ponteiro
+    const angle=(-180+(score/10)*180)*Math.PI/180;
+    const px=cx+(r-10)*Math.cos(angle);
+    const py=cy+(r-10)*Math.sin(angle);
+    paths+="<line x1='"+cx+"' y1='"+cy+"' x2='"+px+"' y2='"+py+"' stroke='#0A0F1E' stroke-width='3' stroke-linecap='round'/>";
+    paths+="<circle cx='"+cx+"' cy='"+cy+"' r='8' fill='#0A0F1E'/>";
+    // Texto central
+    paths+="<text x='"+cx+"' y='"+(cy-r/2)+"' font-size='32' fill='#0A0F1E' font-weight='800' text-anchor='middle' font-family='Inter,sans-serif'>"+score+"</text>";
+    paths+="<text x='"+cx+"' y='"+(cy-r/2+18)+"' font-size='10' fill='#999' text-anchor='middle' font-family='Inter,sans-serif'>/ 10</text>";
+    return "<svg width='"+w+"' height='"+h+"' viewBox='0 0 "+w+" "+h+"'>"+paths+"</svg>";
+  };
+  
+  // Gerar PDF (Apple keynote style)
+  const generatePDF=()=>{
+    if(!reportData){fl("Carregue os dados primeiro");return;}
+    const lang=reportData.lang;
+    const L=lang==="en"?{title:"QUARTERLY REPORT",period:"Period",turnovers:"Cleanings",score:"Avg Score",issuesEvited:"Issues Prevented",page:"Page",executive:"The Numbers",performance:"Performance by Property",highlights:"Highlights",achievements:"Achievements",recommendations:"What's Next",house:"Property",turnoversCol:"Cleanings",scoreCol:"Score",notes:"Notes",blocked:"blocked",critFails:"critical fails",confidential:"Confidential — for client use only",thanks:"Thank you",thanksSub:"We're proud to be your partner.",contactUs:"Get in touch",weAreReady:"Available for a quarterly alignment if you'd like.",nps:"Your Satisfaction",scoreDistribution:"Quality Distribution",excellent:"Excellent",good:"Good",attention:"Needs attention",topHouses:"Most active properties",scoreEvolution:"Score evolution",yourFeedback:"Your words",preparedFor:"Prepared for",vs:"vs prev",delivered:"delivered",reached:"score reached",zeroBlocks:"zero critical issues",cleaningsDeliveredOnTime:"cleanings delivered on time",cleaningsSub:"every single one",scoreSub:"out of 100 possible",issuesSub:"caught and prevented",story:"The Story",storySub:"How this quarter unfolded"}:lang==="es"?{title:"REPORTE TRIMESTRAL",period:"Período",turnovers:"Limpiezas",score:"Score Promedio",issuesEvited:"Problemas Evitados",page:"Página",executive:"Los Números",performance:"Desempeño por Propiedad",highlights:"Destaques",achievements:"Logros",recommendations:"Próximos Pasos",house:"Propiedad",turnoversCol:"Limpiezas",scoreCol:"Score",notes:"Notas",blocked:"bloqueada(s)",critFails:"fallas críticas",confidential:"Confidencial — uso exclusivo del cliente",thanks:"Gracias",thanksSub:"Es un honor ser tu socio.",contactUs:"Contacto",weAreReady:"Disponibles para una reunión de alineación trimestral.",nps:"Tu Satisfacción",scoreDistribution:"Distribución de Calidad",excellent:"Excelente",good:"Bueno",attention:"Atención",topHouses:"Propiedades más activas",scoreEvolution:"Evolución del score",yourFeedback:"Tus palabras",preparedFor:"Preparado para",vs:"vs ant.",delivered:"entregadas",reached:"score alcanzado",zeroBlocks:"cero problemas críticos",cleaningsDeliveredOnTime:"limpiezas entregadas a tiempo",cleaningsSub:"cada una",scoreSub:"de 100 posibles",issuesSub:"detectados y prevenidos",story:"La Historia",storySub:"Como fue este trimestre"}:{title:"RELATÓRIO TRIMESTRAL",period:"Período",turnovers:"Limpezas",score:"Score Médio",issuesEvited:"Problemas Evitados",page:"Página",executive:"Os Números",performance:"Performance por Propriedade",highlights:"Destaques",achievements:"Conquistas",recommendations:"Próximos Passos",house:"Propriedade",turnoversCol:"Limpezas",scoreCol:"Score",notes:"Observações",blocked:"bloqueada(s)",critFails:"falha(s) crítica(s)",confidential:"Confidencial — para uso do cliente",thanks:"Obrigado",thanksSub:"É um privilégio ser parceiro de vocês.",contactUs:"Fale conosco",weAreReady:"Disponíveis para uma reunião de alinhamento trimestral.",nps:"Sua Satisfação",scoreDistribution:"Distribuição de Qualidade",excellent:"Excelente",good:"Bom",attention:"Atenção",topHouses:"Propriedades mais ativas",scoreEvolution:"Evolução do score",yourFeedback:"Suas palavras",preparedFor:"Preparado para",vs:"vs ant.",delivered:"entregues",reached:"score alcançado",zeroBlocks:"zero problemas críticos",cleaningsDeliveredOnTime:"limpezas entregues no prazo",cleaningsSub:"cada uma delas",scoreSub:"de 100 possíveis",issuesSub:"detectados e prevenidos",story:"A História",storySub:"Como foi este trimestre"};
+    
+    const fmDate=(d)=>{if(!d)return"";const[y,m,dd]=d.split("-");return dd+"/"+m+"/"+y;};
+    const w=window.open("","_blank");
+    if(!w){fl("Bloqueado pelo navegador. Permita pop-ups.");return;}
+    
+    const periodLabel=fmDate(reportData.startDate)+" — "+fmDate(reportData.endDate);
+    const yr=reportData.endDate.slice(0,4);
+    
+    // Comparativos
+    const prev=reportData.prevKpis;
+    const diffTurnovers=prev?reportData.kpis.totalTurnovers-prev.totalTurnovers:null;
+    const diffTurnoversPct=prev&&prev.totalTurnovers>0?Math.round(diffTurnovers/prev.totalTurnovers*100):null;
+    const diffScore=prev&&prev.overallScore&&reportData.kpis.overallScore?reportData.kpis.overallScore-prev.overallScore:null;
+    const diffBlocked=prev?reportData.kpis.totalBlocked-prev.totalBlocked:null;
+    
+    let h="<!DOCTYPE html><html><head><meta charset='utf-8'><title>"+L.title+" — "+reportData.client+"</title>";
+    h+="<style>";
+    h+="@page{size:A4;margin:0}";
+    h+="*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}";
+    h+="body{font-family:'Segoe UI','Inter','Helvetica Neue',system-ui,sans-serif;color:#0A0F1E;background:#fff;-webkit-font-smoothing:antialiased}";
+    h+=".page{width:210mm;height:297mm;padding:0;page-break-after:always;position:relative;background:#fff;overflow:hidden}";
+    h+=".page:last-child{page-break-after:auto}";
+    h+="tr,td,.chart-card,.kpi-hero,.thanks-section,.reco-item,.quote-block,.achievement-card,.story-item{page-break-inside:avoid;break-inside:avoid}";
+    
+    // ===== CAPA =====
+    h+=".cover{background:#fff;width:210mm;height:297mm;display:flex;flex-direction:column;justify-content:space-between;padding:38mm 28mm;position:relative;overflow:hidden}";
+    h+=".cover::before{content:'';position:absolute;top:0;left:0;width:100%;height:8px;background:linear-gradient(90deg,#00B4D8 0%,#0094B0 50%,#00B4D8 100%)}";
+    h+=".cover::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:8px;background:linear-gradient(90deg,#00B4D8 0%,#0094B0 50%,#00B4D8 100%)}";
+    h+=".cover-bg-circle{position:absolute;right:-100px;top:60px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(0,180,216,0.08) 0%,rgba(0,180,216,0) 70%);z-index:0}";
+    h+=".cover-bg-circle-2{position:absolute;left:-150px;bottom:150px;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(0,148,176,0.05) 0%,rgba(0,148,176,0) 70%);z-index:0}";
+    h+=".cover-content{position:relative;z-index:1}";
+    h+=".cover-logo{height:75px;object-fit:contain;margin-bottom:32px}";
+    h+=".cover-eyebrow{font-size:12px;color:#00B4D8;font-weight:700;letter-spacing:5px;text-transform:uppercase;margin-bottom:14px}";
+    h+=".cover-title{font-size:72px;font-weight:900;line-height:0.95;letter-spacing:-3px;color:#0A0F1E;margin-bottom:8px}";
+    h+=".cover-year{font-size:24px;font-weight:700;color:#00B4D8;letter-spacing:2px;margin-bottom:36px}";
+    h+=".cover-divider{width:120px;height:6px;background:#00B4D8;margin-bottom:36px;border-radius:4px}";
+    h+=".cover-client-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px;font-weight:600}";
+    h+=".cover-client{font-size:46px;font-weight:800;color:#0A0F1E;margin-bottom:20px;letter-spacing:-1.5px;line-height:1.05}";
+    h+=".cover-period-detail{font-size:17px;color:#666;font-weight:500}";
+    h+=".cover-bottom{font-size:11px;color:#888;border-top:1px solid #e5e5e5;padding-top:16px;position:relative;z-index:1}";
+    
+    // ===== HEADER/FOOTER =====
+    h+=".inner{padding:18mm 22mm 24mm;height:100%;position:relative}";
+    h+=".header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e8eef0;padding-bottom:10px;margin-bottom:22px}";
+    h+=".header-brand{display:flex;align-items:center;gap:10px}";
+    h+=".header-logo{height:26px;object-fit:contain}";
+    h+=".header-name{font-size:10px;font-weight:800;color:#0094B0;letter-spacing:1.5px}";
+    h+=".header-meta{font-size:9px;color:#888;text-align:right;line-height:1.4}";
+    h+=".footer{position:absolute;bottom:14mm;left:22mm;right:22mm;display:flex;justify-content:space-between;font-size:9px;color:#aaa;border-top:1px solid #f0f0f0;padding-top:8px}";
+    
+    // ===== HERO STATS =====
+    h+=".hero-section{margin-bottom:18px}";
+    h+=".hero-eyebrow{font-size:11px;color:#00B4D8;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}";
+    h+=".hero-title{font-size:36px;font-weight:900;color:#0A0F1E;letter-spacing:-1.5px;line-height:1;margin-bottom:6px}";
+    h+=".hero-subtitle{font-size:13px;color:#666;font-weight:500}";
+    h+=".kpi-hero-grid{display:flex;flex-direction:column;gap:14px;margin:24px 0}";
+    h+=".kpi-hero{background:linear-gradient(135deg,#f8fbfd 0%,#eaf6fa 100%);border-left:5px solid #00B4D8;border-radius:8px;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)}";
+    h+=".kpi-hero-left{flex:1}";
+    h+=".kpi-hero-value{font-size:64px;font-weight:900;color:#0A0F1E;line-height:0.95;letter-spacing:-2.5px;font-variant-numeric:tabular-nums}";
+    h+=".kpi-hero-label{font-size:11px;color:#0094B0;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-top:6px}";
+    h+=".kpi-hero-sub{font-size:11px;color:#666;font-weight:500;margin-top:3px}";
+    h+=".kpi-hero-trend{text-align:right}";
+    h+=".kpi-hero-trend-val{font-size:14px;font-weight:800;letter-spacing:-0.3px}";
+    h+=".kpi-hero-trend-label{font-size:9px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-top:2px}";
+    h+=".trend-up{color:#15803d}";
+    h+=".trend-down{color:#b91c1c}";
+    h+=".trend-flat{color:#888}";
+    h+=".kpi-icon{width:54px;height:54px;border-radius:50%;background:#00B4D8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;flex-shrink:0;margin-right:18px}";
+    h+=".kpi-icon-svg{width:54px;height:54px;flex-shrink:0;margin-right:18px}";
+    
+    // ===== ACHIEVEMENTS =====
+    h+=".achievement-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}";
+    h+=".achievement-card{background:#fff;border:2px solid #f0f4f6;border-radius:12px;padding:22px 20px;text-align:center;position:relative;overflow:hidden}";
+    h+=".achievement-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,#00B4D8,#0094B0)}";
+    h+=".achievement-icon{font-size:38px;margin-bottom:10px;line-height:1}";
+    h+=".achievement-value{font-size:42px;font-weight:900;color:#0A0F1E;line-height:1;letter-spacing:-1.5px}";
+    h+=".achievement-title{font-size:11px;color:#00B4D8;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-top:8px}";
+    h+=".achievement-sub{font-size:10px;color:#888;font-weight:500;margin-top:3px}";
+    
+    // ===== QUOTE =====
+    h+=".quote-section{background:linear-gradient(135deg,#0A0F1E 0%,#0D1B30 100%);color:#fff;border-radius:14px;padding:40px 36px;margin:26px 0;position:relative;overflow:hidden}";
+    h+=".quote-section::before{content:'\"';position:absolute;top:-30px;left:20px;font-size:200px;color:rgba(0,180,216,0.15);font-family:Georgia,serif;line-height:1;font-weight:900}";
+    h+=".quote-text{font-size:22px;font-weight:600;line-height:1.45;color:#fff;font-style:italic;position:relative;z-index:1;letter-spacing:-0.3px}";
+    h+=".quote-author{font-size:12px;color:#00B4D8;font-weight:700;margin-top:18px;letter-spacing:2px;text-transform:uppercase;position:relative;z-index:1}";
+    
+    // ===== TIMELINE =====
+    h+=".story-section{margin:24px 0}";
+    h+=".story-timeline{display:flex;align-items:stretch;gap:0;margin-top:18px}";
+    h+=".story-item{flex:1;text-align:center;position:relative;padding:0 8px}";
+    h+=".story-dot{width:18px;height:18px;border-radius:50%;background:#00B4D8;margin:0 auto 10px;position:relative;z-index:2;border:4px solid #fff;box-shadow:0 0 0 2px #00B4D8}";
+    h+=".story-line{position:absolute;top:7px;left:50%;right:-50%;height:3px;background:#00B4D8;z-index:1}";
+    h+=".story-item:last-child .story-line{display:none}";
+    h+=".story-month{font-size:11px;font-weight:800;color:#0094B0;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}";
+    h+=".story-score{font-size:32px;font-weight:900;color:#0A0F1E;line-height:1;letter-spacing:-1px}";
+    h+=".story-detail{font-size:10px;color:#666;font-weight:500;margin-top:4px}";
+    
+    // ===== CHARTS & TABLES =====
+    h+=".chart-card{background:#fafbfc;border:1px solid #eef2f4;border-radius:10px;padding:18px;margin-bottom:14px}";
+    h+=".chart-title{font-size:11px;font-weight:800;color:#0094B0;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px}";
+    h+=".pie-legend{display:flex;flex-direction:column;gap:10px;font-size:12px}";
+    h+=".pie-legend-item{display:flex;align-items:center;gap:10px}";
+    h+=".pie-dot{width:14px;height:14px;border-radius:50%}";
+    h+=".pie-legend-bold{font-size:18px;font-weight:800;color:#0A0F1E;min-width:30px}";
+    h+="h2{font-size:30px;font-weight:900;color:#0A0F1E;margin-bottom:6px;letter-spacing:-1.2px;line-height:1.05}";
+    h+=".h2-sub{font-size:11px;color:#00B4D8;margin-bottom:24px;text-transform:uppercase;letter-spacing:2px;font-weight:800}";
+    h+=".section-block{margin-bottom:24px}";
+    h+=".section-title{font-size:13px;font-weight:800;color:#0094B0;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e8eef0;text-transform:uppercase;letter-spacing:1.5px}";
+    h+=".prose{font-size:13px;line-height:1.75;color:#333;margin-bottom:16px;text-align:justify;font-weight:400}";
+    h+=".prose strong{color:#0094B0;font-weight:700}";
+    h+="table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}";
+    h+="th{background:linear-gradient(135deg,#00B4D8,#0094B0);color:#fff;padding:11px 13px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px}";
+    h+="td{padding:10px 13px;border-bottom:1px solid #f0f0f0;color:#333}";
+    h+="tr:nth-child(even) td{background:#fafbfc}";
+    h+=".badge{display:inline-block;padding:4px 11px;border-radius:12px;font-size:10px;font-weight:800;letter-spacing:0.3px}";
+    h+=".badge-ok{background:#dcfce7;color:#15803d}";
+    h+=".badge-warn{background:#fef3c7;color:#a16207}";
+    h+=".badge-bad{background:#fee2e2;color:#b91c1c}";
+    
+    // ===== RECOMMENDATIONS =====
+    h+=".reco-item{padding:18px 20px;background:linear-gradient(135deg,#fafbfc,#f5fafd);border-left:4px solid #00B4D8;border-radius:10px;margin-bottom:12px;font-size:13px;line-height:1.65;color:#333;position:relative}";
+    h+=".reco-item::before{content:'›';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:28px;color:#00B4D8;font-weight:800;line-height:0}";
+    h+=".reco-item{padding-left:38px}";
+    
+    // ===== THANK YOU =====
+    h+=".thanks-section{background:linear-gradient(135deg,#0A0F1E 0%,#0D1B30 50%,#0A0F1E 100%);color:#fff;border-radius:14px;padding:42px 32px;text-align:center;margin-top:28px;position:relative;overflow:hidden}";
+    h+=".thanks-section::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(0,180,216,0.2) 0%,rgba(0,180,216,0) 70%)}";
+    h+=".thanks-title{font-size:42px;font-weight:900;margin-bottom:10px;color:#fff;letter-spacing:-1.5px;position:relative;z-index:1}";
+    h+=".thanks-sub{font-size:14px;color:rgba(255,255,255,0.8);line-height:1.6;font-weight:500;position:relative;z-index:1}";
+    h+=".thanks-contact{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.15);font-size:12px;color:rgba(255,255,255,0.7);position:relative;z-index:1}";
+    h+=".thanks-contact strong{color:#00B4D8;font-weight:700}";
+    
+    h+=".quote-block{padding:18px 22px;border-left:4px solid #00B4D8;background:linear-gradient(90deg,#fafbfc,#fff);border-radius:6px;font-style:italic;color:#333;margin-bottom:12px;font-size:13px;line-height:1.7}";
+    
+    h+="</style></head><body>";
+    
+    // ====== PÁGINA 1: CAPA ======
+    h+="<div class='page'><div class='cover'>";
+    h+="<div class='cover-bg-circle'></div>";
+    h+="<div class='cover-bg-circle-2'></div>";
+    h+="<div class='cover-content'>";
+    h+="<img src='"+LOGO+"' class='cover-logo' alt='Sunny'/>";
+    h+="<div class='cover-eyebrow'>"+L.title+"</div>";
+    h+="<div class='cover-title'>Q"+(Math.ceil((new Date(reportData.endDate+"T12:00").getMonth()+1)/3))+"</div>";
+    h+="<div class='cover-year'>"+yr+"</div>";
+    h+="<div class='cover-divider'></div>";
+    h+="<div class='cover-client-label'>"+L.preparedFor+"</div>";
+    h+="<div class='cover-client'>"+reportData.client+"</div>";
+    h+="<div class='cover-period-detail'>"+periodLabel+"</div>";
+    h+="</div>";
+    h+="<div class='cover-bottom'><strong style='color:#0094B0'>"+co.name+"</strong> · "+(co.phone||"")+" · "+(co.site||co.email||"")+"</div>";
+    h+="</div></div>";
+    
+    const innerHeader=()=>{return "<div class='header'><div class='header-brand'><img src='"+LOGO+"' class='header-logo'/><div><div class='header-name'>"+co.name.toUpperCase()+"</div></div></div><div class='header-meta'><strong>"+reportData.client+"</strong><br/>"+periodLabel+"</div></div>";};
+    const innerFooter=(pgNum)=>{return "<div class='footer'><div>"+L.confidential+"</div><div>"+L.page+" "+pgNum+"</div></div>";};
+    
+    const renderTrend=(diff,suffix,reverse)=>{
+      if(diff===null||diff===undefined)return "";
+      const isUp=reverse?diff<0:diff>0;
+      const isDown=reverse?diff>0:diff<0;
+      const arrow=Math.abs(diff)<0.01?"→":isUp?"↑":"↓";
+      const cls=Math.abs(diff)<0.01?"trend-flat":isUp?"trend-up":"trend-down";
+      const sign=diff>0?"+":"";
+      return "<div class='kpi-hero-trend'><div class='kpi-hero-trend-val "+cls+"'>"+arrow+" "+sign+diff+(suffix||"")+"</div><div class='kpi-hero-trend-label'>"+L.vs+"</div></div>";
+    };
+    
+    let pgNum=2;
+    
+    // ====== PÁGINA 2: HERO STATS ======
+    h+="<div class='page inner'>";
+    h+=innerHeader();
+    h+="<div class='hero-section'>";
+    h+="<div class='hero-eyebrow'>"+periodLabel+"</div>";
+    h+="<div class='hero-title'>"+L.executive+"</div>";
+    h+="<div class='hero-subtitle'>"+(lang==="en"?"What we delivered this quarter":lang==="es"?"Lo que entregamos este trimestre":"O que entregamos este trimestre")+"</div>";
+    h+="</div>";
+    
+    h+="<div class='kpi-hero-grid'>";
+    // KPI 1: Turnovers
+    h+="<div class='kpi-hero'><svg class='kpi-icon-svg' viewBox='0 0 54 54'><circle cx='27' cy='27' r='27' fill='#00B4D8'/><path d='M17 27 L24 34 L37 21' stroke='#fff' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+    h+="<div class='kpi-hero-left'><div class='kpi-hero-value'>"+reportData.kpis.totalTurnovers+"</div><div class='kpi-hero-label'>"+L.cleaningsDeliveredOnTime+"</div><div class='kpi-hero-sub'>"+L.cleaningsSub+"</div></div>";
+    h+=renderTrend(diffTurnovers,"");
+    h+="</div>";
+    
+    // KPI 2: Score
+    if(reportData.kpis.overallScore){
+      h+="<div class='kpi-hero'><svg class='kpi-icon-svg' viewBox='0 0 54 54'><circle cx='27' cy='27' r='27' fill='#0094B0'/><path d='M27 12 L31 22 L42 22 L33 29 L36 40 L27 33 L18 40 L21 29 L12 22 L23 22 Z' fill='#fff'/></svg>";
+      h+="<div class='kpi-hero-left'><div class='kpi-hero-value'>"+reportData.kpis.overallScore+"<span style='font-size:32px;color:#888;font-weight:700'>/100</span></div><div class='kpi-hero-label'>"+L.reached+"</div><div class='kpi-hero-sub'>"+L.scoreSub+"</div></div>";
+      h+=renderTrend(diffScore,"");
+      h+="</div>";
+    }
+    
+    // KPI 3: Issues evited OR Zero blocks
+    if(reportData.kpis.totalBlocked===0){
+      h+="<div class='kpi-hero' style='background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left-color:#15803d'><svg class='kpi-icon-svg' viewBox='0 0 54 54'><circle cx='27' cy='27' r='27' fill='#15803d'/><path d='M27 14 L40 20 L40 30 C40 38 33 44 27 46 C21 44 14 38 14 30 L14 20 Z' fill='#fff'/><path d='M22 28 L26 32 L34 24' stroke='#15803d' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+      h+="<div class='kpi-hero-left'><div class='kpi-hero-value' style='color:#15803d'>0</div><div class='kpi-hero-label' style='color:#15803d'>"+L.zeroBlocks+"</div><div class='kpi-hero-sub'>"+L.issuesSub+"</div></div>";
+      h+="</div>";
+    }else{
+      h+="<div class='kpi-hero'><svg class='kpi-icon-svg' viewBox='0 0 54 54'><circle cx='27' cy='27' r='27' fill='#0094B0'/><path d='M27 14 L40 20 L40 30 C40 38 33 44 27 46 C21 44 14 38 14 30 L14 20 Z' fill='#fff'/></svg>";
+      h+="<div class='kpi-hero-left'><div class='kpi-hero-value'>"+reportData.kpis.issuesEvited+"</div><div class='kpi-hero-label'>"+L.issuesEvited+"</div><div class='kpi-hero-sub'>"+L.issuesSub+"</div></div>";
+      h+="</div>";
+    }
+    h+="</div>";
+    
+    if(reportAiTexts.resumoExecutivo){h+="<p class='prose' style='margin-top:24px'>"+reportAiTexts.resumoExecutivo.replace(/\n/g,"<br/>")+"</p>";}
+    
+    h+=innerFooter(pgNum)+"</div>";
+    pgNum++;
+    
+    // ====== PÁGINA 3: ACHIEVEMENTS + QUOTE + STORYLINE ======
+    h+="<div class='page inner'>";
+    h+=innerHeader();
+    h+="<div class='hero-section'>";
+    h+="<div class='hero-eyebrow'>"+L.achievements+"</div>";
+    h+="<div class='hero-title'>"+L.highlights+"</div>";
+    h+="</div>";
+    
+    // Achievement grid (max 4)
+    if(reportData.achievements&&reportData.achievements.length>0){
+      h+="<div class='achievement-grid'>";
+      reportData.achievements.slice(0,4).forEach(a=>{
+        h+="<div class='achievement-card'>";
+        h+="<div class='achievement-icon'>"+a.icon+"</div>";
+        h+="<div class='achievement-value'>"+a.value+"</div>";
+        h+="<div class='achievement-title'>"+a.title+"</div>";
+        h+="<div class='achievement-sub'>"+a.sub+"</div>";
+        h+="</div>";
+      });
+      h+="</div>";
+    }
+    
+    // Featured quote (only if promoter)
+    if(reportData.featuredQuote){
+      h+="<div class='quote-section'>";
+      h+="<div class='quote-text'>"+reportData.featuredQuote+"</div>";
+      h+="<div class='quote-author'>— "+reportData.client+"</div>";
+      h+="</div>";
+    }
+    
+    // Storyline mensal (se tiver dados de evolução)
+    if(reportData.monthlyEvolution&&reportData.monthlyEvolution.length>=2){
+      const monthNames={pt:["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"],en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],es:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]};
+      const mn=monthNames[lang]||monthNames.pt;
+      h+="<div class='story-section'>";
+      h+="<div class='section-title'>"+L.story+"</div>";
+      h+="<div class='story-timeline'>";
+      reportData.monthlyEvolution.forEach((m,i)=>{
+        const monthIdx=parseInt(m.month.slice(5,7))-1;
+        h+="<div class='story-item'>";
+        h+="<div class='story-dot'>";
+        if(i<reportData.monthlyEvolution.length-1)h+="<div class='story-line'></div>";
+        h+="</div>";
+        h+="<div class='story-month'>"+mn[monthIdx]+" "+m.month.slice(2,4)+"</div>";
+        h+="<div class='story-score' style='color:"+(m.score>=90?"#15803d":m.score>=75?"#a16207":"#b91c1c")+"'>"+m.score+"</div>";
+        h+="<div class='story-detail'>"+m.count+" "+(lang==="en"?"inspections":lang==="es"?"inspecciones":"inspeções")+"</div>";
+        h+="</div>";
+      });
+      h+="</div></div>";
+    }
+    
+    if(reportAiTexts.highlights){h+="<p class='prose' style='margin-top:20px'>"+reportAiTexts.highlights.replace(/\n/g,"<br/>")+"</p>";}
+    
+    h+=innerFooter(pgNum)+"</div>";
+    pgNum++;
+    
+    // ====== PÁGINA 4: PERFORMANCE POR CASA + PIZZA ======
+    const ROWS_PER_PAGE=14;
+    const totalInsp=reportData.scoreDist.excellent+reportData.scoreDist.good+reportData.scoreDist.attention;
+    
+    const tableHeader="<table><thead><tr><th>"+L.house+"</th><th style='text-align:center'>"+L.turnoversCol+"</th><th style='text-align:center'>"+L.scoreCol+"</th><th>"+L.notes+"</th></tr></thead><tbody>";
+    const renderRow=(hp)=>{
+      const scoreBadge=hp.avgScore===null?"<span class='badge'>—</span>":hp.avgScore>=90?"<span class='badge badge-ok'>"+hp.avgScore+"</span>":hp.avgScore>=75?"<span class='badge badge-warn'>"+hp.avgScore+"</span>":"<span class='badge badge-bad'>"+hp.avgScore+"</span>";
+      const obs=hp.blocked>0?hp.blocked+" "+L.blocked:hp.critFails>0?hp.critFails+" "+L.critFails:hp.avgScore>=95?"⭐":"";
+      return "<tr><td><strong>"+hp.name+"</strong></td><td style='text-align:center'>"+hp.turnovers+"</td><td style='text-align:center'>"+scoreBadge+"</td><td>"+obs+"</td></tr>";
+    };
+    
+    if(reportData.housePerf.length<=10){
+      h+="<div class='page inner'>";
+      h+=innerHeader();
+      h+="<div class='hero-section'>";
+      h+="<div class='hero-eyebrow'>"+L.performance+"</div>";
+      h+="<div class='hero-title'>"+reportData.housePerf.length+" "+(lang==="en"?"properties":lang==="es"?"propiedades":"propriedades")+"</div>";
+      h+="</div>";
+      if(totalInsp>0){
+        h+="<div class='chart-card'><div class='chart-title'>"+L.scoreDistribution+"</div>";
+        h+="<div style='display:flex;align-items:center;gap:24px;justify-content:center'>";
+        h+="<div>"+svgPieChart([{value:reportData.scoreDist.excellent,color:"#4ADE80"},{value:reportData.scoreDist.good,color:"#FFB547"},{value:reportData.scoreDist.attention,color:"#FF6B6B"}],150)+"</div>";
+        h+="<div class='pie-legend'>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#4ADE80'></span><span class='pie-legend-bold'>"+reportData.scoreDist.excellent+"</span><span>"+L.excellent+" (90-100)</span></div>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#FFB547'></span><span class='pie-legend-bold'>"+reportData.scoreDist.good+"</span><span>"+L.good+" (75-89)</span></div>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#FF6B6B'></span><span class='pie-legend-bold'>"+reportData.scoreDist.attention+"</span><span>"+L.attention+" (<75)</span></div>";
+        h+="</div></div></div>";
+      }
+      h+=tableHeader;
+      reportData.housePerf.forEach(hp=>{h+=renderRow(hp);});
+      h+="</tbody></table>";
+      h+=innerFooter(pgNum)+"</div>";
+      pgNum++;
+    }else{
+      h+="<div class='page inner'>";
+      h+=innerHeader();
+      h+="<div class='hero-section'>";
+      h+="<div class='hero-eyebrow'>"+L.performance+"</div>";
+      h+="<div class='hero-title'>"+reportData.housePerf.length+" "+(lang==="en"?"properties":lang==="es"?"propiedades":"propriedades")+"</div>";
+      h+="</div>";
+      if(totalInsp>0){
+        h+="<div class='chart-card'><div class='chart-title'>"+L.scoreDistribution+"</div>";
+        h+="<div style='display:flex;align-items:center;gap:24px;justify-content:center'>";
+        h+="<div>"+svgPieChart([{value:reportData.scoreDist.excellent,color:"#4ADE80"},{value:reportData.scoreDist.good,color:"#FFB547"},{value:reportData.scoreDist.attention,color:"#FF6B6B"}],170)+"</div>";
+        h+="<div class='pie-legend'>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#4ADE80'></span><span class='pie-legend-bold'>"+reportData.scoreDist.excellent+"</span><span>"+L.excellent+" (90-100)</span></div>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#FFB547'></span><span class='pie-legend-bold'>"+reportData.scoreDist.good+"</span><span>"+L.good+" (75-89)</span></div>";
+        h+="<div class='pie-legend-item'><span class='pie-dot' style='background:#FF6B6B'></span><span class='pie-legend-bold'>"+reportData.scoreDist.attention+"</span><span>"+L.attention+" (<75)</span></div>";
+        h+="</div></div></div>";
+      }
+      h+=tableHeader;
+      reportData.housePerf.slice(0,8).forEach(hp=>{h+=renderRow(hp);});
+      h+="</tbody></table>";
+      h+=innerFooter(pgNum)+"</div>";
+      pgNum++;
+      const remaining=reportData.housePerf.slice(8);
+      for(let i=0;i<remaining.length;i+=ROWS_PER_PAGE){
+        const chunk=remaining.slice(i,i+ROWS_PER_PAGE);
+        h+="<div class='page inner'>";
+        h+=innerHeader();
+        h+="<div class='hero-section'>";
+        h+="<div class='hero-eyebrow'>"+L.performance+"</div>";
+        h+="<div class='hero-title' style='font-size:24px'>"+(lang==="en"?"continued":lang==="es"?"continuación":"continuação")+"</div>";
+        h+="</div>";
+        h+=tableHeader;
+        chunk.forEach(hp=>{h+=renderRow(hp);});
+        h+="</tbody></table>";
+        h+=innerFooter(pgNum)+"</div>";
+        pgNum++;
+      }
+    }
+    
+    // ====== PÁGINA 5: GRÁFICOS - EVOLUÇÃO + TOP CASAS ======
+    h+="<div class='page inner'>";
+    h+=innerHeader();
+    h+="<div class='hero-section'>";
+    h+="<div class='hero-eyebrow'>"+(lang==="en"?"DATA STORY":lang==="es"?"HISTORIA DE DATOS":"HISTÓRIA DOS DADOS")+"</div>";
+    h+="<div class='hero-title'>"+(lang==="en"?"Visual Insights":lang==="es"?"Insights Visuales":"Insights Visuais")+"</div>";
+    h+="</div>";
+    
+    if(reportData.monthlyEvolution.length>=2){
+      h+="<div class='chart-card'><div class='chart-title'>"+L.scoreEvolution+"</div>";
+      h+="<div style='display:flex;justify-content:center'>"+svgLineChart(reportData.monthlyEvolution,500,200,lang)+"</div>";
+      h+="</div>";
+    }
+    
+    if(reportData.top10Houses.length>0){
+      h+="<div class='chart-card'><div class='chart-title'>"+L.topHouses+"</div>";
+      h+=svgBarChart(reportData.top10Houses.slice(0,8).map(t=>({label:t.name,value:t.turnovers})),480,220);
+      h+="</div>";
+    }
+    
+    if(reportData.nps.comments&&reportData.nps.comments.length>0&&!reportData.featuredQuote){
+      h+="<div class='section-title'>"+L.yourFeedback+"</div>";
+      reportData.nps.comments.slice(0,2).forEach(c=>{h+="<div class='quote-block'>\""+c+"\"</div>";});
+    }
+    
+    h+=innerFooter(pgNum)+"</div>";
+    pgNum++;
+    
+    // ====== PÁGINA 6: RECOMENDAÇÕES ======
+    h+="<div class='page inner'>";
+    h+=innerHeader();
+    h+="<div class='hero-section'>";
+    h+="<div class='hero-eyebrow'>"+(lang==="en"?"LOOKING FORWARD":lang==="es"?"MIRANDO ADELANTE":"OLHANDO PRA FRENTE")+"</div>";
+    h+="<div class='hero-title'>"+L.recommendations+"</div>";
+    h+="</div>";
+    
+    if(reportAiTexts.recomendacoes){
+      const recs=reportAiTexts.recomendacoes.split(/\n+/).filter(l=>l.trim());
+      recs.forEach(r=>{h+="<div class='reco-item'>"+r.replace(/^[-•*\d+.\s)]+/,"").trim()+"</div>";});
+    }
+    
+    h+="<div class='thanks-section'><div class='thanks-title'>"+L.thanks+"</div><div class='thanks-sub'>"+L.thanksSub+"<br/>"+L.weAreReady+"</div>";
+    h+="<div class='thanks-contact'><strong>"+L.contactUs+":</strong> "+(co.phone||"")+" · "+(co.email||"")+"</div></div>";
+    h+="<div class='footer'><div>"+L.confidential+"</div><div>"+L.page+" "+pgNum+"</div></div>";
+    h+="</div>";
+    
+    h+="</body></html>";
+    w.document.write(h);
+    w.document.close();
+    setTimeout(()=>w.print(),800);
+    fl("📄 PDF aberto em nova aba");
+  };
+
+  
+  return <>
+    <Card>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:14}}>📈 Novo Relatório Trimestral</div>
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10,marginBottom:12}}>
+        <div><label style={lb}>Cliente *</label>
+          <select value={reportConfig.client} onChange={e=>setReportConfig({...reportConfig,client:e.target.value})} style={{...sel,width:"100%"}}>
+            <option value="">— Selecione —</option>
+            {activeClients.map(c=><option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div><label style={lb}>Data inicial *</label><DI value={reportConfig.startDate} onChange={e=>setReportConfig({...reportConfig,startDate:e.target.value})} style={{...inp,width:"100%"}}/></div>
+        <div><label style={lb}>Data final *</label><DI value={reportConfig.endDate} onChange={e=>setReportConfig({...reportConfig,endDate:e.target.value})} style={{...inp,width:"100%"}}/></div>
+        <div><label style={lb}>Idioma</label>
+          <select value={reportConfig.lang} onChange={e=>setReportConfig({...reportConfig,lang:e.target.value})} style={{...sel,width:"100%"}}>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button onClick={generateReportData} style={bt(T.ac,T.bg,{padding:"10px 18px",fontSize:12,borderRadius:8,fontWeight:700})}>1️⃣ Carregar Dados</button>
+        <button onClick={generateAITexts} disabled={!reportData||reportGenerating} style={bt(T.pu,"#fff",{padding:"10px 18px",fontSize:12,borderRadius:8,fontWeight:700,opacity:!reportData||reportGenerating?0.4:1})}>{reportGenerating?"⏳ Gerando...":"2️⃣ Gerar Textos (AI)"}</button>
+        <button onClick={generatePDF} disabled={!reportData} style={bt(T.gr,T.bg,{padding:"10px 18px",fontSize:12,borderRadius:8,fontWeight:700,opacity:!reportData?0.4:1})}>3️⃣ Gerar PDF</button>
+      </div>
+    </Card>
+    
+    {reportData&&<Card>
+      <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>📊 Preview dos Dados — {reportData.client}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8,marginBottom:14}}>
+        {[
+          {l:"Turnovers",v:reportData.kpis.totalTurnovers,cl:T.ac},
+          {l:"Score Médio",v:reportData.kpis.overallScore||"—",cl:reportData.kpis.overallScore>=90?T.gr:reportData.kpis.overallScore>=75?T.or:T.rd},
+          {l:"Issues Evitados",v:reportData.kpis.issuesEvited,cl:T.gr},
+          {l:"Bloqueios",v:reportData.kpis.totalBlocked,cl:reportData.kpis.totalBlocked>0?T.rd:T.dm},
+          {l:"NPS",v:reportData.nps.avg||"—",cl:reportData.nps.avg>=9?T.gr:reportData.nps.avg>=7?T.or:T.dm},
+          {l:"Casas",v:reportData.kpis.housesCount,cl:T.ac}
+        ].map((s,i)=><div key={i} style={{background:T.bg,borderRadius:8,padding:"10px 12px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:600,textTransform:"uppercase",marginBottom:3}}>{s.l}</div><div style={{fontSize:18,fontWeight:800,color:s.cl}}>{s.v}</div></div>)}
+      </div>
+      
+      <details style={{marginBottom:10}}><summary style={{cursor:"pointer",fontSize:11,fontWeight:600,color:T.dm,padding:6}}>▾ Performance por Casa ({reportData.housePerf.length})</summary>
+        <div style={{padding:"8px 0",marginTop:6}}>
+          {reportData.housePerf.map((h,i)=><div key={i} style={{padding:"8px 10px",borderBottom:"1px solid "+T.bd,display:"grid",gridTemplateColumns:"2fr 1fr 1fr 2fr",gap:8,alignItems:"center",fontSize:11}}>
+            <div style={{fontWeight:600}}>{h.name}</div>
+            <div style={{textAlign:"center",color:T.dm}}>{h.turnovers} turn.</div>
+            <div style={{textAlign:"center",fontWeight:700,color:h.avgScore>=90?T.gr:h.avgScore>=75?T.or:h.avgScore?T.rd:T.dm}}>{h.avgScore||"—"}</div>
+            <div style={{fontSize:10,color:T.dm}}>{h.blocked>0&&"🚫 "+h.blocked+" bloq · "}{h.critFails>0&&"⚠️ "+h.critFails+" crít"}</div>
+          </div>)}
+        </div>
+      </details>
+    </Card>}
+    
+    {reportAiTexts.resumoExecutivo!==undefined&&<Card>
+      <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>✍️ Editar Textos (gerados por AI)</div>
+      <div style={{fontSize:10,color:T.dm,marginBottom:14}}>Você pode ajustar os textos antes de gerar o PDF</div>
+      {[
+        ["resumoExecutivo","📝 Resumo Executivo"],
+        ["highlights","⭐ Highlights"],
+        ["recomendacoes","📋 Recomendações"]
+      ].map(([k,l])=><div key={k} style={{marginBottom:12}}>
+        <label style={lb}>{l}</label>
+        <textarea value={reportAiTexts[k]||""} onChange={e=>setReportAiTexts({...reportAiTexts,[k]:e.target.value})} style={{...inp,width:"100%",minHeight:k==="recomendacoes"?100:70,resize:"vertical",fontSize:12,lineHeight:1.5}} rows={4}/>
+      </div>)}
+    </Card>}
+    
+    {!reportData&&<Card style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}>
+      <div style={{fontSize:36,marginBottom:10}}>📈</div>
+      <div style={{marginBottom:6}}>Gere relatórios trimestrais profissionais para seus clientes</div>
+      <div style={{fontSize:10,color:T.dm}}>Selecione cliente + período acima e clique em "Carregar Dados"</div>
+    </Card>}
+  </>;
+})()}
 
 </div>;})()}
 
