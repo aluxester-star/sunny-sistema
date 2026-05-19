@@ -698,6 +698,8 @@ const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFM
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:getLocalDate(),dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
 const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");const[trash,setTrash]=useState([]);
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
+const[weekStartDate,setWeekStartDate]=useState(()=>{const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");});
+const[weekDetailModal,setWeekDetailModal]=useState(null);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Lavanderia"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
 const[customFinCats,setCustomFinCats]=useState([]);
 const[fSearch,setFSearch]=useState("");const[fType,setFType]=useState("todos");const[fCat,setFCat]=useState("");const[rptMo,setRptMo]=useState(MO[new Date().getMonth()]);const[rptSub,setRptSub]=useState("resumo");const[taxYear,setTaxYear]=useState(new Date().getFullYear());const[dcList,setDcList]=useState([]);const[dcFilter,setDcFilter]=useState("all");const[dcImport,setDcImport]=useState(null);const[dcSched,setDcSched]=useState(null);const[dcCheck,setDcCheck]=useState(null);const[inviteModal,setInviteModal]=useState(null);const[userListModal,setUserListModal]=useState(null);const[manualData,setManualData]=useState({});const[manualFilter,setManualFilter]=useState("");const[manualEdit,setManualEdit]=useState(null);const[manualSub,setManualSub]=useState("casas");const[sops,setSops]=useState([]);const[sopEdit,setSopEdit]=useState(null);const[sopChat,setSopChat]=useState([]);const[sopLoading,setSopLoading]=useState(false);const[sopCatExpanded,setSopCatExpanded]=useState({Limpeza:true,Lavanderia:true,"Inspeção":true,"Manutenção":true,Atendimento:true,"RH/Treinamento":true,Administrativo:true});const[sopAiMode,setSopAiMode]=useState(null);const[escData,setEscData]=useState({startDate:"2026-03-01",teams:[{id:"A",name:"Dupla A",members:[]},{id:"B",name:"Dupla B",members:[]}],bonusDays:[],scores:{}});const[escMonth,setEscMonth]=useState(new Date().getMonth());const[escYear,setEscYear]=useState(new Date().getFullYear());const[escView,setEscView]=useState("calendar");const[escCalView,setEscCalView]=useState("month");const[escWeekStart,setEscWeekStart]=useState(0);const[escDayDetail,setEscDayDetail]=useState(null);const[escEdit,setEscEdit]=useState(null);const[editFinId,setEditFinId]=useState(null);const[editFinData,setEditFinData]=useState({});
@@ -708,6 +710,7 @@ const[empForm,setEmpForm]=useState({name:"",phone:"",email:"",address:"",type:"F
 const[empRoles,setEmpRoles]=useState([]);const[teamSub,setTeamSub]=useState("list");const[roleForm,setRoleForm]=useState(null);const[quickEmpModal,setQuickEmpModal]=useState(null);const[inclSporadics,setInclSporadics]=useState(false);
 const[empInvites,setEmpInvites]=useState({});const[empInviteModal,setEmpInviteModal]=useState(null);const[empPendingReview,setEmpPendingReview]=useState(null);
 const[icalSyncing,setIcalSyncing]=useState(false);const[icalTestModal,setIcalTestModal]=useState(null);const[icalSyncLog,setIcalSyncLog]=useState([]);
+const[invConfigModal,setInvConfigModal]=useState(null);const[invSub,setInvSub]=useState("invoices");const[payrollSub,setPayrollSub]=useState("payroll");const[autoTriggers,setAutoTriggers]=useState([]);
 const[strategySub,setStrategySub]=useState("kpis");const[reportConfig,setReportConfig]=useState({client:"",startDate:"",endDate:"",lang:"pt"});const[reportData,setReportData]=useState(null);const[reportAiTexts,setReportAiTexts]=useState({});const[reportGenerating,setReportGenerating]=useState(false);
 const[editEmpIdx,setEditEmpIdx]=useState(null);const[editEmpData,setEditEmpData]=useState({});
 const[showSSN,setShowSSN]=useState({});
@@ -748,6 +751,7 @@ try{const r=await FB.get("sops3");if(r&&r.value)setSops(JSON.parse(r.value));}ca
 try{const r=await FB.get("fb_campaigns");if(r&&r.value)setFbCampaigns(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("emp_invites");if(r&&r.value)setEmpInvites(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ical_sync_log");if(r&&r.value)setIcalSyncLog(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("auto_triggers");if(r&&r.value)setAutoTriggers(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("emp_roles");if(r&&r.value){setEmpRoles(JSON.parse(r.value));}else{const defaults=[{id:"r_cleaner",name:"Cleaner",icon:"🧹",color:"#00B4D8",feedback:"cleaner_fixo",inPayroll:true,sporadic:false},{id:"r_manager",name:"Manager",icon:"👔",color:"#A855F7",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_supervisor",name:"Supervisor",icon:"🎯",color:"#3B82F6",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_qi",name:"Quality Inspector",icon:"🔍",color:"#10B981",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_trainer",name:"Trainer",icon:"🎓",color:"#EAB308",feedback:"",inPayroll:true,sporadic:false},{id:"r_sporadic",name:"Cleaner Esporádico",icon:"⚡",color:"#F97316",feedback:"",inPayroll:false,sporadic:true},{id:"r_external",name:"Ajudante Externo",icon:"🤝",color:"#6B7280",feedback:"",inPayroll:false,sporadic:true}];setEmpRoles(defaults);await FB.set("emp_roles",JSON.stringify(defaults));}}catch{}
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
@@ -1120,6 +1124,228 @@ const disconnectICal=async(houseId)=>{
   setDb(updated);
   await sv("db3",updated);
   fl("iCal desconectado");
+};
+
+// ========== AUTO-FATURAMENTO & FOLHA ==========
+const getClientInvoiceConfig=(client)=>{
+  const allConfigs=(co.clientInvoiceConfig||{});
+  return allConfigs[client]||{frequency:"none",dayOfWeek:5,dayOfMonth:30,autoCreate:false};
+};
+
+const saveClientInvoiceConfig=async(client,config)=>{
+  const allConfigs={...(co.clientInvoiceConfig||{})};
+  allConfigs[client]=config;
+  const updated={...co,clientInvoiceConfig:allConfigs};
+  setCo(updated);
+  await sv("co3",updated);
+};
+
+const getPayrollConfig=()=>{
+  return co.payrollConfig||{frequency:"weekly",dayOfWeek:5,autoCreate:false};
+};
+
+const savePayrollConfig=async(config)=>{
+  const updated={...co,payrollConfig:config};
+  setCo(updated);
+  await sv("co3",updated);
+};
+
+// Detectar invoices pendentes para gerar HOJE
+const getInvoicesDueToday=()=>{
+  const allConfigs=co.clientInvoiceConfig||{};
+  const today=new Date();
+  const todayDow=today.getDay(); // 0=dom, 1=seg, ..., 6=sab
+  const todayDate=today.getDate();
+  const todayStr=getLocalDate();
+  const due=[];
+  
+  Object.entries(allConfigs).forEach(([client,cfg])=>{
+    if(!cfg.frequency||cfg.frequency==="none")return;
+    let shouldGenerate=false;
+    let periodStart=null,periodEnd=null;
+    
+    if(cfg.frequency==="weekly"&&cfg.dayOfWeek===todayDow){
+      // semana anterior (mesma DOW da semana passada até ontem)
+      const end=new Date(today);end.setDate(end.getDate()-1);
+      const start=new Date(end);start.setDate(start.getDate()-6);
+      periodStart=start.toISOString().slice(0,10);
+      periodEnd=end.toISOString().slice(0,10);
+      shouldGenerate=true;
+    }else if(cfg.frequency==="biweekly"&&cfg.dayOfWeek===todayDow){
+      // 14 dias atrás
+      const end=new Date(today);end.setDate(end.getDate()-1);
+      const start=new Date(end);start.setDate(start.getDate()-13);
+      periodStart=start.toISOString().slice(0,10);
+      periodEnd=end.toISOString().slice(0,10);
+      // Verifica se já foi gerado nesta semana (evita duplicidade quinzenal)
+      const lastDraft=autoTriggers.find(t=>t.client===client&&t.type==="invoice"&&t.createdAt&&new Date(t.createdAt)>new Date(Date.now()-7*86400000));
+      if(lastDraft)shouldGenerate=false;
+      else shouldGenerate=true;
+    }else if(cfg.frequency==="monthly"&&cfg.dayOfMonth===todayDate){
+      // mês anterior
+      const end=new Date(today.getFullYear(),today.getMonth(),0); // último dia mês passado
+      const start=new Date(today.getFullYear(),today.getMonth()-1,1);
+      periodStart=start.toISOString().slice(0,10);
+      periodEnd=end.toISOString().slice(0,10);
+      shouldGenerate=true;
+    }
+    
+    if(shouldGenerate&&periodStart&&periodEnd){
+      // Contar turnovers do cliente no período
+      const houses=db.filter(p=>p.c===client).map(p=>p.n);
+      const periodTurnovers=agEvents.filter(e=>e.house&&houses.includes(e.house)&&e.date>=periodStart&&e.date<=periodEnd);
+      const total=periodTurnovers.reduce((s,e)=>{const prop=db.find(p=>p.n===e.house&&p.c===client);return s+(prop?prop.ip||0:0);},0);
+      // Verifica se já tem invoice deste período pra este cliente
+      const alreadyExists=sI.find(i=>i.client===client&&i.autoPeriodStart===periodStart&&i.autoPeriodEnd===periodEnd);
+      // Verifica se já tem trigger registrado
+      const alreadyTriggered=autoTriggers.find(t=>t.type==="invoice"&&t.client===client&&t.periodStart===periodStart&&t.periodEnd===periodEnd);
+      
+      due.push({
+        client,
+        config:cfg,
+        periodStart,periodEnd,
+        turnoverCount:periodTurnovers.length,
+        total,
+        turnovers:periodTurnovers,
+        alreadyGenerated:!!alreadyExists,
+        alreadyTriggered:!!alreadyTriggered
+      });
+    }
+  });
+  
+  return due;
+};
+
+const getPayrollDueToday=()=>{
+  const cfg=getPayrollConfig();
+  if(!cfg.frequency||cfg.frequency==="none")return null;
+  const today=new Date();
+  const todayDow=today.getDay();
+  const todayDate=today.getDate();
+  
+  let shouldGenerate=false;
+  let periodStart=null,periodEnd=null;
+  let monthLabel="";
+  
+  if(cfg.frequency==="weekly"&&cfg.dayOfWeek===todayDow){
+    const end=new Date(today);end.setDate(end.getDate()-1);
+    const start=new Date(end);start.setDate(start.getDate()-6);
+    periodStart=start.toISOString().slice(0,10);
+    periodEnd=end.toISOString().slice(0,10);
+    monthLabel=MO[today.getMonth()];
+    shouldGenerate=true;
+  }else if(cfg.frequency==="monthly"&&cfg.dayOfMonth===todayDate){
+    const end=new Date(today.getFullYear(),today.getMonth(),0);
+    const start=new Date(today.getFullYear(),today.getMonth()-1,1);
+    periodStart=start.toISOString().slice(0,10);
+    periodEnd=end.toISOString().slice(0,10);
+    monthLabel=MO[end.getMonth()];
+    shouldGenerate=true;
+  }
+  
+  if(!shouldGenerate)return null;
+  
+  // Contar turnovers da semana por cleaner fixo
+  const fixedCleaners=empProfiles.filter(p=>p.type==="Fixo");
+  const periodEvents=agEvents.filter(e=>e.date>=periodStart&&e.date<=periodEnd&&e.employees&&e.employees.length>0);
+  const byCleaner={};
+  fixedCleaners.forEach(c=>{
+    const cleanerEvents=periodEvents.filter(e=>e.employees.includes(c.name));
+    if(cleanerEvents.length>0){
+      let total=0;
+      cleanerEvents.forEach(e=>{
+        const prop=db.find(p=>p.n===e.house);
+        const ep=prop?prop.ep||0:0;
+        total+=Math.round(ep/(e.employees.length||1)*100)/100;
+      });
+      byCleaner[c.name]={houses:cleanerEvents.length,total};
+    }
+  });
+  
+  const alreadyTriggered=autoTriggers.find(t=>t.type==="payroll"&&t.periodStart===periodStart&&t.periodEnd===periodEnd);
+  
+  return {
+    config:cfg,
+    periodStart,periodEnd,monthLabel,
+    cleanerCount:Object.keys(byCleaner).length,
+    totalAmount:Object.values(byCleaner).reduce((s,c)=>s+c.total,0),
+    byCleaner,
+    alreadyTriggered:!!alreadyTriggered
+  };
+};
+
+const generateAutoInvoice=async(item)=>{
+  const{client,periodStart,periodEnd,turnovers,total}=item;
+  // Próximo número de invoice
+  const maxNo=sI.reduce((m,i)=>{const n=parseInt(i.no||"0");return n>m?n:m;},0);
+  const newNo=String(maxNo+1);
+  // Itens: 1 por turnover
+  const items=turnovers.map(ev=>{
+    const prop=db.find(p=>p.n===ev.house&&p.c===client);
+    const price=prop?prop.ip||0:0;
+    return {desc:ev.house+" — "+(ev.type||"Turnover")+" "+ev.date,qty:1,price};
+  });
+  const newInv={
+    id:Date.now(),
+    no:newNo,
+    date:getLocalDate(),
+    client,
+    items,
+    total,
+    at:new Date().toISOString(),
+    status:"rascunho",
+    autoGenerated:true,
+    autoPeriodStart:periodStart,
+    autoPeriodEnd:periodEnd
+  };
+  const updated=[newInv,...sI];
+  setSI(updated);
+  await sv("si3",updated);
+  // Registrar trigger
+  const newTrigger={id:Date.now(),type:"invoice",client,periodStart,periodEnd,createdAt:new Date().toISOString(),invoiceId:newInv.id,total};
+  const updatedTriggers=[newTrigger,...autoTriggers].slice(0,100);
+  setAutoTriggers(updatedTriggers);
+  await sv("auto_triggers",JSON.stringify(updatedTriggers));
+  return newInv;
+};
+
+const generateAllPendingInvoices=async()=>{
+  const due=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTriggered&&d.turnoverCount>0);
+  if(due.length===0){fl("Nenhum invoice pendente");return;}
+  let count=0;
+  for(const item of due){
+    await generateAutoInvoice(item);
+    count++;
+  }
+  fl("✅ "+count+" invoice(s) gerado(s) como rascunho!");
+};
+
+const generateAutoPayroll=async(payroll)=>{
+  const{periodStart,periodEnd,monthLabel,byCleaner}=payroll;
+  // Criar entradas em sP
+  const newEntries=Object.entries(byCleaner).map(([cleaner,data])=>({
+    id:Date.now()+Math.random(),
+    emp:cleaner,
+    month:monthLabel,
+    casas:data.houses,
+    total:data.total,
+    bonus:0,
+    extras:0,
+    discount:0,
+    createdAt:new Date().toISOString(),
+    autoGenerated:true,
+    autoPeriodStart:periodStart,
+    autoPeriodEnd:periodEnd
+  }));
+  const updated=[...newEntries,...sP];
+  setSP(updated);
+  await sv("sp3",updated);
+  // Registrar trigger
+  const newTrigger={id:Date.now(),type:"payroll",periodStart,periodEnd,createdAt:new Date().toISOString(),cleanerCount:newEntries.length,total:payroll.totalAmount};
+  const updatedTriggers=[newTrigger,...autoTriggers].slice(0,100);
+  setAutoTriggers(updatedTriggers);
+  await sv("auto_triggers",JSON.stringify(updatedTriggers));
+  fl("✅ Folha semanal gerada: "+newEntries.length+" cleaner(s)");
 };
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
 const addEmpProfile=async()=>{if(!empForm.name)return;const e={...empForm,id:Date.now()};const u=[...empProfiles,e];await uEP(u);
@@ -1500,6 +1726,39 @@ return groups[0].map((grp,gi)=><React.Fragment key={gi}>
 {vw==="dashboard"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>📊 Dashboard</span><div style={{display:"flex",gap:6,alignItems:"center"}}><button onClick={()=>{const nv=!darkMode;setDarkMode(nv);try{localStorage.setItem("sunny_theme",nv?"dark":"light");}catch{}}} style={{border:"none",background:darkMode?"#FFB54722":"#60A5FA22",color:darkMode?"#FFB547":"#60A5FA",padding:"6px 10px",borderRadius:8,fontSize:14,cursor:"pointer"}}>{darkMode?"☀️":"🌙"}</button><select value={fMo} onChange={e=>setFMo(e.target.value)} style={{...sel,width:"auto",minWidth:130,fontSize:11,borderRadius:8}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div></div>
 
+{/* BANNER DE AUTOMAÇÃO */}
+{(()=>{
+  const invDue=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTriggered&&d.turnoverCount>0);
+  const payDue=getPayrollDueToday();
+  const showPayroll=payDue&&!payDue.alreadyTriggered&&payDue.cleanerCount>0;
+  if(invDue.length===0&&!showPayroll)return null;
+  return <Card style={{padding:14,borderLeft:"4px solid "+T.or,background:T.or+"06"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+      <div style={{flex:1,minWidth:240}}>
+        <div style={{fontSize:13,fontWeight:800,color:T.or,marginBottom:6}}>⚡ AUTOMAÇÃO PENDENTE — Hoje</div>
+        {invDue.length>0&&<div style={{marginBottom:showPayroll?10:0}}>
+          <div style={{fontSize:11,fontWeight:700,marginBottom:4}}>📄 {invDue.length} invoice{invDue.length>1?"s":""} para gerar:</div>
+          {invDue.map((d,i)=><div key={i} style={{padding:"5px 10px",background:T.bg,borderRadius:5,marginBottom:3,fontSize:11,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span><strong>{d.client}</strong> — {d.turnoverCount} turnover{d.turnoverCount>1?"s":""}</span>
+            <strong style={{color:T.gr}}>${fm(d.total)}</strong>
+          </div>)}
+        </div>}
+        {showPayroll&&<div>
+          <div style={{fontSize:11,fontWeight:700,marginBottom:4}}>💰 Folha {payDue.config.frequency==="weekly"?"semanal":"mensal"} para gerar:</div>
+          <div style={{padding:"5px 10px",background:T.bg,borderRadius:5,fontSize:11,display:"flex",justifyContent:"space-between"}}>
+            <span><strong>{payDue.cleanerCount}</strong> cleaner{payDue.cleanerCount>1?"s":""} · período {payDue.periodStart} a {payDue.periodEnd}</span>
+            <strong style={{color:T.rd}}>${fm(payDue.totalAmount)}</strong>
+          </div>
+        </div>}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {invDue.length>0&&<button onClick={generateAllPendingInvoices} style={bt(T.ac,T.bg,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:6})}>📄 Gerar {invDue.length} Invoice{invDue.length>1?"s":""}</button>}
+        {showPayroll&&<button onClick={()=>generateAutoPayroll(payDue)} style={bt(T.gr,T.bg,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:6})}>💰 Gerar Folha</button>}
+      </div>
+    </div>
+  </Card>;
+})()}
+
 {(()=>{const pendPay=sP.filter(p=>(p.status||"paga")!=="paga").length;const pendInv=sI.filter(i=>(i.status||"emitida")==="emitida").length;const moInsp=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===fMo);const avgInsp=moInsp.length?Math.round(moInsp.reduce((s,i)=>s+i.score,0)/moInsp.length):0;const ldReady=ldHouses.filter(h=>(h.status||"PRONTA")==="PRONTA").length;const ldTotal=ldHouses.length;const rascunhos=sI.filter(i=>(i.status||"emitida")==="rascunho");const emitidas=sI.filter(i=>(i.status||"emitida")==="emitida");const prevTotal=rascunhos.reduce((s,i)=>s+i.total,0);const emitTotal=emitidas.reduce((s,i)=>s+i.total,0);return <>
 
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
@@ -1696,8 +1955,11 @@ return <Card style={{padding:18,border:"1px solid "+T.ac+"33",background:T.ac+"0
 
 {/* PAYROLL */}
 {vw==="payroll"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-<Card style={{padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span style={{fontSize:13,fontWeight:700}}>💰 Folha de Pagamento</span>
-<button onClick={()=>setAutoGen({type:"payroll",from:"",to:"",selected:[],list:em})} style={bt(T.or+"15",T.or,{padding:"5px 12px",fontSize:10})}>⚡ Gerar Folhas</button></div>
+<Card style={{padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:6}}><span style={{fontSize:13,fontWeight:700}}>💰 Folha de Pagamento</span>
+<div style={{display:"flex",gap:6}}>
+<button onClick={()=>setInvConfigModal({})} style={{padding:"5px 12px",borderRadius:6,border:"1px solid "+T.pu+"33",background:T.pu+"10",color:T.pu,fontSize:10,fontWeight:700,cursor:"pointer",position:"relative"}}>⚙️ Auto-Folha{(()=>{const p=getPayrollDueToday();if(p&&!p.alreadyTriggered&&p.cleanerCount>0)return <span style={{position:"absolute",top:-6,right:-6,width:14,height:14,borderRadius:7,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>!</span>;return null;})()}</button>
+<button onClick={()=>setAutoGen({type:"payroll",from:"",to:"",selected:[],list:em})} style={bt(T.or+"15",T.or,{padding:"5px 12px",fontSize:10})}>⚡ Gerar Folhas</button>
+</div></div>
 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:8}}>
 <div><label style={lb}>Funcionário</label><select value={sE} onChange={e=>{setSE(e.target.value);setPI([]);}} style={{...sel,fontWeight:600,background:sE?T.aD:T.cd}}><option value="">—</option>{em.map(e=><option key={e}>{e}</option>)}</select></div>
 <div><label style={lb}>De</label><DI value={wkFrom} onChange={e=>setWkFrom(e.target.value)} style={inp}/></div><div><label style={lb}>Até</label><DI value={wkTo} onChange={e=>setWkTo(e.target.value)} style={inp}/></div>
@@ -1744,8 +2006,9 @@ return <Card style={{padding:18,border:"1px solid "+T.ac+"33",background:T.ac+"0
 
 {/* INVOICE */}
 {vw==="invoice"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-<div style={{display:"flex",gap:4,marginBottom:12}}>
+<div style={{display:"flex",gap:4,marginBottom:12,alignItems:"center"}}>
 {[["inv","Invoices"],["est","Estimates"]].map(([k,l])=><button key={k} onClick={()=>setEstView(k)} style={{flex:1,padding:"8px",borderRadius:8,border:estView===k?"2px solid "+T.ac:"1.5px solid "+T.bd,background:estView===k?T.ac+"15":T.c2,color:estView===k?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+<button onClick={()=>setInvConfigModal({})} style={{padding:"8px 12px",borderRadius:8,border:"1.5px solid "+T.pu+"33",background:T.pu+"10",color:T.pu,fontSize:10,fontWeight:700,cursor:"pointer",position:"relative"}}>⚡ Auto-Faturamento{(()=>{const due=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTriggered&&d.turnoverCount>0).length;return due>0?<span style={{position:"absolute",top:-6,right:-6,minWidth:18,height:18,borderRadius:9,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{due}</span>:null;})()}</button>
 </div>
 {estView==="inv"?<div>
 
@@ -2798,6 +3061,7 @@ return(
 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
 <button onClick={newInspection} style={bt(T.ac,T.bg,{padding:"8px 16px",borderRadius:6,fontSize:11})}>+ Nova Inspeção</button>
 <button onClick={()=>setInspView("today")} style={bt(inspView==="today"?T.or:T.or+"15",inspView==="today"?T.bg:T.or,{padding:"8px 14px",borderRadius:6,fontSize:11,fontWeight:700,position:"relative"})}>🎯 Hoje{(()=>{const td=getLocalDate();const tm=getLocalDateOffset(1);const evs=agEvents.filter(e=>(e.date===td||e.date===tm)&&e.house&&e.house!=="—");const insp=inspections.filter(i=>i.date===td);const inspH=new Set(insp.map(i=>i.house));const pend=evs.filter(e=>!inspH.has(e.house)).length;return pend>0?<span style={{position:"absolute",top:-6,right:-6,minWidth:18,height:18,borderRadius:9,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{pend}</span>:null;})()}</button>
+<button onClick={()=>setInspView("week")} style={bt(inspView==="week"?T.bl:T.bl+"15",inspView==="week"?T.bg:T.bl,{padding:"8px 14px",borderRadius:6,fontSize:11,fontWeight:700})}>📅 Semana</button>
 <button onClick={()=>setInspView("ranking")} style={bt(T.pu+"15",T.pu,{padding:"8px 12px",borderRadius:6,fontSize:10})}>🏆 Ranking</button>
 <button onClick={()=>setInspView("reports")} style={bt(T.or+"15",T.or,{padding:"8px 12px",borderRadius:6,fontSize:10})}>📊 Relatórios</button>
 <select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:100,fontSize:10}}>{MO.map(m=><option key={m}>{m}</option>)}</select>
@@ -2821,7 +3085,23 @@ return(
 </div></div>);})()}</Card>
 </>}
 
-{inspView==="form"&&inspForm&&<InspForm key="inspform" init={inspForm} cls2={cls} db2={db} em2={em} agEvents2={agEvents} userName={(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())} onSave={async(ins)=>{await uInsp([ins,...inspections]);setInspForm(null);setInspView("list");fl(ins.status==="blocked"?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+ins.score);}} onCancel={()=>{setInspForm(null);setInspView("list");}}/>}
+{inspView==="form"&&inspForm&&<InspForm key="inspform" init={inspForm} cls2={cls} db2={db} em2={em} agEvents2={agEvents} userName={(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())} onSave={async(ins)=>{
+  await uInsp([ins,...inspections]);
+  // Auto-update agenda cleanStatus
+  if(ins.fromAgendaId||(ins.house&&ins.date)){
+    const inspectorName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+    const newStatus=ins.status==="blocked"?"reproved":"approved";
+    const updatedAg=agEvents.map(ev=>{
+      if(ins.fromAgendaId&&ev.id===ins.fromAgendaId){return {...ev,cleanStatus:newStatus,cleanStatusAt:new Date().toISOString(),cleanStatusBy:inspectorName,inspectedScore:ins.score};}
+      if(!ins.fromAgendaId&&ev.house===ins.house&&ev.date===ins.date){return {...ev,cleanStatus:newStatus,cleanStatusAt:new Date().toISOString(),cleanStatusBy:inspectorName,inspectedScore:ins.score};}
+      return ev;
+    });
+    await uAg(updatedAg);
+  }
+  setInspForm(null);
+  setInspView("list");
+  fl(ins.status==="blocked"?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+ins.score);
+}} onCancel={()=>{setInspForm(null);setInspView("list");}}/>}
 
 {inspView==="detail"&&inspForm&&<>
 <div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Back</button><span style={{fontSize:14,fontWeight:700}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
@@ -2840,6 +3120,159 @@ return(
 {inspForm.status==="blocked"&&<button onClick={async()=>{askModal("Obs da liberação","",async(obs)=>{if(!obs)return;const updated=inspections.map(x=>x.id===inspForm.id?{...x,status:"released",releaseNote:obs,releasedAt:new Date().toISOString()}:x);await uInsp(updated);setInspForm({...inspForm,status:"released",releaseNote:obs,releasedAt:new Date().toISOString()});fl("Casa liberada!");});}} style={bt(T.gr,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>Liberar Casa</button>}
 <button onClick={()=>{const w=window.open("","_blank");const css="*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:40px;color:#333}h2{font-size:14px;color:#0094B0;margin:16px 0 6px;border-bottom:1px solid #0094B0;padding-bottom:3px}.score{font-size:48px;font-weight:800;text-align:center;margin:16px 0}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;font-size:12px}.ok{color:#4ADE80;font-weight:700}.adj{color:#FFB547;font-weight:700}.fail{color:#FF6B6B;font-weight:700}.meta{color:#888;font-size:11px}.note{padding:2px 0 4px 20px;font-size:10px;color:#FFB547;font-style:italic;border-bottom:1px solid #eee}@media print{body{padding:20px}}";let h="<html><head><title>Inspection "+(inspForm.houseName||"")+"</title><style>"+css+"</style></head><body>"+pdfBack+pdfHeader("Inspection Report");h+="<div class='score' style='color:"+getScoreColor(inspForm.score)+"'>"+inspForm.score+"/100</div>";h+="<p style='text-align:center;margin-bottom:16px;font-size:13px'>"+getScoreLabel(inspForm.score)+(inspForm.status==="blocked"?" — BLOCKED":"")+"</p>";h+="<div class='row'><span><strong>Property:</strong> "+(inspForm.houseName||inspForm.house)+"</span><span><strong>Date:</strong> "+inspForm.date+"</span></div>";h+="<div class='row'><span><strong>Type:</strong> "+inspForm.type+"</span><span><strong>Inspector:</strong> "+(inspForm.inspector||"—")+"</span></div>";h+="<div class='row'><span><strong>Team:</strong> "+((inspForm.employees||[]).join(", ")||"—")+"</span></div>";Object.entries(INSP_CHECKLIST).forEach(([area,items])=>{h+="<h2>"+area+"</h2>";items.forEach(item=>{const v=(inspForm.checks||{})[item.id];const cls=v==="ok"?"ok":v==="adjust"?"adj":v==="fail"?"fail":"meta";const lbl=v==="ok"?"OK":v==="adjust"?"Adjust":v==="fail"?"Failed":"N/A";h+="<div class='row'><span>"+item.t+"</span><span class='"+cls+"'>"+lbl+"</span></div>";const note=(inspForm.notes||{})[item.id];if(note)h+="<div class='note'>"+note+"</div>";const photo=(inspForm.photos||{})[item.id];if(photo)h+="<div style='padding:4px 0 6px 20px'><img src='"+photo+"' style='max-width:200px;border-radius:4px;border:1px solid #ddd'/></div>";});});if(inspForm.generalNotes)h+="<h2>Notes</h2><p style='font-size:12px'>"+inspForm.generalNotes+"</p>";h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeout(()=>w.print(),500);}} style={bt(T.ac,T.bg,{padding:"10px 24px",borderRadius:8,fontSize:12})}>📄 Imprimir Relatório</button>
 </>}
+
+{inspView==="week"&&(()=>{
+  const sd=new Date(weekStartDate+"T12:00");
+  const days=[];
+  for(let i=0;i<7;i++){const d=new Date(sd);d.setDate(d.getDate()+i);const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");days.push({date:ds,dow:["DOM","SEG","TER","QUA","QUI","SEX","SAB"][d.getDay()],dayN:d.getDate()});}
+  const moveWeek=(delta)=>{const d=new Date(weekStartDate+"T12:00");d.setDate(d.getDate()+delta*7);setWeekStartDate(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));};
+  const goToday=()=>{const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);setWeekStartDate(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));};
+  
+  const getEventsForDay=(dateStr)=>{
+    // Eventos com check-in nesse dia (do iCal) ou turnover nesse dia
+    const turnovers=agEvents.filter(e=>e.date===dateStr&&e.house&&e.house!=="—");
+    const checkIns=agEvents.filter(e=>e.checkIn===dateStr&&e.house&&e.house!=="—"&&e.date!==dateStr);
+    return {turnovers,checkIns};
+  };
+  
+  // KPIs da semana
+  const allWeekEvents=agEvents.filter(e=>{const d=e.date;return d>=days[0].date&&d<=days[6].date&&e.house&&e.house!=="—";});
+  const sameDayCount=allWeekEvents.filter(e=>e.checkIn&&e.date===e.checkIn).length;
+  const noCleanerCount=allWeekEvents.filter(e=>!e.employees||e.employees.length===0).length;
+  const insptedThisWeek=inspections.filter(i=>i.date>=days[0].date&&i.date<=days[6].date).length;
+  const totalCheckIns=allWeekEvents.filter(e=>e.checkIn&&e.checkIn>=days[0].date&&e.checkIn<=days[6].date).length;
+  
+  const statusBadge=(ev)=>{
+    const s=ev.cleanStatus||"pending";
+    const colors={pending:T.dm,cleaning:T.bl,clean_complete:T.gr,inspecting:T.or,approved:T.gr,reproved:T.rd};
+    const icons={pending:"⏳",cleaning:"🧹",clean_complete:"✅",inspecting:"🔍",approved:"✓",reproved:"❌"};
+    return {color:colors[s],icon:icons[s]};
+  };
+  
+  const renderHouseCard=(ev,isCheckIn)=>{
+    const isSameDay=ev.checkIn&&ev.date===ev.checkIn;
+    const noCleaner=!ev.employees||ev.employees.length===0;
+    const sb=statusBadge(ev);
+    const inspToday=inspections.find(i=>i.house===ev.house&&i.date===ev.date);
+    return <div key={ev.id+(isCheckIn?"_ci":"")} onClick={()=>setWeekDetailModal(ev)} style={{padding:"6px 7px",marginBottom:4,borderRadius:5,background:isSameDay?T.rd+"10":isCheckIn?T.bl+"08":T.cd,border:"1px solid "+(isSameDay?T.rd+"40":isCheckIn?T.bl+"30":T.bd),borderLeft:"3px solid "+(isSameDay?T.rd:noCleaner?T.or:inspToday?T.gr:T.ac),cursor:"pointer",transition:"all 0.1s"}}>
+      <div style={{fontSize:10,fontWeight:700,color:T.tx,marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.house}</div>
+      <div style={{display:"flex",gap:3,flexWrap:"wrap",alignItems:"center"}}>
+        {isSameDay&&<span style={{fontSize:8,color:T.rd,fontWeight:800}}>🔥SAME</span>}
+        {isCheckIn&&!isSameDay&&<span style={{fontSize:8,color:T.bl,fontWeight:700}}>🏨IN</span>}
+        {noCleaner&&!isCheckIn&&<span style={{fontSize:8,color:T.or,fontWeight:700}}>⚠️NO</span>}
+        {inspToday&&<span style={{fontSize:8,color:T.gr,fontWeight:700}}>✓INSP</span>}
+        {ev.cleanStatus&&!inspToday&&<span style={{fontSize:9,color:sb.color}}>{sb.icon}</span>}
+        {ev.checkInTime&&isCheckIn&&<span style={{fontSize:8,color:T.dm}}>{ev.checkInTime}</span>}
+      </div>
+    </div>;
+  };
+  
+  return <>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+      <button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm,{padding:"6px 12px"})}>← Voltar</button>
+      <span style={{fontSize:16,fontWeight:800}}>📅 Semana</span>
+      <button onClick={()=>moveWeek(-1)} style={bt(T.c2,T.dm,{padding:"6px 10px",borderRadius:6})}>◀</button>
+      <span style={{fontSize:12,fontWeight:700,color:T.ac}}>{days[0].dayN}/{(parseInt(days[0].date.slice(5,7)))} a {days[6].dayN}/{(parseInt(days[6].date.slice(5,7)))} · {days[0].date.slice(0,4)}</span>
+      <button onClick={()=>moveWeek(1)} style={bt(T.c2,T.dm,{padding:"6px 10px",borderRadius:6})}>▶</button>
+      <button onClick={goToday} style={bt(T.ac+"15",T.ac,{padding:"6px 12px",fontSize:10,borderRadius:6})}>Hoje</button>
+    </div>
+    
+    {/* KPIs */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8,marginBottom:10}}>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Turnovers</div><div style={{fontSize:20,fontWeight:800,color:T.ac}}>{allWeekEvents.length}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Check-ins</div><div style={{fontSize:20,fontWeight:800,color:T.bl}}>{totalCheckIns}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Same-day</div><div style={{fontSize:20,fontWeight:800,color:sameDayCount>0?T.rd:T.dm}}>{sameDayCount}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Sem cleaner</div><div style={{fontSize:20,fontWeight:800,color:noCleanerCount>0?T.or:T.dm}}>{noCleanerCount}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Inspecionadas</div><div style={{fontSize:20,fontWeight:800,color:T.gr}}>{insptedThisWeek}</div></div>
+    </div>
+    
+    {/* Grid semanal */}
+    <Card style={{padding:8,overflowX:"auto"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(110px,1fr))",gap:5,minWidth:760}}>
+        {days.map(d=>{
+          const {turnovers,checkIns}=getEventsForDay(d.date);
+          const isToday=d.date===getLocalDate();
+          const totalDay=turnovers.length+checkIns.length;
+          const dayName={DOM:"Domingo",SEG:"Segunda",TER:"Terça",QUA:"Quarta",QUI:"Quinta",SEX:"Sexta",SAB:"Sábado"}[d.dow];
+          return <div key={d.date} style={{minHeight:240}}>
+            <div style={{padding:"6px 8px",background:isToday?T.ac+"22":T.cd,borderRadius:6,marginBottom:6,textAlign:"center",border:isToday?"1px solid "+T.ac:"1px solid "+T.bd}}>
+              <div style={{fontSize:9,fontWeight:800,color:isToday?T.ac:T.dm,letterSpacing:0.5}}>{dayName.toUpperCase()}</div>
+              <div style={{fontSize:14,fontWeight:800,color:isToday?T.ac:T.tx,marginTop:2}}>{d.dayN}</div>
+              <div style={{fontSize:8,color:T.dm,marginTop:2}}>{totalDay} eventos</div>
+            </div>
+            <div>
+              {turnovers.length>0&&<>
+                <div style={{fontSize:8,color:T.dm,fontWeight:700,marginBottom:3,textTransform:"uppercase"}}>🧹 Turnover ({turnovers.length})</div>
+                {turnovers.map(ev=>renderHouseCard(ev,false))}
+              </>}
+              {checkIns.length>0&&<>
+                <div style={{fontSize:8,color:T.bl,fontWeight:700,marginBottom:3,marginTop:6,textTransform:"uppercase"}}>🏨 Check-in ({checkIns.length})</div>
+                {checkIns.map(ev=>renderHouseCard(ev,true))}
+              </>}
+              {turnovers.length===0&&checkIns.length===0&&<div style={{padding:"20px 4px",textAlign:"center",color:T.dm,fontSize:9,fontStyle:"italic",opacity:0.5}}>—</div>}
+            </div>
+          </div>;
+        })}
+      </div>
+    </Card>
+    
+    <div style={{padding:"10px 14px",background:T.bg+"66",borderRadius:8,fontSize:10,color:T.dm,marginTop:6,lineHeight:1.5}}>
+      <strong style={{color:T.ac}}>Legenda:</strong> 🔥SAME = same-day · 🏨IN = check-in · ⚠️NO = sem cleaner · ✓INSP = inspecionada · ⏳🧹✅🔍 = status limpeza · Clique numa casa pra ver detalhes
+    </div>
+    
+    {/* Modal de detalhes */}
+    {weekDetailModal&&(()=>{const ev=weekDetailModal;const isSameDay=ev.checkIn&&ev.date===ev.checkIn;const inspToday=inspections.find(i=>i.house===ev.house&&i.date===ev.date);const houseObj=db.find(p=>p.n===ev.house);const sb=statusBadge(ev);return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setWeekDetailModal(null)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,gap:10}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:800,color:T.ac}}>{ev.house}</div>
+            <div style={{fontSize:11,color:T.dm,marginTop:2}}>{ev.client||"—"} · {ev.type||"Turnover"}</div>
+          </div>
+          <button onClick={()=>setWeekDetailModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+        </div>
+        
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+          {isSameDay&&<span style={{padding:"4px 9px",borderRadius:10,background:T.rd,color:"#fff",fontSize:10,fontWeight:800}}>🔥 SAME DAY</span>}
+          {(!ev.employees||ev.employees.length===0)&&<span style={{padding:"4px 9px",borderRadius:10,background:T.or,color:"#fff",fontSize:10,fontWeight:800}}>⚠️ SEM CLEANER</span>}
+          {inspToday&&<span style={{padding:"4px 9px",borderRadius:10,background:T.gr,color:"#fff",fontSize:10,fontWeight:800}}>✓ INSPECIONADA</span>}
+          {ev.icalUid&&<span style={{padding:"4px 9px",borderRadius:10,background:T.pu+"22",color:T.pu,fontSize:10,fontWeight:800}}>🤖 SYNC iCAL</span>}
+        </div>
+        
+        <div style={{background:T.bg,borderRadius:8,padding:14,marginBottom:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Data Turnover</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.date}</div></div>
+            {ev.checkIn&&<div><div style={{fontSize:9,color:T.bl,fontWeight:700,textTransform:"uppercase"}}>Check-in Hóspede</div><div style={{fontSize:13,fontWeight:700,marginTop:2,color:T.bl}}>{ev.checkIn}{ev.checkInTime?" · "+ev.checkInTime:""}</div></div>}
+            {ev.checkOut&&<div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Check-out</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.checkOut}</div></div>}
+            {ev.stayNights&&<div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Estadia</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.stayNights} noite{ev.stayNights>1?"s":""}</div></div>}
+          </div>
+        </div>
+        
+        {ev.employees&&ev.employees.length>0&&<div style={{padding:"10px 12px",background:T.ac+"08",borderRadius:8,marginBottom:10}}>
+          <div style={{fontSize:9,color:T.dm,fontWeight:700,marginBottom:4}}>👤 EQUIPE DESIGNADA</div>
+          <div style={{fontSize:12,fontWeight:700}}>{ev.employees.join(", ")}</div>
+        </div>}
+        
+        {ev.cleanStatus&&<div style={{padding:"10px 12px",background:sb.color+"08",borderLeft:"3px solid "+sb.color,borderRadius:6,marginBottom:10}}>
+          <div style={{fontSize:9,color:T.dm,fontWeight:700,marginBottom:3}}>STATUS DA LIMPEZA</div>
+          <div style={{fontSize:13,fontWeight:700,color:sb.color}}>{sb.icon} {ev.cleanStatus}</div>
+          {ev.cleanStatusAt&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>Marcado em {new Date(ev.cleanStatusAt).toLocaleString("pt-BR")}{ev.cleanStatusBy?" por "+ev.cleanStatusBy:""}</div>}
+        </div>}
+        
+        {houseObj&&houseObj.notes&&<div style={{padding:"10px 12px",background:T.bg,borderRadius:6,marginBottom:10,fontSize:11,color:T.tx,fontStyle:"italic",lineHeight:1.5}}>📝 {houseObj.notes}</div>}
+        
+        {inspToday&&<div style={{padding:"10px 12px",background:T.gr+"08",borderRadius:6,marginBottom:10}}>
+          <div style={{fontSize:10,color:T.gr,fontWeight:700,marginBottom:3}}>✓ INSPEÇÃO DE HOJE</div>
+          <div style={{fontSize:12,fontWeight:700}}>Score: <span style={{color:inspToday.score>=90?T.gr:inspToday.score>=75?T.or:T.rd}}>{inspToday.score}/100</span></div>
+        </div>}
+        
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button onClick={()=>{inspectFromAgenda(ev);setWeekDetailModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"11px",fontSize:12,fontWeight:700,borderRadius:8})}>🔍 {inspToday?"Re-inspecionar":"Inspecionar"}</button>
+          <button onClick={()=>{setAgForm(ev);setWeekDetailModal(null);}} style={bt(T.bl+"15",T.bl,{padding:"11px 16px",fontSize:11,borderRadius:8})}>✏️ Editar</button>
+        </div>
+      </div>
+    </div>;})()}
+  </>;
+})()}
 
 {inspView==="today"&&(()=>{
   const today=getLocalDate();
@@ -4069,15 +4502,15 @@ return <>
 {(()=>{const daysInMonth=new Date(agYear,agMonth+1,0).getDate();const firstDay=new Date(agYear,agMonth,1).getDay();const today=getLocalDate();const moEvents=agEvents.filter(e=>{if(!e.date)return false;const d=new Date(e.date+"T12:00");return d.getMonth()===agMonth&&d.getFullYear()===agYear;});const cells=[];for(let i=0;i<firstDay;i++)cells.push(null);for(let d=1;d<=daysInMonth;d++)cells.push(d);
 const typeColors={"Turnover":T.ac,"Deep Clean":"#A78BFA","Regular":"#4ADE80","Manutenção":"#FFB547","Inspeção":"#FF8A65","Other":T.bl};
 return <div style={{background:T.cd,borderRadius:12,border:"1px solid "+T.bd,overflow:"hidden",boxShadow:darkMode?"0 4px 20px rgba(0,0,0,0.2)":"0 4px 20px rgba(0,0,0,0.06)"}}>
-<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:darkMode?"#182040":"#F0F4FF"}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",background:darkMode?"#182040":"#F0F4FF"}}>
 {["DOM","SEG","TER","QUA","QUI","SEX","SÁB"].map((d,i)=><div key={d} style={{textAlign:"center",fontSize:10,color:i===0||i===6?T.or:T.dm,padding:"12px 0",fontWeight:700,letterSpacing:"0.8px"}}>{d}</div>)}
 </div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
-{cells.map((day,i)=>{if(!day)return <div key={"e"+i} style={{minHeight:110,borderRight:"1px solid "+T.bd+"44",borderBottom:"1px solid "+T.bd+"44"}}/>;
+<div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))"}}>
+{cells.map((day,i)=>{if(!day)return <div key={"e"+i} style={{minHeight:110,borderRight:"1px solid "+T.bd+"44",borderBottom:"1px solid "+T.bd+"44",minWidth:0,overflow:"hidden"}}/>;
 const dateStr=agYear+"-"+String(agMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");
 const isToday=dateStr===today;const isSel=agSelDay===dateStr;
 const dayEvts=moEvents.filter(e=>e.date===dateStr);const dayTks=tasks.filter(t=>t.date===dateStr);const total=dayEvts.length+dayTks.length;
-return <div key={i} onClick={()=>setAgSelDay(dateStr)} style={{minHeight:110,borderRight:"1px solid "+T.bd+"33",borderBottom:"1px solid "+T.bd+"33",padding:"4px 5px",cursor:"pointer",background:isSel?T.ac+"0C":isToday?darkMode?"#00B4D808":"#E0F7FA22":"transparent",transition:"background 0.15s",borderLeft:isSel?"3px solid "+T.ac:"3px solid transparent"}}>
+return <div key={i} onClick={()=>setAgSelDay(dateStr)} style={{minHeight:110,borderRight:"1px solid "+T.bd+"33",borderBottom:"1px solid "+T.bd+"33",padding:"4px 5px",cursor:"pointer",background:isSel?T.ac+"0C":isToday?darkMode?"#00B4D808":"#E0F7FA22":"transparent",transition:"background 0.15s",borderLeft:isSel?"3px solid "+T.ac:"3px solid transparent",minWidth:0,overflow:"hidden",boxSizing:"border-box"}}>
 <div style={{display:"flex",justifyContent:"flex-start",marginBottom:4}}>{isToday?<span style={{width:26,height:26,borderRadius:13,background:"linear-gradient(135deg,#00B4D8,#0094B0)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,boxShadow:"0 2px 8px rgba(0,180,216,0.4)"}}>{day}</span>:<span style={{fontSize:12,fontWeight:isSel?700:total>0?600:400,color:isSel?T.ac:T.tx,padding:"2px 4px"}}>{day}</span>}</div>
 {dayEvts.slice(0,3).map(ev=><div key={ev.id} onClick={e=>{e.stopPropagation();setAgForm(ev);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:(typeColors[ev.type]||T.ac)+"20",color:typeColors[ev.type]||T.ac,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer"}}>{ev.title||ev.house||ev.client||"—"}</div>)}
 {dayTks.slice(0,1).map(tk=><div key={tk.id} onClick={e=>{e.stopPropagation();setTaskForm(tk);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:tk.done?T.gr+"15":T.or+"15",color:tk.done?T.gr:T.or,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer",textDecoration:tk.done?"line-through":"none"}}>📋 {tk.title||"—"}</div>)}
@@ -4130,12 +4563,125 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 <div><label style={lb}>House</label><select value={agForm.house||""} onChange={e=>setAgForm({...agForm,house:e.target.value,title:e.target.value})} style={{...sel,width:"100%"}}><option value="">—</option>{agForm.client&&db.filter(p=>p.c===agForm.client).map(p=><option key={p.n} value={p.n}>{p.n}</option>)}</select></div>
 <div style={{gridColumn:"1/3"}}><label style={lb}>Título</label><TI value={agForm.title||""} onChange={e=>setAgForm({...agForm,title:e.target.value})} style={{...inp,width:"100%"}} placeholder="Ex: Turnover + Pool"/></div>
 </div>
+{(agForm.type==="Turnover"||!agForm.type)&&<div style={{padding:"10px 12px",background:T.bl+"06",borderRadius:8,border:"1px dashed "+T.bl+"30",marginBottom:10}}>
+<div style={{fontSize:10,color:T.bl,fontWeight:700,marginBottom:6}}>📅 PRÓXIMO HÓSPEDE {agForm.icalUid&&<span style={{fontSize:9,color:T.gr,marginLeft:4}}>🤖 vindo do iCal</span>}</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+<div><label style={lb}>Check-in</label><DI value={agForm.checkIn||""} onChange={e=>setAgForm({...agForm,checkIn:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Hora Check-in</label><TI value={agForm.checkInTime||""} onChange={e=>setAgForm({...agForm,checkInTime:e.target.value})} style={{...inp,width:"100%"}} placeholder="16:00"/></div>
+</div>
+{agForm.checkIn===agForm.date&&agForm.date&&<div style={{marginTop:8,padding:"6px 10px",background:T.rd+"15",borderRadius:6,fontSize:10,color:T.rd,fontWeight:700}}>🔥 SAME DAY — hóspede chega no mesmo dia do turnover</div>}
+{agForm.stayNights&&<div style={{marginTop:6,fontSize:10,color:T.dm}}>🛏️ Estadia: {agForm.stayNights} noite{agForm.stayNights>1?"s":""}</div>}
+</div>}
 <div style={{marginBottom:10}}><label style={lb}>Equipe</label><div style={{display:"flex",flexWrap:"wrap",gap:4,alignItems:"center"}}>{em.map(e=>{const emp=empProfiles.find(p=>p.name===e);const role=emp?empRoles.find(r=>r.name===(emp.role||"Cleaner")):null;const isSporadic=role&&role.sporadic;return <button type="button" key={e} onClick={()=>{setAgForm(f=>({...f,employees:(f.employees||[]).includes(e)?(f.employees||[]).filter(x=>x!==e):[...(f.employees||[]),e]}));}} style={{padding:"5px 10px",borderRadius:6,fontSize:9,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit",background:(agForm.employees||[]).includes(e)?T.ac+"18":T.c2,color:(agForm.employees||[]).includes(e)?T.ac:T.dm,transition:"all 0.1s"}}>{isSporadic?"⚡ ":""}{e}</button>;})}<button type="button" onClick={()=>setQuickEmpModal({name:""})} style={{padding:"5px 10px",borderRadius:6,fontSize:9,fontWeight:700,cursor:"pointer",border:"1px dashed "+T.or,background:T.or+"10",color:T.or,fontFamily:"inherit"}}>+ Cleaner Rápido</button></div></div>
+{agEvents.find(e=>e.id===agForm.id)&&<div style={{padding:"10px 12px",background:T.gr+"06",borderRadius:8,border:"1px dashed "+T.gr+"30",marginBottom:10}}>
+<div style={{fontSize:10,color:T.gr,fontWeight:700,marginBottom:6}}>🧹 STATUS DA LIMPEZA</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+{[{k:"pending",l:"⏳ Pending",c:T.dm},{k:"cleaning",l:"🧹 Cleaning",c:T.bl},{k:"clean_complete",l:"✅ Clean OK",c:T.gr},{k:"inspecting",l:"🔍 Inspecting",c:T.or},{k:"approved",l:"✓ Approved",c:T.gr},{k:"reproved",l:"❌ Reproved",c:T.rd}].map(s=><button key={s.k} onClick={()=>{const cleanerName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase());setAgForm({...agForm,cleanStatus:s.k,cleanStatusAt:new Date().toISOString(),cleanStatusBy:cleanerName});}} style={{padding:"5px 9px",borderRadius:6,fontSize:9,fontWeight:700,cursor:"pointer",border:"none",fontFamily:"inherit",background:agForm.cleanStatus===s.k?s.c+"22":T.c2,color:agForm.cleanStatus===s.k?s.c:T.dm}}>{s.l}</button>)}
+</div>
+{agForm.cleanStatusAt&&<div style={{fontSize:9,color:T.dm}}>📌 Marcado em {new Date(agForm.cleanStatusAt).toLocaleString("pt-BR")}{agForm.cleanStatusBy?" por "+agForm.cleanStatusBy:""}</div>}
+</div>}
 <div style={{marginBottom:12}}><label style={lb}>Notas</label><TI value={agForm.notes||""} onChange={e=>setAgForm({...agForm,notes:e.target.value})} style={{...inp,width:"100%",minHeight:40}} placeholder="Observações..."/></div>
 <div style={{display:"flex",gap:8}}>
 <button onClick={()=>{const ev={...agForm};if(!ev.date){fl("Selecione uma data!");return;}const exists=agEvents.find(e=>e.id===ev.id);if(exists){uAg(agEvents.map(e=>e.id===ev.id?ev:e));}else{uAg([...agEvents,ev]);}setAgForm(null);fl("✅ Salvo!");}} style={bt(T.ac,T.bg,{padding:"10px 24px",fontSize:12,flex:1,borderRadius:8})}>💾 Salvar</button>
 {agEvents.find(e=>e.id===agForm.id)&&<button onClick={()=>{if(confirm("Deletar?")){uAg(agEvents.filter(e=>e.id!==agForm.id));setAgForm(null);fl("Deletado!");}}} style={bt(T.rd+"15",T.rd,{padding:"10px 16px",fontSize:12,borderRadius:8})}>🗑</button>}
 <button onClick={()=>setAgForm(null)} style={bt(T.dm+"15",T.dm,{padding:"10px 16px",fontSize:12,borderRadius:8})}>Cancel</button>
+</div>
+</div></div>}
+
+{invConfigModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setInvConfigModal(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.pu+"60",width:"100%",maxWidth:680,maxHeight:"90vh",overflowY:"auto"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+<span style={{fontSize:14,fontWeight:800,color:T.pu}}>⚡ Auto-Faturamento & Folha</span>
+<button onClick={()=>setInvConfigModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+</div>
+
+<div style={{padding:"10px 14px",background:T.bl+"08",borderRadius:8,marginBottom:14,fontSize:11,color:T.dm,lineHeight:1.5,border:"1px dashed "+T.bl+"30"}}>
+💡 Configure quando cada cliente deve receber invoice. Sistema vai te alertar no Dashboard quando chegar o dia + criar draft automaticamente quando confirmar.
+</div>
+
+{/* CONFIG POR CLIENTE */}
+<div style={{fontSize:12,fontWeight:800,color:T.ac,marginBottom:10,paddingBottom:6,borderBottom:"2px solid "+T.ac+"33"}}>📄 INVOICE POR CLIENTE</div>
+<div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18}}>
+{cls.map(client=>{
+  const cfg=getClientInvoiceConfig(client);
+  const houses=db.filter(p=>p.c===client).length;
+  return <div key={client} style={{padding:"12px 14px",background:T.bg,borderRadius:8,border:"1px solid "+T.bd}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
+      <div>
+        <div style={{fontSize:13,fontWeight:700}}>{client}</div>
+        <div style={{fontSize:9,color:T.dm}}>{houses} casa{houses!==1?"s":""}</div>
+      </div>
+      <select value={cfg.frequency} onChange={e=>saveClientInvoiceConfig(client,{...cfg,frequency:e.target.value})} style={{...sel,width:"auto",minWidth:140,fontSize:11}}>
+        <option value="none">— Sem automação —</option>
+        <option value="weekly">Semanal</option>
+        <option value="biweekly">Quinzenal</option>
+        <option value="monthly">Mensal</option>
+      </select>
+    </div>
+    {(cfg.frequency==="weekly"||cfg.frequency==="biweekly")&&<div style={{display:"flex",alignItems:"center",gap:8}}>
+      <label style={{fontSize:10,color:T.dm,fontWeight:600}}>Dia da emissão:</label>
+      <select value={cfg.dayOfWeek} onChange={e=>saveClientInvoiceConfig(client,{...cfg,dayOfWeek:parseInt(e.target.value)})} style={{...sel,width:"auto",fontSize:11}}>
+        <option value={1}>Segunda</option>
+        <option value={2}>Terça</option>
+        <option value={3}>Quarta</option>
+        <option value={4}>Quinta</option>
+        <option value={5}>Sexta</option>
+        <option value={6}>Sábado</option>
+        <option value={0}>Domingo</option>
+      </select>
+    </div>}
+    {cfg.frequency==="monthly"&&<div style={{display:"flex",alignItems:"center",gap:8}}>
+      <label style={{fontSize:10,color:T.dm,fontWeight:600}}>Dia do mês:</label>
+      <input type="number" min={1} max={31} value={cfg.dayOfMonth} onChange={e=>saveClientInvoiceConfig(client,{...cfg,dayOfMonth:parseInt(e.target.value)||1})} style={{...inp,width:80,fontSize:11,textAlign:"center"}}/>
+    </div>}
+    {cfg.frequency!=="none"&&<div style={{fontSize:9,color:T.gr,marginTop:6,fontWeight:600}}>✅ Cobrança {cfg.frequency==="weekly"?"semanal":cfg.frequency==="biweekly"?"quinzenal":"mensal"} ativada</div>}
+  </div>;
+})}
+</div>
+
+{/* CONFIG FOLHA */}
+<div style={{fontSize:12,fontWeight:800,color:T.gr,marginBottom:10,paddingBottom:6,borderBottom:"2px solid "+T.gr+"33"}}>💰 FOLHA DE PAGAMENTO</div>
+{(()=>{const cfg=getPayrollConfig();return <div style={{padding:"12px 14px",background:T.bg,borderRadius:8,border:"1px solid "+T.bd,marginBottom:14}}>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8}}>
+    <div style={{fontSize:12,fontWeight:700}}>Frequência geral de pagamento</div>
+    <select value={cfg.frequency} onChange={e=>savePayrollConfig({...cfg,frequency:e.target.value})} style={{...sel,width:"auto",minWidth:140,fontSize:11}}>
+      <option value="none">— Sem automação —</option>
+      <option value="weekly">Semanal</option>
+      <option value="monthly">Mensal</option>
+    </select>
+  </div>
+  {cfg.frequency==="weekly"&&<div style={{display:"flex",alignItems:"center",gap:8}}>
+    <label style={{fontSize:10,color:T.dm,fontWeight:600}}>Dia do pagamento:</label>
+    <select value={cfg.dayOfWeek} onChange={e=>savePayrollConfig({...cfg,dayOfWeek:parseInt(e.target.value)})} style={{...sel,width:"auto",fontSize:11}}>
+      <option value={1}>Segunda</option>
+      <option value={2}>Terça</option>
+      <option value={3}>Quarta</option>
+      <option value={4}>Quinta</option>
+      <option value={5}>Sexta</option>
+      <option value={6}>Sábado</option>
+      <option value={0}>Domingo</option>
+    </select>
+  </div>}
+  {cfg.frequency==="monthly"&&<div style={{display:"flex",alignItems:"center",gap:8}}>
+    <label style={{fontSize:10,color:T.dm,fontWeight:600}}>Dia do mês:</label>
+    <input type="number" min={1} max={31} value={cfg.dayOfMonth||1} onChange={e=>savePayrollConfig({...cfg,dayOfMonth:parseInt(e.target.value)||1})} style={{...inp,width:80,fontSize:11,textAlign:"center"}}/>
+  </div>}
+  {cfg.frequency!=="none"&&<div style={{fontSize:9,color:T.gr,marginTop:6,fontWeight:600}}>✅ Folha {cfg.frequency==="weekly"?"semanal":"mensal"} ativada — calcula apenas cleaners FIXOS</div>}
+</div>;})()}
+
+{/* HISTÓRICO */}
+{autoTriggers.length>0&&<>
+<div style={{fontSize:12,fontWeight:800,color:T.dm,marginBottom:10,paddingBottom:6,borderBottom:"2px solid "+T.bd}}>📜 ÚLTIMOS DISPAROS</div>
+<div style={{maxHeight:180,overflowY:"auto"}}>
+{autoTriggers.slice(0,10).map((t,i)=><div key={i} style={{padding:"7px 10px",background:T.bg,borderRadius:5,marginBottom:4,fontSize:10,display:"flex",justifyContent:"space-between"}}>
+  <span>{t.type==="invoice"?"📄":"💰"} {t.type==="invoice"?t.client+" — invoice":"Folha — "+t.cleanerCount+" cleaners"} · {t.periodStart} → {t.periodEnd}</span>
+  <span style={{color:T.gr,fontWeight:700}}>${fm(t.total)}</span>
+</div>)}
+</div>
+</>}
+
+<div style={{display:"flex",gap:8,marginTop:14}}>
+<button onClick={()=>setInvConfigModal(null)} style={bt(T.ac,T.bg,{flex:1,padding:"11px",fontSize:12,fontWeight:700,borderRadius:8})}>Fechar</button>
 </div>
 </div></div>}
 
