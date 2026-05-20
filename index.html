@@ -4548,8 +4548,11 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 {(agForm.type==="Turnover"||!agForm.type)&&<div style={{padding:"10px 12px",background:T.bl+"06",borderRadius:8,border:"1px dashed "+T.bl+"30",marginBottom:10}}>
 <div style={{fontSize:10,color:T.bl,fontWeight:700,marginBottom:6}}>📅 PRÓXIMO HÓSPEDE {agForm.icalUid&&<span style={{fontSize:9,color:T.gr,marginLeft:4}}>🤖 vindo do iCal</span>}</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-<div><label style={lb}>Check-in</label><DI value={agForm.checkIn||""} onChange={e=>setAgForm({...agForm,checkIn:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Check-out (hóspede anterior)</label><DI value={agForm.checkOut||""} onChange={e=>setAgForm({...agForm,checkOut:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Check-in (próximo hóspede)</label><DI value={agForm.checkIn||""} onChange={e=>setAgForm({...agForm,checkIn:e.target.value})} style={{...inp,width:"100%"}}/></div>
 <div><label style={lb}>Hora Check-in</label><TI value={agForm.checkInTime||""} onChange={e=>setAgForm({...agForm,checkInTime:e.target.value})} style={{...inp,width:"100%"}} placeholder="16:00"/></div>
+<div><label style={lb}>Hóspedes</label><NI value={agForm.guests??""} onChange={e=>setAgForm({...agForm,guests:e.target.value===""?undefined:Math.max(0,parseInt(e.target.value)||0)})} style={{...inp,width:"100%"}}/></div>
+<div style={{gridColumn:"1/3",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}><label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:11,color:T.tx,fontWeight:600}}><input type="checkbox" checked={!!agForm.pets} onChange={e=>setAgForm({...agForm,pets:e.target.checked})} style={{width:16,height:16,cursor:"pointer",accentColor:T.ac}}/>🐾 Próximo check-in tem pets</label></div>
 </div>
 {agForm.checkIn===agForm.date&&agForm.date&&<div style={{marginTop:8,padding:"6px 10px",background:T.rd+"15",borderRadius:6,fontSize:10,color:T.rd,fontWeight:700}}>🔥 SAME DAY — hóspede chega no mesmo dia do turnover</div>}
 {agForm.stayNights&&<div style={{marginTop:6,fontSize:10,color:T.dm}}>🛏️ Estadia: {agForm.stayNights} noite{agForm.stayNights>1?"s":""}</div>}
