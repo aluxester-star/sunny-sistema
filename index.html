@@ -642,7 +642,7 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 </>}
 
 </div>;}
-const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","strategy","report","tax","team","inspect","history","agenda","deepclean","manual","escala","database","laundry","feedback","icalsync"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","tax","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["laundry"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","team","deepclean","escala"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"},cliente:{label:"Cliente",tabs:["deepclean"],color:"#FF8A65"}};
+const ROLES={admin:{label:"Admin",tabs:["dashboard","payroll","invoice","finance","strategy","report","tax","team","inspect","history","agenda","deepclean","manual","escala","database","laundry","feedback","icalsync","configuracoes"],color:"#00B4D8"},financeiro:{label:"Financeiro",tabs:["dashboard","invoice","payroll","finance","report","tax","history"],color:"#4ADE80"},estoque:{label:"Estoque",tabs:["laundry"],color:"#A78BFA"},operacional:{label:"Operacional",tabs:["payroll","team","deepclean","escala"],color:"#FFB547"},inspetor:{label:"Inspetor",tabs:["inspect"],color:"#FF8A65"},visualizador:{label:"Visualizador",tabs:["history"],color:"#60A5FA"},cliente:{label:"Cliente",tabs:["deepclean"],color:"#FF8A65"}};
 function App({onLogout,userRole="admin",clientName="",customTabs=null,scanParam=null,userEmail=""}){
 const[darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("sunny_theme")!=="light";}catch(e){return true;}});
 useEffect(()=>{try{localStorage.setItem("sunny_theme",darkMode?"dark":"light");}catch(e){}document.body.style.background=darkMode?"#0A0F1E":"#F5F7FA";},[darkMode]);
@@ -1349,8 +1349,8 @@ const[modal,setModal]=useState(null);
 const askModal=(title,defaultVal,onOk)=>{setModal({title,val:defaultVal||"",onOk});};
 const ModalC=()=>modal?<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:380,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:T.tx}}>{modal.title}</div><input autoFocus value={modal.val} onChange={e=>setModal({...modal,val:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"){modal.onOk(modal.val);setModal(null);}if(e.key==="Escape")setModal(null);}} style={{...inp,width:"100%",fontSize:15,padding:"12px 14px",marginBottom:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.bg}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{modal.onOk(modal.val);setModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>OK</button><button onClick={()=>setModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:13,borderRadius:10})}>Cancel</button></div></div></div>:null;
 
-const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"strategy",l:"Strategy",i:"🎯"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"manual",l:"Manual",i:"📋"},{id:"escala",l:"Escala",i:"🗓️"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Laundry",i:"🧺"},{id:"feedback",l:"Feedback",i:"💬"},{id:"icalsync",l:"Sync iCal",i:"🔄"}];
-const SB_GROUPS=[{id:"principal",icon:"🏠",label:"PRINCIPAL",items:["dashboard","agenda","inspect"]},{id:"financeiro",icon:"💰",label:"FINANCEIRO",items:["invoice","payroll","finance","tax"]},{id:"estrategia",icon:"📈",label:"ESTRATÉGIA",items:["strategy","report","feedback"]},{id:"operacao",icon:"⚙️",label:"OPERAÇÃO",items:["team","escala","laundry","deepclean","manual"]},{id:"config",icon:"🗄️",label:"CONFIGURAÇÕES",items:["database","icalsync","history"]}];
+const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"strategy",l:"Strategy",i:"🎯"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"manual",l:"Manual",i:"📋"},{id:"escala",l:"Escala",i:"🗓️"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Laundry",i:"🧺"},{id:"feedback",l:"Feedback",i:"💬"},{id:"icalsync",l:"Sync iCal",i:"🔄"},{id:"configuracoes",l:"Configurações",i:"⚙️"}];
+const SB_GROUPS=[{id:"principal",icon:"🏠",label:"PRINCIPAL",items:["dashboard","agenda","inspect"]},{id:"financeiro",icon:"💰",label:"FINANCEIRO",items:["invoice","payroll","finance","tax"]},{id:"estrategia",icon:"📈",label:"ESTRATÉGIA",items:["strategy","report","feedback"]},{id:"operacao",icon:"⚙️",label:"OPERAÇÃO",items:["team","escala","laundry","deepclean","manual"]},{id:"config",icon:"🗄️",label:"CONFIGURAÇÕES",items:["configuracoes","database","icalsync","history"]}];
 const[sbGroups,setSbGroups]=useState(()=>{try{const s=localStorage.getItem("sidebar_collapsed_groups");if(s){const p=JSON.parse(s);const o={};SB_GROUPS.forEach(g=>{o[g.id]=p[g.id]===true;});return o;}}catch{}const o={};SB_GROUPS.forEach(g=>{o[g.id]=!g.items.includes(vw);});return o;});
 const toggleSbGroup=gid=>setSbGroups(p=>{const n={...p,[gid]:!p[gid]};try{localStorage.setItem("sidebar_collapsed_groups",JSON.stringify(n));}catch{}return n;});
 const[sbMobile,setSbMobile]=useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
@@ -1360,6 +1360,7 @@ const[lang,setLang]=useState(()=>{try{return localStorage.getItem("lang")||"pt";
 const[langOpen,setLangOpen]=useState(false);
 const[notifOpen,setNotifOpen]=useState(false);
 const[profOpen,setProfOpen]=useState(false);
+const[cfgTab,setCfgTab]=useState("empresa");
 const tabs=customTabs?allTabs.filter(t=>customTabs.includes(t.id)):allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 useEffect(()=>{if(tabs.length>0&&!tabs.find(t=>t.id===vw)){setVw(tabs[0].id);}},[tabs.length]);
 useEffect(()=>{if(sI.length>0&&!iN){const maxNo=sI.reduce((mx,i)=>{const n=parseInt(i.no)||0;return n>mx?n:mx;},0);setIN(String(maxNo+1));}},[sI.length]);
@@ -1669,6 +1670,7 @@ return <React.Fragment>
 {profOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:14,minWidth:240,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
 <div style={{fontSize:13,fontWeight:700,color:T.tx,marginBottom:2}}>{userName}</div>
 <div style={{fontSize:11,color:T.dm,marginBottom:12,wordBreak:"break-all"}}>{userEmail||""}</div>
+{userRole==="admin"&&<button onClick={()=>{setProfOpen(false);setVw("configuracoes");}} style={{width:"100%",background:"transparent",border:"1px solid "+T.bd,color:T.tx,padding:"9px 12px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",marginBottom:6,textAlign:"left"}}>⚙️ Configurações</button>}
 <button onClick={()=>{setProfOpen(false);onLogout&&onLogout();}} style={{width:"100%",background:T.bd+"55",border:"none",color:T.tx,padding:"9px 12px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Logout</button>
 </div>}
 </div>
@@ -1757,6 +1759,95 @@ return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T
 
 <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
 <div style={{maxWidth:1020,margin:"0 auto",padding:"12px 8px",paddingBottom:60}}>
+
+{/* CONFIGURAÇÕES — FASE 1 view dedicada (admin only) */}
+{vw==="configuracoes"&&userRole==="admin"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>⚙️ Configurações</span>
+</div>
+<Card>
+<div style={{display:"flex",gap:4,borderBottom:"1px solid "+T.bd,marginBottom:14}}>
+{[{id:"empresa",l:"🏢 Empresa"},{id:"acessos",l:"👥 Acessos"},{id:"backup",l:"💾 Backup"}].map(t=><button key={t.id} onClick={()=>setCfgTab(t.id)} style={{padding:"8px 14px",border:"none",background:"transparent",color:cfgTab===t.id?T.ac:T.dm,fontSize:12,fontWeight:cfgTab===t.id?700:500,cursor:"pointer",borderBottom:cfgTab===t.id?"2px solid "+T.ac:"2px solid transparent",marginBottom:-1,fontFamily:"inherit"}}>{t.l}</button>)}
+</div>
+{cfgTab==="empresa"&&<div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10,marginBottom:10}}>{Object.entries({name:"Nome",address:"Endereço",phone:"Telefone",bank:"Banco",account:"Conta",routing:"Routing"}).map(([k,l])=><div key={k}><label style={lb}>{l}</label><TI value={co[k]||""} onChange={e=>setCo({...co,[k]:e.target.value})} style={inp}/></div>)}</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>{Object.entries({zelle:"Zelle",venmo:"Venmo",site:"Site",instagram:"Instagram",facebook:"Facebook"}).map(([k,l])=><div key={k}><label style={lb}>{l}</label><TI value={co[k]||""} onChange={e=>setCo({...co,[k]:e.target.value})} style={inp}/></div>)}</div>
+<div style={{display:"flex",gap:8,marginTop:14,alignItems:"center"}}>
+<button onClick={async()=>{await sv("co3",co);fl("✅ Dados da empresa salvos!");}} style={{padding:"8px 20px",background:T.gr,border:"none",borderRadius:7,color:T.bg,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💾 Salvar Empresa</button>
+<span style={{fontSize:9,color:T.dm}}>Clique para salvar alterações</span>
+</div>
+</div>}
+{cfgTab==="acessos"&&<div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+<span style={{fontSize:13,fontWeight:700}}>Gerenciar Acessos</span>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>setInviteModal({email:"",tabs:[],client:""})} style={bt(T.ac,T.bg,{padding:"6px 14px",fontSize:11})}>+ Convidar</button>
+<button onClick={async()=>{try{const r=await FB.get("users");const users=r&&r.value?JSON.parse(r.value):{};setUserListModal(users);}catch{fl("Erro ao carregar");}}} style={bt(T.bl+"15",T.bl,{padding:"6px 14px",fontSize:11})}>👁 Ver</button>
+</div>
+</div>
+<div style={{fontSize:10,color:T.dm,marginBottom:6}}>Abas disponíveis:</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:3}}>{allTabs.map(t=><span key={t.id} style={{padding:"3px 8px",borderRadius:5,background:T.ac+"10",color:T.ac,fontSize:9,fontWeight:500}}>{t.i} {t.id}</span>)}</div>
+</div>}
+{cfgTab==="backup"&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+<button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button>
+<button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button>
+<label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label>
+<button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button>
+</div>}
+</Card>
+{inviteModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setInviteModal(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:480,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+<span style={{fontSize:16,fontWeight:800,color:T.ac}}>👤 Convidar Usuário</span>
+<button onClick={()=>setInviteModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>
+<div style={{marginBottom:14}}><label style={lb}>Email</label>
+<TI value={inviteModal.email} onChange={e=>setInviteModal({...inviteModal,email:e.target.value})} placeholder="email@exemplo.com" style={{...inp,width:"100%",fontSize:13}}/></div>
+<div style={{marginBottom:14}}><label style={lb}>Cliente (só preencher se for acesso de cliente)</label>
+<select value={inviteModal.client} onChange={e=>setInviteModal({...inviteModal,client:e.target.value})} style={{...sel,width:"100%"}}><option value="">— Não é cliente —</option>{cls.map(c=><option key={c}>{c}</option>)}</select></div>
+<div style={{marginBottom:14}}><label style={lb}>Abas que pode acessar</label>
+<div style={{display:"flex",gap:4,marginBottom:8}}>
+<button onClick={()=>setInviteModal({...inviteModal,tabs:allTabs.map(t=>t.id)})} style={bt(T.ac+"15",T.ac,{padding:"4px 10px",fontSize:8})}>Todas</button>
+<button onClick={()=>setInviteModal({...inviteModal,tabs:[]})} style={bt(T.rd+"15",T.rd,{padding:"4px 10px",fontSize:8})}>Nenhuma</button>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+{allTabs.map(t=>{const checked=(inviteModal.tabs||[]).includes(t.id);return <div key={t.id} onClick={()=>{const tabs=inviteModal.tabs||[];setInviteModal({...inviteModal,tabs:checked?tabs.filter(x=>x!==t.id):[...tabs,t.id]});}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,border:checked?"2px solid "+T.ac:"1px solid "+T.bd,background:checked?T.ac+"08":T.c2,cursor:"pointer"}}>
+<div style={{width:20,height:20,borderRadius:5,border:"2px solid "+(checked?T.ac:T.bd),background:checked?T.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,flexShrink:0}}>{checked?"✓":""}</div>
+<div><div style={{fontSize:11,fontWeight:checked?700:500,color:checked?T.ac:T.dm}}>{t.i} {t.l}</div></div>
+</div>})}
+</div></div>
+<div style={{display:"flex",gap:8,marginTop:16}}>
+<button onClick={async()=>{if(!inviteModal.email){fl("❌ Informe o email!");return;}if(!(inviteModal.tabs||[]).length){fl("❌ Selecione pelo menos uma aba!");return;}try{const users=JSON.parse(((await FB.get("users"))||{}).value||"{}");users[inviteModal.email.replace(/\./g,"_")]={role:inviteModal.client?"cliente":"custom",tabs:inviteModal.tabs,client:inviteModal.client||""};await FB.set("users",JSON.stringify(users));fl("✅ "+inviteModal.email+" — "+inviteModal.tabs.length+" abas!");setInviteModal(null);}catch(err){fl("❌ Erro: "+err.message);}}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>💾 Salvar Acesso</button>
+<button onClick={()=>setInviteModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:10})}>Cancel</button>
+</div>
+</div></div>}
+{userListModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setUserListModal(null)}>
+<div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:560,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",maxHeight:"85vh",overflowY:"auto",animation:"popIn 0.2s ease"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+<span style={{fontSize:16,fontWeight:800,color:T.ac}}>👥 Usuários Cadastrados ({Object.keys(userListModal).length})</span>
+<button onClick={()=>setUserListModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+</div>
+{Object.keys(userListModal).length===0?<div style={{textAlign:"center",color:T.dm,padding:20,fontSize:12}}>Nenhum usuário cadastrado</div>:
+Object.entries(userListModal).map(([k,v])=>{const email=k.replace(/_/g,".");const isObj=typeof v==="object";const role=isObj?(v.role||"custom"):v;const tabsList=isObj?(v.tabs||[]):((ROLES[v]||{}).tabs||[]);const client=isObj?(v.client||""):"";const isClient=role==="cliente"||client;
+return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T.bd,marginBottom:8,background:T.c2}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+<div>
+<div style={{fontSize:13,fontWeight:700}}>{email}</div>
+<div style={{display:"flex",gap:6,alignItems:"center",marginTop:4}}>
+<span style={{padding:"2px 8px",borderRadius:5,fontSize:9,fontWeight:700,background:isClient?T.or+"18":role==="admin"?T.ac+"18":T.pu+"18",color:isClient?T.or:role==="admin"?T.ac:T.pu}}>{isClient?"Cliente":role==="admin"?"Admin":"Custom"}</span>
+{client&&<span style={{fontSize:9,color:T.or}}>👤 {client}</span>}
+</div>
+</div>
+<div style={{display:"flex",gap:4}}>
+<button onClick={()=>{setInviteModal({email,tabs:tabsList,client});setUserListModal(null);}} style={bt(T.bl+"15",T.bl,{padding:"4px 10px",fontSize:9,borderRadius:5})}>✏️ Editar</button>
+<button onClick={async()=>{if(!confirm("Remover acesso de "+email+"?"))return;const upd={...userListModal};delete upd[k];await FB.set("users",JSON.stringify(upd));setUserListModal(upd);fl("✅ "+email+" removido!");}} style={bt(T.rd+"15",T.rd,{padding:"4px 10px",fontSize:9,borderRadius:5})}>🗑</button>
+</div>
+</div>
+<div style={{display:"flex",flexWrap:"wrap",gap:3}}>{tabsList.map(tid=>{const tab=allTabs.find(t=>t.id===tid);return <span key={tid} style={{padding:"2px 8px",borderRadius:4,background:T.ac+"12",color:T.ac,fontSize:9,fontWeight:500}}>{tab?tab.i+" "+tab.l:tid}</span>})}</div>
+{tabsList.length===0&&<div style={{fontSize:9,color:T.dm}}>Acesso por role: {role} ({((ROLES[role]||{}).tabs||[]).length} abas)</div>}
+</div>})}
+</div></div>}
+</div>}
 
 {/* DASHBOARD */}
 {vw==="dashboard"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
