@@ -1353,6 +1353,9 @@ const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i
 const SB_GROUPS=[{id:"principal",icon:"🏠",label:"PRINCIPAL",items:["dashboard","agenda","inspect"]},{id:"financeiro",icon:"💰",label:"FINANCEIRO",items:["invoice","payroll","finance","tax"]},{id:"estrategia",icon:"📈",label:"ESTRATÉGIA",items:["strategy","report","feedback"]},{id:"operacao",icon:"⚙️",label:"OPERAÇÃO",items:["team","escala","laundry","deepclean","manual"]},{id:"config",icon:"🗄️",label:"CONFIGURAÇÕES",items:["database","icalsync","history"]}];
 const[sbGroups,setSbGroups]=useState(()=>{try{const s=localStorage.getItem("sidebar_collapsed_groups");if(s){const p=JSON.parse(s);const o={};SB_GROUPS.forEach(g=>{o[g.id]=p[g.id]===true;});return o;}}catch{}const o={};SB_GROUPS.forEach(g=>{o[g.id]=!g.items.includes(vw);});return o;});
 const toggleSbGroup=gid=>setSbGroups(p=>{const n={...p,[gid]:!p[gid]};try{localStorage.setItem("sidebar_collapsed_groups",JSON.stringify(n));}catch{}return n;});
+const[sbMobile,setSbMobile]=useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
+const[sbOpen,setSbOpen]=useState(false);
+useEffect(()=>{const h=()=>setSbMobile(window.innerWidth<768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
 const[lang,setLang]=useState(()=>{try{return localStorage.getItem("lang")||"pt";}catch{return"pt";}});
 const[langOpen,setLangOpen]=useState(false);
 const[notifOpen,setNotifOpen]=useState(false);
@@ -1398,7 +1401,7 @@ if(vw==="preview"){const d=vI||{no:iN,date:iD,client:iC,items:iI,total:iTot};ret
 
 // === MAIN ===
 return(
-<div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',sans-serif",color:T.tx,paddingLeft:220,paddingTop:60}}>
+<div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',sans-serif",color:T.tx,paddingLeft:sbMobile?0:220,paddingTop:60}}>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>{`select,select option{background:${T.cd};color:${T.tx};}select option:checked{background:${T.ac};color:${darkMode?T.bg:"#fff"};}input[type="date"]{color-scheme:${darkMode?"dark":"light"};}div::-webkit-scrollbar{height:3px;width:3px;}div::-webkit-scrollbar-thumb{background:${T.ac}44;border-radius:3px;}div::-webkit-scrollbar-track{background:transparent;}@media(max-width:600px){.Card{padding:10px!important;}}*{transition:background-color 0.25s ease,border-color 0.25s ease,color 0.2s ease,box-shadow 0.25s ease;}input,select,textarea,button{transition:background-color 0.15s ease,border-color 0.15s ease,color 0.15s ease,transform 0.1s ease;}button:active{transform:scale(0.97);}`}</style>
 <ModalC/>
@@ -1619,10 +1622,11 @@ setClientReport(null);fl("Report generated!");}} style={{width:"100%",marginTop:
 {toast&&<div style={{position:"fixed",top:12,left:"50%",transform:"translateX(-50%)",background:darkMode?"linear-gradient(135deg,#4ADE80,#22C55E)":"linear-gradient(135deg,#22C55E,#16A34A)",color:"#fff",padding:"8px 22px",borderRadius:10,fontWeight:700,fontSize:12,zIndex:9999,boxShadow:"0 6px 24px rgba(0,0,0,0.25)",animation:"slideUp 0.25s ease",letterSpacing:"0.2px"}}>{toast}</div>}
 {saveFlash&&!toast&&<div style={{position:"fixed",top:12,right:12,background:"#4ADE80",color:"#fff",padding:"4px 10px",borderRadius:8,fontSize:10,fontWeight:700,zIndex:9999,animation:"fadeIn 0.15s ease",boxShadow:"0 2px 8px rgba(74,222,128,0.3)"}}>✓ Saved</div>}
 
-{/* SIDEBAR — C2 estilos finais + collapse + localStorage */}
-<div style={{position:"fixed",left:0,top:0,bottom:0,width:220,background:T.cd,borderRight:"1px solid "+T.bd,overflowY:"auto",overflowX:"hidden",zIndex:101,boxSizing:"border-box",paddingBottom:20}}>
+{/* SIDEBAR — C4 mobile drawer */}
+{sbMobile&&sbOpen&&<div onClick={()=>setSbOpen(false)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",zIndex:103,animation:"fadeIn 0.2s ease"}}/>}
+<div style={{position:"fixed",left:0,top:0,bottom:0,width:220,background:T.cd,borderRight:"1px solid "+T.bd,overflowY:"auto",overflowX:"hidden",zIndex:sbMobile?104:101,boxSizing:"border-box",paddingBottom:20,transform:sbMobile&&!sbOpen?"translateX(-100%)":"translateX(0)",transition:"transform 250ms ease",boxShadow:sbMobile&&sbOpen?"4px 0 24px rgba(0,0,0,0.3)":"none"}}>
 <div style={{padding:"16px 16px 14px",borderBottom:"1px solid "+T.bd+"55"}}><img src="https://sunny-sistema.vercel.app/sunny-logo.png" alt="Sunny" style={{height:32,objectFit:"contain"}}/></div>
-{SB_GROUPS.map(g=>{const its=tabs.filter(t=>g.items.includes(t.id));if(its.length===0)return null;const closed=sbGroups[g.id]===true;return <div key={g.id} style={{marginTop:6}}><div onClick={()=>toggleSbGroup(g.id)} style={{padding:"8px 16px",fontSize:10,fontWeight:700,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",userSelect:"none"}}><span>{g.icon} {g.label}</span><span style={{fontSize:8,opacity:0.6}}>{closed?"▶":"▼"}</span></div><div style={{maxHeight:closed?0:its.length*42+8,overflow:"hidden",transition:"max-height 200ms ease"}}>{its.map(t=>{const isActive=vw===t.id;return <div key={t.id} onClick={()=>setVw(t.id)} onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=T.bd+"4d";}} onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}} style={{padding:"10px 16px 10px 13px",fontSize:13,cursor:"pointer",color:isActive?T.ac:T.tx,fontWeight:isActive?700:500,background:isActive?T.ac+"26":"transparent",borderLeft:isActive?"3px solid "+T.ac:"3px solid transparent",transition:"background 0.15s ease, color 0.15s ease",userSelect:"none"}}>{t.i} {t.l}</div>;})}</div></div>;})}
+{SB_GROUPS.map(g=>{const its=tabs.filter(t=>g.items.includes(t.id));if(its.length===0)return null;const closed=sbGroups[g.id]===true;return <div key={g.id} style={{marginTop:6}}><div onClick={()=>toggleSbGroup(g.id)} style={{padding:"8px 16px",fontSize:10,fontWeight:700,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",userSelect:"none"}}><span>{g.icon} {g.label}</span><span style={{fontSize:8,opacity:0.6}}>{closed?"▶":"▼"}</span></div><div style={{maxHeight:closed?0:its.length*42+8,overflow:"hidden",transition:"max-height 200ms ease"}}>{its.map(t=>{const isActive=vw===t.id;return <div key={t.id} onClick={()=>{setVw(t.id);if(sbMobile)setSbOpen(false);}} onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=T.bd+"4d";}} onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}} style={{padding:"10px 16px 10px 13px",fontSize:13,cursor:"pointer",color:isActive?T.ac:T.tx,fontWeight:isActive?700:500,background:isActive?T.ac+"26":"transparent",borderLeft:isActive?"3px solid "+T.ac:"3px solid transparent",transition:"background 0.15s ease, color 0.15s ease",userSelect:"none"}}>{t.i} {t.l}</div>;})}</div></div>;})}
 </div>
 
 {/* HEADER — C3 barra superior 60px */}
@@ -1638,7 +1642,8 @@ const totalNotif=invDue.length+(payPending?1:0)+turnoversNoInsp.length;
 const userName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())||"User";
 const userInitial=(userEmail||"?").trim().charAt(0).toUpperCase()||"?";
 return <React.Fragment>
-<div style={{position:"fixed",top:0,left:220,right:0,height:60,background:T.bg,borderBottom:"1px solid "+T.bd,display:"flex",alignItems:"center",padding:"0 20px",gap:14,zIndex:102,boxSizing:"border-box"}}>
+<div style={{position:"fixed",top:0,left:sbMobile?0:220,right:0,height:60,background:T.bg,borderBottom:"1px solid "+T.bd,display:"flex",alignItems:"center",padding:"0 20px",gap:14,zIndex:102,boxSizing:"border-box"}}>
+{sbMobile&&<button onClick={()=>setSbOpen(v=>!v)} style={{background:"transparent",border:"none",color:T.tx,fontSize:22,cursor:"pointer",padding:"4px 8px",fontFamily:"inherit",marginLeft:-8}}>☰</button>}
 <div style={{fontSize:16,fontWeight:700,color:T.tx,letterSpacing:"-0.2px"}}>{headerTitle}</div>
 <div style={{flex:1}}/>
 <div style={{position:"relative"}}>
