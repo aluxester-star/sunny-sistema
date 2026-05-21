@@ -15,7 +15,7 @@ The runtime is React 18 via UMD CDN bundles plus `babel-standalone`. The app's J
 - There is no module system — everything is top-level in one closure. Helpers, components, and the `App` body all share scope.
 - Syntax errors render as a red `<pre>` over the root; check the browser console.
 - React, ReactDOM, Firebase (`firebase-app-compat`, `firebase-firestore-compat`, `firebase-auth-compat`), QRCode, and Babel are loaded from CDNs in `<head>`. The Firestore + Auth handles are exposed as the globals `db` and `auth`.
-- A service worker registered inline at the bottom of `index.html` caches the shell under the name `sunny-v3`. **Bump that cache name when shipping changes that must invalidate clients**, otherwise returning users will see the old HTML.
+- A service worker registered inline at the bottom of `index.html` caches the shell under the name `sunny-v4` (was `sunny-v3` before the 2026-05-19 cleanup). **Bump that cache name when shipping changes that must invalidate clients**, otherwise returning users will see the old HTML.
 
 ### Entry / routing
 
@@ -51,6 +51,34 @@ When changing data shapes, remember:
 - Migration runs in the giant initial `useEffect` (around line 719) where each key is loaded one by one — that is the right place to add legacy-data fixups (see e.g. `ld_h2` merge logic, auto-generated `cd` codes on `db3`, lot status reconciliation).
 - The seeded constants `D` (properties), `IE` (employees), `DC` (company info), `IPROD` / `ILINEN` (inventory) provide initial values when a key is missing in Firestore. Don't repurpose them as the source of truth — production data has long since diverged.
 - Keys ending in `2` / `3` are versioned migrations; introducing a new schema for an existing module conventionally means a new suffix and a fallback read of the old one.
+
+## Error handling — `svT` / `safe` / `popup` (in-progress migration)
+
+> **Próxima sessão deve continuar pelo COMMIT 5.2 conforme `ERROR-HANDLING-AUDIT.md`.** A migração está pausada — ver `SESSION-SUMMARY-2026-05-19-paused.md` para o estado exato e a lista de handlers pendentes.
+
+An incremental migration is underway to give the UI real feedback when persistence fails (previously `sv()` and `FB.*` silently swallowed errors and handlers showed optimistic success toasts). Four opt-in helpers live near `fl()` (around line 773):
+
+| Helper | What it does |
+|---|---|
+| `friendlyErr(e)` | Translates an `Error` into a friendly pt-BR message. Branches: offline / network failure → "Sem conexão com a internet…"; CRITICAL_KEYS empty-array protection → "Operação cancelada por segurança…"; `AbortError`/timeout → "Demorou demais para responder…"; `QuotaExceededError` → "Memória do navegador cheia…"; permission-denied → "Sem permissão para essa ação…"; fallback → "Tente de novo em alguns segundos…". |
+| `svT(k, d)` | Same shape as `sv` but **throws** instead of swallowing. Detects `FB.set` returning `null` (network fail) and the empty-array guard for `CRITICAL_KEYS`. |
+| `safe(fn, okMsg, errLabel)` | `try { await fn(); if (okMsg) fl(okMsg); return true; } catch (e) { fl("❌ " + errLabel + " — " + friendlyErr(e)); return false; }`. Caller branches on the return: `if (!ok) return;` to skip form-clear / navigation. |
+| `popup(label)` | Replacement for `var w = window.open("", "_blank")`. Returns `null` and shows a toast asking the user to allow popups when blocked. |
+
+**Do not change `sv()` or `FB.get/set/del`.** They stay silent on purpose to support the ~50 callers that haven't been migrated yet (boot loads tolerate missing keys; auto-backup is best-effort; etc.). Migration is **opt-in per handler** — change `await sv(...)` to `await svT(...)` inside a `safe(...)` block, with `if (!ok) return` before any state cleanup or navigation. See `ERROR-HANDLING-AUDIT.md` and `SESSION-SUMMARY-2026-05-19-erro-handling.md` for the migration backlog.
+
+### Handlers already migrated
+
+- `savP` (linha ~799, save payroll) — proof of concept, commit `a43f0e2`.
+
+### Handlers still using the silent `sv` (do not break — migrate explicitly)
+
+- All other save handlers in the file: `savI`, `emitirInv`, `pagarInv`, `delP`, `delI`, `addFin`, `delFin`, `updateFinEntry`, `dupFin`, `syncFin`, `updatePStatus`, `uPr`/`uLn`/`uLB`/`uLoss`/`uCC`/`uCU`, `uInsp`/`uAg`/`uTk`, `setAgendaCleanStatus`, `autoGenPayrolls`/`autoGenInvoices` (fire-and-forget), iCal sync handlers, auto-faturamento triggers in boot. These should be migrated handler by handler with a browser test between commits.
+- 22 PDF generators using `var w = window.open("", "_blank"); if (!w) return;` still silently fail when popup-blocked. Replace with `popup(label)` in a later commit.
+
+### Boot useEffect
+
+Intentionally **stays** on the silent pattern (`try { ... } catch {} `). Failure to load a Firestore key falls back to seed defaults — that's the right UX. Don't migrate the ~30 boot reads to throw.
 
 ## AI integration
 
