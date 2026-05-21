@@ -1353,6 +1353,10 @@ const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i
 const SB_GROUPS=[{id:"principal",icon:"🏠",label:"PRINCIPAL",items:["dashboard","agenda","inspect"]},{id:"financeiro",icon:"💰",label:"FINANCEIRO",items:["invoice","payroll","finance","tax"]},{id:"estrategia",icon:"📈",label:"ESTRATÉGIA",items:["strategy","report","feedback"]},{id:"operacao",icon:"⚙️",label:"OPERAÇÃO",items:["team","escala","laundry","deepclean","manual"]},{id:"config",icon:"🗄️",label:"CONFIGURAÇÕES",items:["database","icalsync","history"]}];
 const[sbGroups,setSbGroups]=useState(()=>{try{const s=localStorage.getItem("sidebar_collapsed_groups");if(s){const p=JSON.parse(s);const o={};SB_GROUPS.forEach(g=>{o[g.id]=p[g.id]===true;});return o;}}catch{}const o={};SB_GROUPS.forEach(g=>{o[g.id]=!g.items.includes(vw);});return o;});
 const toggleSbGroup=gid=>setSbGroups(p=>{const n={...p,[gid]:!p[gid]};try{localStorage.setItem("sidebar_collapsed_groups",JSON.stringify(n));}catch{}return n;});
+const[lang,setLang]=useState(()=>{try{return localStorage.getItem("lang")||"pt";}catch{return"pt";}});
+const[langOpen,setLangOpen]=useState(false);
+const[notifOpen,setNotifOpen]=useState(false);
+const[profOpen,setProfOpen]=useState(false);
 const tabs=customTabs?allTabs.filter(t=>customTabs.includes(t.id)):allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 useEffect(()=>{if(tabs.length>0&&!tabs.find(t=>t.id===vw)){setVw(tabs[0].id);}},[tabs.length]);
 useEffect(()=>{if(sI.length>0&&!iN){const maxNo=sI.reduce((mx,i)=>{const n=parseInt(i.no)||0;return n>mx?n:mx;},0);setIN(String(maxNo+1));}},[sI.length]);
@@ -1620,6 +1624,53 @@ setClientReport(null);fl("Report generated!");}} style={{width:"100%",marginTop:
 <div style={{padding:"16px 16px 14px",borderBottom:"1px solid "+T.bd+"55"}}><img src="https://sunny-sistema.vercel.app/sunny-logo.png" alt="Sunny" style={{height:32,objectFit:"contain"}}/></div>
 {SB_GROUPS.map(g=>{const its=tabs.filter(t=>g.items.includes(t.id));if(its.length===0)return null;const closed=sbGroups[g.id]===true;return <div key={g.id} style={{marginTop:6}}><div onClick={()=>toggleSbGroup(g.id)} style={{padding:"8px 16px",fontSize:10,fontWeight:700,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",userSelect:"none"}}><span>{g.icon} {g.label}</span><span style={{fontSize:8,opacity:0.6}}>{closed?"▶":"▼"}</span></div><div style={{maxHeight:closed?0:its.length*42+8,overflow:"hidden",transition:"max-height 200ms ease"}}>{its.map(t=>{const isActive=vw===t.id;return <div key={t.id} onClick={()=>setVw(t.id)} onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=T.bd+"4d";}} onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}} style={{padding:"10px 16px 10px 13px",fontSize:13,cursor:"pointer",color:isActive?T.ac:T.tx,fontWeight:isActive?700:500,background:isActive?T.ac+"26":"transparent",borderLeft:isActive?"3px solid "+T.ac:"3px solid transparent",transition:"background 0.15s ease, color 0.15s ease",userSelect:"none"}}>{t.i} {t.l}</div>;})}</div></div>;})}
 </div>
+
+{/* HEADER — C3 barra superior 60px */}
+{(()=>{
+const curTab=allTabs.find(t=>t.id===vw);
+const headerTitle=curTab?curTab.i+" "+curTab.l:vw;
+const invDue=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTriggered&&d.turnoverCount>0);
+const payDueObj=getPayrollDueToday();
+const payPending=payDueObj&&!payDueObj.alreadyTriggered;
+const td=getLocalDate(),tm=getLocalDateOffset(1);
+const turnoversNoInsp=agEvents.filter(e=>(e.type==="Turnover"||!e.type)&&(e.checkIn===td||e.checkIn===tm)&&!inspections.find(i=>i.house===e.house&&i.date===e.date));
+const totalNotif=invDue.length+(payPending?1:0)+turnoversNoInsp.length;
+const userName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())||"User";
+const userInitial=(userEmail||"?").trim().charAt(0).toUpperCase()||"?";
+return <React.Fragment>
+<div style={{position:"fixed",top:0,left:220,right:0,height:60,background:T.bg,borderBottom:"1px solid "+T.bd,display:"flex",alignItems:"center",padding:"0 20px",gap:14,zIndex:102,boxSizing:"border-box"}}>
+<div style={{fontSize:16,fontWeight:700,color:T.tx,letterSpacing:"-0.2px"}}>{headerTitle}</div>
+<div style={{flex:1}}/>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setLangOpen(v=>!v);setNotifOpen(false);setProfOpen(false);}} style={{background:"transparent",border:"1px solid "+T.bd,color:T.tx,padding:"6px 10px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🌐 {lang.toUpperCase()}</button>
+{langOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:4,minWidth:140,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+{["pt","en","es"].map(l=><div key={l} onClick={()=>{setLang(l);try{localStorage.setItem("lang",l);}catch{}setLangOpen(false);}} style={{padding:"8px 12px",cursor:"pointer",fontSize:13,color:l===lang?T.ac:T.tx,fontWeight:l===lang?700:500,borderRadius:6}}>{l==="pt"?"🇧🇷 Português":l==="en"?"🇺🇸 English":"🇪🇸 Español"}</div>)}
+</div>}
+</div>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setNotifOpen(v=>!v);setLangOpen(false);setProfOpen(false);}} style={{background:"transparent",border:"none",padding:6,borderRadius:7,fontSize:18,cursor:"pointer",position:"relative",color:totalNotif>0?T.tx:T.dm,fontFamily:"inherit"}}>🔔{totalNotif>0&&<span style={{position:"absolute",top:-2,right:-2,minWidth:16,height:16,borderRadius:8,background:T.rd||"#EF4444",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",boxShadow:"0 2px 6px rgba(239,68,68,0.4)"}}>{totalNotif}</span>}</button>
+{notifOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:8,minWidth:300,maxHeight:420,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+<div style={{fontSize:10,fontWeight:700,color:T.dm,padding:"6px 10px 10px",textTransform:"uppercase",letterSpacing:"1px"}}>Notificações ({totalNotif})</div>
+{totalNotif===0?<div style={{padding:"20px 10px",fontSize:12,color:T.dm,textAlign:"center"}}>Nada pendente ✓</div>:<React.Fragment>
+{invDue.map((d,i)=><div key={"i"+i} onClick={()=>{setVw("invoice");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>📄</span><span><b>{d.client||"—"}</b> — {d.turnoverCount}x</span></div>)}
+{payPending&&<div onClick={()=>{setVw("payroll");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>💰</span><span>Folha pendente — <b>{payDueObj.cleanerCount}</b> cleaner(s)</span></div>}
+{turnoversNoInsp.map((e,i)=><div key={"t"+i} onClick={()=>{setVw("inspect");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>🔍</span><span>Inspeção <b>{e.house}</b> ({e.checkIn})</span></div>)}
+</React.Fragment>}
+</div>}
+</div>
+<button onClick={()=>{const nv=!darkMode;setDarkMode(nv);try{localStorage.setItem("sunny_theme",nv?"dark":"light");}catch{}}} style={{background:darkMode?"#FFB54722":"#60A5FA22",border:"none",color:darkMode?"#FFB547":"#60A5FA",padding:"6px 10px",borderRadius:7,fontSize:16,cursor:"pointer",fontFamily:"inherit"}}>{darkMode?"☀️":"🌙"}</button>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setProfOpen(v=>!v);setLangOpen(false);setNotifOpen(false);}} style={{background:T.ac+"26",border:"1.5px solid "+T.ac+"55",color:T.ac,width:34,height:34,borderRadius:17,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{userInitial}</button>
+{profOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:14,minWidth:240,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+<div style={{fontSize:13,fontWeight:700,color:T.tx,marginBottom:2}}>{userName}</div>
+<div style={{fontSize:11,color:T.dm,marginBottom:12,wordBreak:"break-all"}}>{userEmail||""}</div>
+<button onClick={()=>{setProfOpen(false);onLogout&&onLogout();}} style={{width:"100%",background:T.bd+"55",border:"none",color:T.tx,padding:"9px 12px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Logout</button>
+</div>}
+</div>
+</div>
+{(langOpen||notifOpen||profOpen)&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:199}} onClick={()=>{setLangOpen(false);setNotifOpen(false);setProfOpen(false);}}/>}
+</React.Fragment>;
+})()}
 
 <div style={{background:darkMode?"linear-gradient(135deg,#111833,#0A0F1E)":"linear-gradient(135deg,#FFFFFF,#F0F4FF)",borderBottom:"1px solid "+T.bd,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100,boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
 <div style={{display:"flex",alignItems:"center",gap:8}}><SunnyLogo h={28}/><div style={{fontSize:13,fontWeight:700,color:"#00B4D8"}}>Sunny Cleaning</div></div>
