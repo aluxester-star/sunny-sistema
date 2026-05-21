@@ -1350,6 +1350,16 @@ const askModal=(title,defaultVal,onOk)=>{setModal({title,val:defaultVal||"",onOk
 const ModalC=()=>modal?<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,animation:"fadeIn 0.15s ease"}} onClick={()=>setModal(null)}><div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:380,boxShadow:"0 12px 48px rgba(0,0,0,0.4)",animation:"popIn 0.2s ease"}}><div style={{fontSize:14,fontWeight:700,marginBottom:12,color:T.tx}}>{modal.title}</div><input autoFocus value={modal.val} onChange={e=>setModal({...modal,val:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"){modal.onOk(modal.val);setModal(null);}if(e.key==="Escape")setModal(null);}} style={{...inp,width:"100%",fontSize:15,padding:"12px 14px",marginBottom:14,borderRadius:10,border:"2px solid "+T.ac+"44",background:T.bg}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{modal.onOk(modal.val);setModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"12px",fontSize:13,borderRadius:10,fontWeight:700})}>OK</button><button onClick={()=>setModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:13,borderRadius:10})}>Cancel</button></div></div></div>:null;
 
 const allTabs=[{id:"dashboard",l:"Dashboard",i:"📊"},{id:"payroll",l:"Folha",i:"💰"},{id:"invoice",l:"Invoice",i:"📄"},{id:"finance",l:"Financeiro",i:"💲"},{id:"strategy",l:"Strategy",i:"🎯"},{id:"report",l:"Relatório",i:"📈"},{id:"tax",l:"Tax",i:"🧾"},{id:"team",l:"Equipe",i:"👷"},{id:"inspect",l:"Inspeção",i:"🔍"},{id:"history",l:"Histórico",i:"📁"},{id:"agenda",l:"Agenda",i:"📅"},{id:"deepclean",l:"Deep Clean",i:"🧹"},{id:"manual",l:"Manual",i:"📋"},{id:"escala",l:"Escala",i:"🗓️"},{id:"database",l:"Base",i:"🗄️"},{id:"laundry",l:"Laundry",i:"🧺"},{id:"feedback",l:"Feedback",i:"💬"},{id:"icalsync",l:"Sync iCal",i:"🔄"}];
+const SB_GROUPS=[{id:"principal",icon:"🏠",label:"PRINCIPAL",items:["dashboard","agenda","inspect"]},{id:"financeiro",icon:"💰",label:"FINANCEIRO",items:["invoice","payroll","finance","tax"]},{id:"estrategia",icon:"📈",label:"ESTRATÉGIA",items:["strategy","report","feedback"]},{id:"operacao",icon:"⚙️",label:"OPERAÇÃO",items:["team","escala","laundry","deepclean","manual"]},{id:"config",icon:"🗄️",label:"CONFIGURAÇÕES",items:["database","icalsync","history"]}];
+const[sbGroups,setSbGroups]=useState(()=>{try{const s=localStorage.getItem("sidebar_collapsed_groups");if(s){const p=JSON.parse(s);const o={};SB_GROUPS.forEach(g=>{o[g.id]=p[g.id]===true;});return o;}}catch{}const o={};SB_GROUPS.forEach(g=>{o[g.id]=!g.items.includes(vw);});return o;});
+const toggleSbGroup=gid=>setSbGroups(p=>{const n={...p,[gid]:!p[gid]};try{localStorage.setItem("sidebar_collapsed_groups",JSON.stringify(n));}catch{}return n;});
+const[sbMobile,setSbMobile]=useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
+const[sbOpen,setSbOpen]=useState(false);
+useEffect(()=>{const h=()=>setSbMobile(window.innerWidth<768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+const[lang,setLang]=useState(()=>{try{return localStorage.getItem("lang")||"pt";}catch{return"pt";}});
+const[langOpen,setLangOpen]=useState(false);
+const[notifOpen,setNotifOpen]=useState(false);
+const[profOpen,setProfOpen]=useState(false);
 const tabs=customTabs?allTabs.filter(t=>customTabs.includes(t.id)):allTabs.filter(t=>(ROLES[userRole]||ROLES.admin).tabs.includes(t.id));
 useEffect(()=>{if(tabs.length>0&&!tabs.find(t=>t.id===vw)){setVw(tabs[0].id);}},[tabs.length]);
 useEffect(()=>{if(sI.length>0&&!iN){const maxNo=sI.reduce((mx,i)=>{const n=parseInt(i.no)||0;return n>mx?n:mx;},0);setIN(String(maxNo+1));}},[sI.length]);
@@ -1391,7 +1401,7 @@ if(vw==="preview"){const d=vI||{no:iN,date:iD,client:iC,items:iI,total:iTot};ret
 
 // === MAIN ===
 return(
-<div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',sans-serif",color:T.tx}}>
+<div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',sans-serif",color:T.tx,paddingLeft:sbMobile?0:220,paddingTop:60}}>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>{`select,select option{background:${T.cd};color:${T.tx};}select option:checked{background:${T.ac};color:${darkMode?T.bg:"#fff"};}input[type="date"]{color-scheme:${darkMode?"dark":"light"};}div::-webkit-scrollbar{height:3px;width:3px;}div::-webkit-scrollbar-thumb{background:${T.ac}44;border-radius:3px;}div::-webkit-scrollbar-track{background:transparent;}@media(max-width:600px){.Card{padding:10px!important;}}*{transition:background-color 0.25s ease,border-color 0.25s ease,color 0.2s ease,box-shadow 0.25s ease;}input,select,textarea,button{transition:background-color 0.15s ease,border-color 0.15s ease,color 0.15s ease,transform 0.1s ease;}button:active{transform:scale(0.97);}`}</style>
 <ModalC/>
@@ -1432,11 +1442,11 @@ return(
 </div>
 </div>}
 
-<button onClick={()=>{setScanModal(null);setShowScanInput(true);setScanCode("");}} style={{position:"fixed",bottom:80,right:16,zIndex:9990,width:56,height:56,borderRadius:28,border:"none",background:"linear-gradient(135deg,#0094B0,#00B4D8)",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,148,176,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<button onClick={()=>{setScanModal(null);setShowScanInput(true);setScanCode("");}} style={{position:"fixed",bottom:16,right:16,zIndex:9990,width:56,height:56,borderRadius:28,border:"none",background:"linear-gradient(135deg,#0094B0,#00B4D8)",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,148,176,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
 <span style={{lineHeight:1}}>QR</span>
 </button>
 
-<button onClick={()=>{setShowSearch(true);setSearchQ("");}} style={{position:"fixed",bottom:80,left:16,zIndex:9990,width:48,height:48,borderRadius:24,border:"none",background:"linear-gradient(135deg,#A78BFA,#8B5CF6)",color:"#fff",fontSize:18,cursor:"pointer",boxShadow:"0 4px 16px rgba(167,139,250,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+<button onClick={()=>{setShowSearch(true);setSearchQ("");}} style={{position:"fixed",bottom:16,left:16,zIndex:9990,width:48,height:48,borderRadius:24,border:"none",background:"linear-gradient(135deg,#A78BFA,#8B5CF6)",color:"#fff",fontSize:18,cursor:"pointer",boxShadow:"0 4px 16px rgba(167,139,250,0.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
 <span style={{lineHeight:1}}>🔍</span>
 </button>
 
@@ -1611,6 +1621,62 @@ setClientReport(null);fl("Report generated!");}} style={{width:"100%",marginTop:
 </div>}
 {toast&&<div style={{position:"fixed",top:12,left:"50%",transform:"translateX(-50%)",background:darkMode?"linear-gradient(135deg,#4ADE80,#22C55E)":"linear-gradient(135deg,#22C55E,#16A34A)",color:"#fff",padding:"8px 22px",borderRadius:10,fontWeight:700,fontSize:12,zIndex:9999,boxShadow:"0 6px 24px rgba(0,0,0,0.25)",animation:"slideUp 0.25s ease",letterSpacing:"0.2px"}}>{toast}</div>}
 {saveFlash&&!toast&&<div style={{position:"fixed",top:12,right:12,background:"#4ADE80",color:"#fff",padding:"4px 10px",borderRadius:8,fontSize:10,fontWeight:700,zIndex:9999,animation:"fadeIn 0.15s ease",boxShadow:"0 2px 8px rgba(74,222,128,0.3)"}}>✓ Saved</div>}
+
+{/* SIDEBAR — C4 mobile drawer */}
+{sbMobile&&sbOpen&&<div onClick={()=>setSbOpen(false)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",zIndex:103,animation:"fadeIn 0.2s ease"}}/>}
+<div style={{position:"fixed",left:0,top:0,bottom:0,width:220,background:T.cd,borderRight:"1px solid "+T.bd,overflowY:"auto",overflowX:"hidden",zIndex:sbMobile?104:101,boxSizing:"border-box",paddingBottom:20,transform:sbMobile&&!sbOpen?"translateX(-100%)":"translateX(0)",transition:"transform 250ms ease",boxShadow:sbMobile&&sbOpen?"4px 0 24px rgba(0,0,0,0.3)":"none"}}>
+<div style={{padding:"16px 16px 14px",borderBottom:"1px solid "+T.bd+"55"}}><img src="https://sunny-sistema.vercel.app/sunny-logo.png" alt="Sunny" style={{height:32,objectFit:"contain"}}/></div>
+{SB_GROUPS.map(g=>{const its=tabs.filter(t=>g.items.includes(t.id));if(its.length===0)return null;const closed=sbGroups[g.id]===true;return <div key={g.id} style={{marginTop:6}}><div onClick={()=>toggleSbGroup(g.id)} style={{padding:"8px 16px",fontSize:10,fontWeight:700,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",userSelect:"none"}}><span>{g.icon} {g.label}</span><span style={{fontSize:8,opacity:0.6}}>{closed?"▶":"▼"}</span></div><div style={{maxHeight:closed?0:its.length*42+8,overflow:"hidden",transition:"max-height 200ms ease"}}>{its.map(t=>{const isActive=vw===t.id;return <div key={t.id} onClick={()=>{setVw(t.id);if(sbMobile)setSbOpen(false);}} onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background=T.bd+"4d";}} onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background="transparent";}} style={{padding:"10px 16px 10px 13px",fontSize:13,cursor:"pointer",color:isActive?T.ac:T.tx,fontWeight:isActive?700:500,background:isActive?T.ac+"26":"transparent",borderLeft:isActive?"3px solid "+T.ac:"3px solid transparent",transition:"background 0.15s ease, color 0.15s ease",userSelect:"none"}}>{t.i} {t.l}</div>;})}</div></div>;})}
+</div>
+
+{/* HEADER — C3 barra superior 60px */}
+{(()=>{
+const curTab=allTabs.find(t=>t.id===vw);
+const headerTitle=curTab?curTab.i+" "+curTab.l:vw;
+const invDue=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTriggered&&d.turnoverCount>0);
+const payDueObj=getPayrollDueToday();
+const payPending=payDueObj&&!payDueObj.alreadyTriggered;
+const td=getLocalDate(),tm=getLocalDateOffset(1);
+const turnoversNoInsp=agEvents.filter(e=>(e.type==="Turnover"||!e.type)&&(e.checkIn===td||e.checkIn===tm)&&!inspections.find(i=>i.house===e.house&&i.date===e.date));
+const totalNotif=invDue.length+(payPending?1:0)+turnoversNoInsp.length;
+const userName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())||"User";
+const userInitial=(userEmail||"?").trim().charAt(0).toUpperCase()||"?";
+return <React.Fragment>
+<div style={{position:"fixed",top:0,left:sbMobile?0:220,right:0,height:60,background:T.bg,borderBottom:"1px solid "+T.bd,display:"flex",alignItems:"center",padding:"0 20px",gap:14,zIndex:102,boxSizing:"border-box"}}>
+{sbMobile&&<button onClick={()=>setSbOpen(v=>!v)} style={{background:"transparent",border:"none",color:T.tx,fontSize:22,cursor:"pointer",padding:"4px 8px",fontFamily:"inherit",marginLeft:-8}}>☰</button>}
+<div style={{fontSize:16,fontWeight:700,color:T.tx,letterSpacing:"-0.2px"}}>{headerTitle}</div>
+<div style={{flex:1}}/>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setLangOpen(v=>!v);setNotifOpen(false);setProfOpen(false);}} style={{background:"transparent",border:"1px solid "+T.bd,color:T.tx,padding:"6px 10px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>🌐 {lang.toUpperCase()}</button>
+{langOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:4,minWidth:140,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+{["pt","en","es"].map(l=><div key={l} onClick={()=>{setLang(l);try{localStorage.setItem("lang",l);}catch{}setLangOpen(false);}} style={{padding:"8px 12px",cursor:"pointer",fontSize:13,color:l===lang?T.ac:T.tx,fontWeight:l===lang?700:500,borderRadius:6}}>{l==="pt"?"🇧🇷 Português":l==="en"?"🇺🇸 English":"🇪🇸 Español"}</div>)}
+</div>}
+</div>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setNotifOpen(v=>!v);setLangOpen(false);setProfOpen(false);}} style={{background:"transparent",border:"none",padding:6,borderRadius:7,fontSize:18,cursor:"pointer",position:"relative",color:totalNotif>0?T.tx:T.dm,fontFamily:"inherit"}}>🔔{totalNotif>0&&<span style={{position:"absolute",top:-2,right:-2,minWidth:16,height:16,borderRadius:8,background:T.rd||"#EF4444",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",boxShadow:"0 2px 6px rgba(239,68,68,0.4)"}}>{totalNotif}</span>}</button>
+{notifOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:8,minWidth:300,maxHeight:420,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+<div style={{fontSize:10,fontWeight:700,color:T.dm,padding:"6px 10px 10px",textTransform:"uppercase",letterSpacing:"1px"}}>Notificações ({totalNotif})</div>
+{totalNotif===0?<div style={{padding:"20px 10px",fontSize:12,color:T.dm,textAlign:"center"}}>Nada pendente ✓</div>:<React.Fragment>
+{invDue.map((d,i)=><div key={"i"+i} onClick={()=>{setVw("invoice");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>📄</span><span><b>{d.client||"—"}</b> — {d.turnoverCount}x</span></div>)}
+{payPending&&<div onClick={()=>{setVw("payroll");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>💰</span><span>Folha pendente — <b>{payDueObj.cleanerCount}</b> cleaner(s)</span></div>}
+{turnoversNoInsp.map((e,i)=><div key={"t"+i} onClick={()=>{setVw("inspect");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>🔍</span><span>Inspeção <b>{e.house}</b> ({e.checkIn})</span></div>)}
+</React.Fragment>}
+</div>}
+</div>
+<button onClick={()=>{const nv=!darkMode;setDarkMode(nv);try{localStorage.setItem("sunny_theme",nv?"dark":"light");}catch{}}} style={{background:darkMode?"#FFB54722":"#60A5FA22",border:"none",color:darkMode?"#FFB547":"#60A5FA",padding:"6px 10px",borderRadius:7,fontSize:16,cursor:"pointer",fontFamily:"inherit"}}>{darkMode?"☀️":"🌙"}</button>
+<div style={{position:"relative"}}>
+<button onClick={()=>{setProfOpen(v=>!v);setLangOpen(false);setNotifOpen(false);}} style={{background:T.ac+"26",border:"1.5px solid "+T.ac+"55",color:T.ac,width:34,height:34,borderRadius:17,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}>{userInitial}</button>
+{profOpen&&<div style={{position:"absolute",top:42,right:0,background:T.cd,border:"1px solid "+T.bd,borderRadius:10,padding:14,minWidth:240,boxShadow:"0 8px 24px rgba(0,0,0,0.25)",zIndex:200}}>
+<div style={{fontSize:13,fontWeight:700,color:T.tx,marginBottom:2}}>{userName}</div>
+<div style={{fontSize:11,color:T.dm,marginBottom:12,wordBreak:"break-all"}}>{userEmail||""}</div>
+<button onClick={()=>{setProfOpen(false);onLogout&&onLogout();}} style={{width:"100%",background:T.bd+"55",border:"none",color:T.tx,padding:"9px 12px",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Logout</button>
+</div>}
+</div>
+</div>
+{(langOpen||notifOpen||profOpen)&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:199}} onClick={()=>{setLangOpen(false);setNotifOpen(false);setProfOpen(false);}}/>}
+</React.Fragment>;
+})()}
+
 <div style={{background:darkMode?"linear-gradient(135deg,#111833,#0A0F1E)":"linear-gradient(135deg,#FFFFFF,#F0F4FF)",borderBottom:"1px solid "+T.bd,padding:"8px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:100,boxShadow:darkMode?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
 <div style={{display:"flex",alignItems:"center",gap:8}}><SunnyLogo h={28}/><div style={{fontSize:13,fontWeight:700,color:"#00B4D8"}}>Sunny Cleaning</div></div>
 <div style={{display:"flex",gap:3}}><button onClick={()=>setDarkMode(!darkMode)} style={{...bt(darkMode?"#182040":"#E8EBF0",darkMode?"#FFD700":"#F59E0B",{padding:"6px 10px",fontSize:10,borderRadius:8,border:"1px solid "+(darkMode?"#1A2545":"#E5E7EB"),transition:"all 0.3s"}),display:"flex",alignItems:"center",gap:4}}>{darkMode?"☀️":"🌙"}<span style={{fontSize:9,fontWeight:600}}>{darkMode?"Light":"Dark"}</span></button>{userRole==="admin"&&<button onClick={()=>setSs(!ss)} style={bt(T.c2,T.dm,{padding:"6px 10px",fontSize:10,borderRadius:8,border:"1px solid "+T.bd})}>⚙️</button>}{onLogout&&<button onClick={onLogout} style={bt(T.c2,T.dm,{padding:"6px 10px",fontSize:10,borderRadius:8,border:"1px solid "+T.bd})} title="Sair">🚪</button>}</div></div>
@@ -1690,18 +1756,6 @@ return <div key={k} style={{padding:"14px",borderRadius:10,border:"1px solid "+T
 </div></div>}
 
 <div style={{display:"flex",gap:8,marginTop:12,flexWrap:"wrap"}}><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];const data={};for(const k of keys){const r=await FB.get(k);if(r)data[k]=r.value;}data._company=co;data._exportDate=new Date().toISOString();const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);fl("✅ Backup exportado!");}catch(e){fl("❌ Erro ao exportar");}}} style={{padding:"8px 16px",background:"#0094B0",border:"none",borderRadius:6,color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer"}}>📦 Exportar Dados (JSON)</button><button onClick={async()=>{try{const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3"];const rows=[["Módulo","Dados"]];for(const k of keys){const r=await FB.get(k);if(r)rows.push([k,r.value]);}const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-backup-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ CSV exportado!");}catch(e){fl("❌ Erro ao exportar CSV");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid #00B4D8",borderRadius:6,color:"#00B4D8",fontSize:11,fontWeight:600,cursor:"pointer"}}>📊 Exportar CSV</button><label style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.or,borderRadius:6,color:T.or,fontSize:11,fontWeight:600,cursor:"pointer"}}>📥 Importar Backup<input type="file" accept=".json" style={{display:"none"}} onChange={async(e)=>{try{const f=e.target.files[0];if(!f)return;const txt=await f.text();const data=JSON.parse(txt);const keys=["sp3","si3","db3","em3","fn3","pr3","ln3","lb3","ep3","insp3","ls3","cc3","cfc3","ld_h2","ld_cfg2","ld_log2","ld_man2","ld_lead2","ld_lots","ld_cat","dc3","man3","esc3","est3","est_cnt","cu3","co3","ag3","tk3"];let c=0;for(const k of keys){if(data[k]){await FB.set(k,data[k]);c++;}}if(data._company)setCo(data._company);fl("✅ "+c+" módulos importados! Recarregando...");setTimeout(()=>window.location.reload(),1500);}catch(err){fl("❌ Arquivo inválido");}}}/></label><button onClick={async()=>{try{const keys=["sp3","si3","fn3"];const all={payrolls:[],invoices:[],finance:[]};for(const k of keys){const r=await FB.get(k);if(r){try{const d=JSON.parse(r.value);if(k==="sp3")all.payrolls=d;if(k==="si3")all.invoices=d;if(k==="fn3")all.finance=d;}catch{}}}let csv="TIPO,DATA,DESCRIÇÃO,VALOR\n";all.payrolls.forEach(p=>(p.items||[]).forEach(i=>csv+=`Payroll,"${p.week}","${p.emp} - ${i.propName||""}",${i.employeePay}\n`));all.invoices.forEach(v=>(v.items||[]).forEach(i=>csv+=`Invoice,"${v.date}","${v.client} - ${i.property||""}",${i.invoicePrice}\n`));all.finance.forEach(f=>csv+=`Finance,"${f.date}","${f.desc}",${f.type==="ENTRADA"?f.amount:-f.amount}\n`);const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`sunny-relatorio-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);fl("✅ Relatório exportado!");}catch(e){fl("❌ Erro");}}} style={{padding:"8px 16px",background:"#1A2545",border:"1px solid "+T.gr,borderRadius:6,color:T.gr,fontSize:11,fontWeight:600,cursor:"pointer"}}>📈 Relatório Completo (CSV)</button></div></div>}
-<div style={{position:"relative",borderBottom:"1px solid "+T.bd,background:darkMode?T.bg+"cc":"#fff"}}>
-<button id="navScrollLeft" onClick={()=>{const el=document.getElementById("navTabsScroll");if(el)el.scrollBy({left:-220,behavior:"smooth"});}} style={{position:"absolute",left:0,top:0,bottom:0,width:32,zIndex:5,border:"none",background:"linear-gradient(90deg,"+(darkMode?T.bg:"#fff")+",transparent)",color:T.ac,cursor:"pointer",fontSize:18,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"flex-start",paddingLeft:6,fontFamily:"inherit"}}>◀</button>
-<div id="navTabsScroll" style={{display:"flex",gap:1,padding:"6px 32px",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",alignItems:"center"}}>
-{(()=>{const badges={agenda:agEvents.filter(e=>e.date===getLocalDate()).length,payroll:sP.filter(p=>(p.status||"paga")!=="paga").length,invoice:sI.filter(i=>(i.status||"emitida")==="rascunho").length,history:sP.filter(p=>(p.status||"paga")==="emitida").length+sI.filter(i=>(i.status||"emitida")==="emitida").length,inspect:inspections.filter(i=>i.status==="blocked").length,laundry:ldHouses.filter(h=>h.status==="SUJA"||h.status==="CONFERENCIA").length+lowP.length+lowL.length,deepclean:(()=>{const today=getLocalDate();return dcList.filter(d=>{if(!d.active||!d.lastDone||!d.freqMonths)return false;const last=new Date(d.lastDone+"T12:00");last.setMonth(last.getMonth()+d.freqMonths);const due=last.getFullYear()+"-"+String(last.getMonth()+1).padStart(2,"0")+"-"+String(last.getDate()).padStart(2,"0");return due<=today;}).length;})()};
-const groups=[[["dashboard","agenda","history"],["payroll","invoice","finance","strategy","report","tax"],["laundry","inspect","deepclean","escala"],["team","manual","database","feedback","icalsync"]]];
-return groups[0].map((grp,gi)=><React.Fragment key={gi}>
-{gi>0&&<div style={{width:2,minWidth:2,height:20,background:T.bd,borderRadius:1,margin:"0 4px",flexShrink:0}}/>}
-{tabs.filter(t=>grp.includes(t.id)).map(t=>{const b=badges[t.id]||0;return <button key={t.id} onClick={()=>setVw(t.id)} style={{padding:"8px 12px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:vw===t.id?700:500,fontFamily:"inherit",whiteSpace:"nowrap",color:vw===t.id?"#fff":T.dm,background:vw===t.id?"linear-gradient(135deg,"+T.ac+",#0094B0)":"transparent",transition:"all 0.2s",position:"relative",boxShadow:vw===t.id?"0 2px 8px "+T.ac+"44":"none",flexShrink:0}}>{t.i} {t.l}{b>0&&<span style={{position:"absolute",top:-4,right:-4,minWidth:16,height:16,borderRadius:8,background:"linear-gradient(135deg,#FF6B6B,#EF4444)",color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{b}</span>}</button>;})}
-</React.Fragment>);})()}
-</div>
-<button id="navScrollRight" onClick={()=>{const el=document.getElementById("navTabsScroll");if(el)el.scrollBy({left:220,behavior:"smooth"});}} style={{position:"absolute",right:0,top:0,bottom:0,width:32,zIndex:5,border:"none",background:"linear-gradient(270deg,"+(darkMode?T.bg:"#fff")+",transparent)",color:T.ac,cursor:"pointer",fontSize:18,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6,fontFamily:"inherit"}}>▶</button>
-</div>
 <div style={{maxWidth:1020,margin:"0 auto",padding:"12px 8px",paddingBottom:60}}>
 
 {/* DASHBOARD */}
@@ -6821,11 +6875,6 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
 })()}
 
 </div>
-
-<div className="np" style={{position:"fixed",bottom:0,left:0,right:0,background:darkMode?"linear-gradient(180deg,transparent,#0A0F1Eee 20%,#0A0F1E)":"linear-gradient(180deg,transparent,#F5F7FAee 20%,#F5F7FA)",padding:"10px 10px 8px",zIndex:90,display:"flex",justifyContent:"center",gap:4}}>
-{[{k:"N",l:"Folha",i:"💰",g:"payroll"},{k:"I",l:"Invoice",i:"📄",g:"invoice"},{k:"D",l:"Home",i:"📊",g:"dashboard"},{k:"S",l:"Strategy",i:"🎯",g:"strategy"},{k:"F",l:"Finance",i:"💲",g:"finance"},{k:"L",l:"Laundry",i:"👕",g:"laundry"}].map(a=><button key={a.k} onClick={()=>setVw(a.g)} style={{padding:"6px 12px",borderRadius:8,border:vw===a.g?"1.5px solid "+T.ac:"1px solid "+T.bd+"44",background:vw===a.g?darkMode?T.ac+"18":"#E0F7FA":darkMode?T.bg+"cc":"#ffffffcc",color:vw===a.g?T.ac:T.dm,fontSize:11,fontWeight:vw===a.g?700:500,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:3,transition:"all 0.15s",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"}}><span style={{fontSize:12}}>{a.i}</span><span>{a.l}</span></button>)}
-</div>
-<div style={{height:52}}/>
 
 </div>);}
 
