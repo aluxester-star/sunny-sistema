@@ -1,5 +1,15 @@
 # CLEANUP-LOG.md — Pós-redesign sidebar/header
 
+## Status em 21/05/2026 23:10 BRT
+- FASE 0 ✅ análise concluída
+- FASE 1 ✅ commitada (8eecd63) + pushada em main (4999306)
+- FASE 2 ✅ commitada local (f7bfb41) em branch feature/fase-2-remover-header
+- FASE 3 ⏳ pendente — remover toggle dark duplicado no Dashboard (~linha 1775)
+- FASE 4 ⏳ pendente — remover seletor de idioma
+- FASE 5 ⏳ pendente — merge final em main + push + bumpar service worker
+
+Próxima sessão: continuar de feature/fase-2-remover-header (hash f7bfb41).
+
 **Branch:** `feature/cleanup-post-redesign` (a partir de `00e78e2`, merge do redesign em `main`)
 **Sessões:** iniciada 2026-05-20, pausada 2026-05-20
 
