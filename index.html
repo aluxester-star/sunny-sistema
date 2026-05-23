@@ -1092,17 +1092,17 @@ const syncAllICalConnections=async()=>{
   setIcalSyncing(false);
 };
 
-const confirmICalConnection=async(houseId,url,testResult)=>{
-  const updated=db.map(h=>h.id===houseId?{...h,icalUrl:url,icalConfirmed:true,icalSourceName:testResult.propertyName||testResult.calName||"",icalConnectedAt:new Date().toISOString()}:h);
+const confirmICalConnection=async(houseN,houseC,url,testResult)=>{
+  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalUrl:url,icalConfirmed:true,icalSourceName:testResult.propertyName||testResult.calName||"",icalConnectedAt:new Date().toISOString()}:h);
   setDb(updated);
   await sv("db3",updated);
   fl("✅ iCal conectado! Use o botão Sincronizar para puxar reservas.");
   setIcalTestModal(null);
 };
 
-const disconnectICal=async(houseId)=>{
+const disconnectICal=async(houseN,houseC)=>{
   if(!confirm("Desconectar iCal desta casa? Os turnovers já criados pelo iCal serão mantidos, mas novas reservas não serão sincronizadas."))return;
-  const updated=db.map(h=>h.id===houseId?{...h,icalUrl:"",icalConfirmed:false,icalSourceName:"",icalConnectedAt:null,icalLastSync:null}:h);
+  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalUrl:"",icalConfirmed:false,icalSourceName:"",icalConnectedAt:null,icalLastSync:null}:h);
   setDb(updated);
   await sv("db3",updated);
   fl("iCal desconectado");
@@ -6868,7 +6868,7 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
             <div style={{fontSize:11,color:T.tx,lineHeight:1.5}}>Você está vinculando o iCal "<strong>{icalTestModal.result.propertyName||"sem nome"}</strong>" à sua casa <strong>{icalTestModal.house.n}</strong> (cliente {icalTestModal.house.c}).<br/><br/>De agora em diante, reservas desse iCal vão criar turnovers com <strong>SEUS códigos e dados</strong>, não com o nome do Airbnb.</div>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>confirmICalConnection(icalTestModal.house.id,icalTestModal.url,icalTestModal.result)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:12,fontWeight:700,borderRadius:8})}>✅ Confirmar Vínculo</button>
+            <button onClick={()=>confirmICalConnection(icalTestModal.house.n,icalTestModal.house.c,icalTestModal.url,icalTestModal.result)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:12,fontWeight:700,borderRadius:8})}>✅ Confirmar Vínculo</button>
             <button onClick={()=>setIcalTestModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:8})}>Cancel</button>
           </div>
         </>}
@@ -6913,7 +6913,7 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
             </div>
             <div style={{display:"flex",gap:5}}>
               <button onClick={()=>openTestModal(h)} style={bt(T.bl+"15",T.bl,{padding:"6px 10px",fontSize:10,borderRadius:5})}>✏️ Editar</button>
-              <button onClick={()=>disconnectICal(h.id)} style={bt(T.rd+"15",T.rd,{padding:"6px 10px",fontSize:10,borderRadius:5})}>🔌 Desconectar</button>
+              <button onClick={()=>disconnectICal(h.n,h.c)} style={bt(T.rd+"15",T.rd,{padding:"6px 10px",fontSize:10,borderRadius:5})}>🔌 Desconectar</button>
             </div>
           </div>;
         })}
