@@ -728,8 +728,8 @@ try{const r=await FB.get("cdsc");if(r&&r.value)setCustomDSC(JSON.parse(r.value))
 try{const r=await FB.get("sops3");if(r&&r.value)setSops(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("fb_campaigns");if(r&&r.value)setFbCampaigns(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("emp_invites");if(r&&r.value)setEmpInvites(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("ical_sync_log");if(r&&r.value)setIcalSyncLog(JSON.parse(r.value));}catch{}
-try{const r=await FB.get("auto_triggers");if(r&&r.value)setAutoTriggers(JSON.parse(r.value));}catch{}
+try{const r=await FB.get("ical_sync_log");if(r&&r.value){let p=JSON.parse(r.value);if(typeof p==="string")p=JSON.parse(p);if(Array.isArray(p))setIcalSyncLog(p);}}catch{}
+try{const r=await FB.get("auto_triggers");if(r&&r.value){let p=JSON.parse(r.value);if(typeof p==="string")p=JSON.parse(p);if(Array.isArray(p))setAutoTriggers(p);}}catch{}
 try{const r=await FB.get("emp_roles");if(r&&r.value){setEmpRoles(JSON.parse(r.value));}else{const defaults=[{id:"r_cleaner",name:"Cleaner",icon:"🧹",color:"#00B4D8",feedback:"cleaner_fixo",inPayroll:true,sporadic:false},{id:"r_manager",name:"Manager",icon:"👔",color:"#A855F7",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_supervisor",name:"Supervisor",icon:"🎯",color:"#3B82F6",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_qi",name:"Quality Inspector",icon:"🔍",color:"#10B981",feedback:"manager",inPayroll:true,sporadic:false},{id:"r_trainer",name:"Trainer",icon:"🎓",color:"#EAB308",feedback:"",inPayroll:true,sporadic:false},{id:"r_sporadic",name:"Cleaner Esporádico",icon:"⚡",color:"#F97316",feedback:"",inPayroll:false,sporadic:true},{id:"r_external",name:"Ajudante Externo",icon:"🤝",color:"#6B7280",feedback:"",inPayroll:false,sporadic:true}];setEmpRoles(defaults);await FB.set("emp_roles",JSON.stringify(defaults));}}catch{}
 try{const r=await FB.get("ld_log2");if(r&&r.value)setLdLog2(JSON.parse(r.value));}catch{}
 try{const r=await FB.get("ld_man2");if(r&&r.value)setLdManual(JSON.parse(r.value));}catch{}
@@ -1087,7 +1087,7 @@ const syncAllICalConnections=async()=>{
   setDb(updatedDb);
   await sv("db3",updatedDb);
   setIcalSyncLog([{at:new Date().toISOString(),totalCreated,totalUpdated,totalRemoved,totalErr,details:log},...icalSyncLog].slice(0,20));
-  await sv("ical_sync_log",JSON.stringify([{at:new Date().toISOString(),totalCreated,totalUpdated,totalRemoved,totalErr,details:log},...icalSyncLog].slice(0,20)));
+  await sv("ical_sync_log",[{at:new Date().toISOString(),totalCreated,totalUpdated,totalRemoved,totalErr,details:log},...icalSyncLog].slice(0,20));
   fl("✅ Sync completo: "+totalCreated+" criados, "+totalUpdated+" atualizados, "+totalRemoved+" removidos");
   setIcalSyncing(false);
 };
@@ -1287,7 +1287,7 @@ const generateAutoInvoice=async(item)=>{
   const newTrigger={id:Date.now(),type:"invoice",client,periodStart,periodEnd,createdAt:new Date().toISOString(),invoiceId:newInv.id,total};
   const updatedTriggers=[newTrigger,...autoTriggers].slice(0,100);
   setAutoTriggers(updatedTriggers);
-  await sv("auto_triggers",JSON.stringify(updatedTriggers));
+  await sv("auto_triggers",updatedTriggers);
   return newInv;
 };
 
@@ -1326,7 +1326,7 @@ const generateAutoPayroll=async(payroll)=>{
   const newTrigger={id:Date.now(),type:"payroll",periodStart,periodEnd,createdAt:new Date().toISOString(),cleanerCount:newEntries.length,total:payroll.totalAmount};
   const updatedTriggers=[newTrigger,...autoTriggers].slice(0,100);
   setAutoTriggers(updatedTriggers);
-  await sv("auto_triggers",JSON.stringify(updatedTriggers));
+  await sv("auto_triggers",updatedTriggers);
   fl("✅ Folha semanal gerada: "+newEntries.length+" cleaner(s)");
 };
 const uEP=async n=>{setEmpProfiles(n);await sv("ep3",n);};
