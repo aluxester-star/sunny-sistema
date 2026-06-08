@@ -673,7 +673,7 @@ const[fIC,setFIC]=useState("");const[fIM,setFIM]=useState("");
 const[sE,setSE]=useState("");const[wkFrom,setWkFrom]=useState(getLocalDate());const[wkTo,setWkTo]=useState(getLocalDateOffset(7));const[pM,setPM]=useState(MO[new Date().getMonth()]);const[pI,setPI]=useState([]);
 const[iN,setIN]=useState("");const[iD,setID]=useState(getLocalDate());const[iC,setIC]=useState("");const[iI,setII]=useState([]);
 const[nEmpN,setNEmpN]=useState("");
-const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");const[fixedCosts,setFixedCosts]=useState([]);
+const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");const[fixedCosts,setFixedCosts]=useState([]);const[finSub,setFinSub]=useState("lancamentos");
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:getLocalDate(),dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
 const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");const[trash,setTrash]=useState([]);
 const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
@@ -2166,12 +2166,17 @@ return <Card style={{padding:18,border:"1px solid "+T.ac+"33",background:T.ac+"0
 {/* FINANCE */}
 {vw==="finance"&&<div style={{display:"flex",flexDirection:"column",gap:10}}>
 
+<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+{[{k:"painel",l:"📊 Painel"},{k:"lancamentos",l:"💸 Lançamentos"},{k:"importar",l:"📥 Importar"},{k:"resumo",l:"📈 Resumo"},{k:"cascata",l:"💧 Cascata"},{k:"configurar",l:"⚙️ Configurar"}].map(t=><button key={t.k} onClick={()=>setFinSub(t.k)} style={{padding:"6px 14px",borderRadius:6,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700,background:finSub===t.k?T.ac+"18":T.c2,color:finSub===t.k?T.ac:T.dm,transition:"all 0.15s"}}>{t.l}</button>)}
+</div>
+
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
 <div style={{background:"linear-gradient(135deg,"+T.gr+"15,"+T.gr+"05)",borderRadius:10,padding:"12px 14px",border:"1px solid "+T.gr+"22"}}><div style={{fontSize:9,color:T.gr,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.5px"}}>ENTRADAS</div><div style={{fontSize:22,fontWeight:800,marginTop:3}}>${fTI.toLocaleString("en-US")}</div><div style={{fontSize:9,color:T.dm}}>{fIn.length} lançamentos</div></div>
 <div style={{background:"linear-gradient(135deg,"+T.rd+"15,"+T.rd+"05)",borderRadius:10,padding:"12px 14px",border:"1px solid "+T.rd+"22"}}><div style={{fontSize:9,color:T.rd,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.5px"}}>SAÍDAS</div><div style={{fontSize:22,fontWeight:800,marginTop:3}}>${fTO.toLocaleString("en-US")}</div><div style={{fontSize:9,color:T.dm}}>{fOut.length} lançamentos</div></div>
 <div style={{background:"linear-gradient(135deg,"+(fLu>=0?T.gr:T.rd)+"15,"+(fLu>=0?T.gr:T.rd)+"05)",borderRadius:10,padding:"12px 14px",border:"1px solid "+(fLu>=0?T.gr:T.rd)+"22"}}><div style={{fontSize:9,color:fLu>=0?T.gr:T.rd,textTransform:"uppercase",fontWeight:700,letterSpacing:"0.5px"}}>{fLu>=0?"LUCRO":"PREJUÍZO"}</div><div style={{fontSize:22,fontWeight:800,marginTop:3}}>${Math.abs(fLu).toLocaleString("en-US")}</div><div style={{fontSize:9,color:T.dm}}>{fTI?(Math.abs(fLu)/fTI*100).toFixed(0)+"% margem":"—"}</div></div>
 </div>
 
+{finSub==="lancamentos"&&<>
 <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",padding:"6px 0"}}>
 <div style={{display:"flex",borderRadius:6,overflow:"hidden",border:"1px solid "+T.bd}}>
 <button onClick={()=>setFV("month")} style={bt(fV==="month"?T.ac+"22":T.cd,fV==="month"?T.ac:T.dm,{borderRadius:0,padding:"5px 10px",fontSize:9})}>Mês</button>
@@ -2318,6 +2323,13 @@ return <div key={e.id} style={{padding:"6px 0",borderBottom:"1px solid "+T.bd,fo
 <button onClick={()=>{const name=document.getElementById("fcName").value;const amount=parseFloat(document.getElementById("fcAmt").value)||0;const day=parseInt(document.getElementById("fcDay").value)||1;let cat=document.getElementById("fcCat").value;if(cat==="__c"){cat=prompt("Category name:");if(!cat)return;}if(!name||!amount){fl("Fill name and amount!");return;}const item={id:Date.now(),name,amount,day:Math.min(28,Math.max(1,day)),category:cat,active:true};const updated=[...fixedCosts,item];setFixedCosts(updated);sv("fc3",updated);document.getElementById("fcName").value="";document.getElementById("fcAmt").value="";document.getElementById("fcDay").value="";fl("✅ "+name+" added!");}} style={bt(T.ac,T.bg,{padding:"8px",fontSize:11,width:"100%",marginTop:8,borderRadius:6})}>Add Fixed Cost</button>
 </div>})()}
 </Card>
+</>}
+
+{finSub==="painel"&&<div style={{padding:40,textAlign:"center",color:T.dm,fontSize:13}}>📊 Painel — em construção</div>}
+{finSub==="importar"&&<div style={{padding:40,textAlign:"center",color:T.dm,fontSize:13}}>📥 Importar — em construção (parser já existe na sub-tab Lançamentos)</div>}
+{finSub==="resumo"&&<div style={{padding:40,textAlign:"center",color:T.dm,fontSize:13}}>📈 Resumo — em construção</div>}
+{finSub==="cascata"&&<div style={{padding:40,textAlign:"center",color:T.dm,fontSize:13}}>💧 Cascata — em construção</div>}
+{finSub==="configurar"&&<div style={{padding:40,textAlign:"center",color:T.dm,fontSize:13}}>⚙️ Configurar — em construção</div>}
 </div>}
 {/* REPORT */}
 {vw==="report"&&(()=>{
