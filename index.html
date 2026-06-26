@@ -481,12 +481,15 @@ function BarChart({data,h=180,colors}){const mx=Math.max(...data.map(d=>Math.max
 function DonutChart({data,size=140,centerText,centerLabel,centerColor}){const total=data.reduce((s,d)=>s+d.v,0);if(!total)return null;let cum=0;const r=size/2,ir=r*0.55,or=r*0.95;const segs=data.map(d=>{const pct=d.v/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;return{...d,pct,start,end};});return <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{segs.length===1?<><circle cx={r} cy={r} r={or} fill="none" stroke={segs[0].c} strokeWidth={or-ir} opacity={0.85}/><circle cx={r} cy={r} r={ir} fill="none"/></>:segs.map((s,i)=>{const x1=r+or*Math.cos(s.start),y1=r+or*Math.sin(s.start),x2=r+or*Math.cos(s.end),y2=r+or*Math.sin(s.end);const ix1=r+ir*Math.cos(s.start),iy1=r+ir*Math.sin(s.start),ix2=r+ir*Math.cos(s.end),iy2=r+ir*Math.sin(s.end);const lg=s.pct>0.5?1:0;return <path key={i} d={`M${x1},${y1}A${or},${or},0,${lg},1,${x2},${y2}L${ix2},${iy2}A${ir},${ir},0,${lg},0,${ix1},${iy1}Z`} fill={s.c} opacity={0.85} stroke="#0A0F1E" strokeWidth={1}/>})}<text x={r} y={r-6} textAnchor="middle" fill={centerColor||"#E8EBF0"} fontSize="18" fontWeight="800">{centerText||("$"+fm(total))}</text><text x={r} y={r+12} textAnchor="middle" fill="#707A8A" fontSize="9">{centerLabel||"TOTAL"}</text></svg>;}
 function MiniLine({data,w=200,h=50,color="#00B4D8"}){if(!data.length)return null;const mx=Math.max(...data),mn=Math.min(...data);const range=mx-mn||1;const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/range)*(h-10)-5}`).join(" ");return <svg width={w} height={h}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"/>{data.map((v,i)=><circle key={i} cx={(i/(data.length-1))*w} cy={h-((v-mn)/range)*(h-10)-5} r="3" fill={color}/>)}</svg>;}
 const INSP_CHECKLIST={
-"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"}],
-"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true}],
-"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"}],
-"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"}],
-"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"}],
-"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true}]};
+"Quartos":[{id:"b1",t:"Cama bem esticada"},{id:"b2",t:"Lençóis sem manchas"},{id:"b3",t:"Travesseiros corretos"},{id:"b4",t:"Poeira removida"},{id:"b5",t:"Piso limpo"},{id:"b6",t:"Cheiro adequado"},{id:"b7",t:"Sem itens esquecidos"},{id:"b8",t:"Ventilador"},{id:"b9",t:"Embaixo da cama"},{id:"b10",t:"Gavetas e closets"},{id:"b11",t:"Controle remoto"},{id:"b12",t:"Batente das janelas"},{id:"b13",t:"Persianas"},{id:"b14",t:"Cortinas abertas"},{id:"b15",t:"Toalhas na cama"},{id:"b16",t:"Testar TV"}],
+"Banheiros":[{id:"ba1",t:"Vaso higienizado",crit:true},{id:"ba2",t:"Espelho sem manchas"},{id:"ba3",t:"Box limpo"},{id:"ba4",t:"Ralo limpo",crit:true},{id:"ba5",t:"Toalhas corretas"},{id:"ba6",t:"Cheiro adequado",crit:true},{id:"ba7",t:"Bodywash, shampoo, condicionador e handsoap reabastecidos"},{id:"ba8",t:"Papel higiênico reabastecido conforme o cliente"},{id:"ba9",t:"Toalhas de mão e tapete de banho"},{id:"ba10",t:"Gavetas e closets"}],
+"Cozinha":[{id:"k1",t:"Bancadas limpas"},{id:"k2",t:"Fogão limpo"},{id:"k3",t:"Micro-ondas limpo"},{id:"k4",t:"Geladeira organizada"},{id:"k5",t:"Lixeira limpa",crit:true},{id:"k6",t:"Utensílios organizados"},{id:"k7",t:"Reposição (dishsoap, dishwasher pods, papel toalha, saco de lixo, esponja e café)"},{id:"k8",t:"Pano de prato"},{id:"k9",t:"Portas dos armários limpas"},{id:"k10",t:"Conferir a cafeteira"},{id:"k11",t:"Conferir dishwasher"},{id:"k12",t:"Conferir o triturador"},{id:"k13",t:"Conferir se louças estão limpas no armário"}],
+"Sala":[{id:"l1",t:"Sofá alinhado"},{id:"l2",t:"Almofadas organizadas"},{id:"l3",t:"TV funcionando"},{id:"l4",t:"Poeira removida"},{id:"l5",t:"Embaixo do sofá"},{id:"l6",t:"Piso limpo"},{id:"l7",t:"Tapete aspirado"},{id:"l8",t:"Batente das janelas"},{id:"l9",t:"Persianas"},{id:"l10",t:"Cortinas abertas"},{id:"l11",t:"Checar armários"},{id:"l12",t:"Ventilador"},{id:"l13",t:"Testar TV"}],
+"Área Externa":[{id:"o1",t:"Móveis organizados"},{id:"o2",t:"Piso limpo"},{id:"o3",t:"Piscina visualmente limpa"},{id:"o4",t:"Móveis organizados e limpos"},{id:"o5",t:"Checar se não tem lixo em nenhuma parte"},{id:"o6",t:"Grill limpo e coberto"},{id:"o7",t:"Checar sliding door"},{id:"o8",t:"Brinquedos e boias organizados e guardados"}],
+"Segurança":[{id:"s1",t:"Travas funcionando",crit:true},{id:"s2",t:"Luzes funcionando",crit:true},{id:"s3",t:"AC funcionando",crit:true},{id:"s4",t:"Wi-Fi funcionando",crit:true},{id:"s5",t:"Portas trancadas - sliding door, cozinha, garagem etc",crit:true}],
+"Lavanderia":[{id:"lv1",t:"Reposição de sabão"},{id:"lv2",t:"Filtro da máquina limpo"},{id:"lv3",t:"Vazia e sem roupas"},{id:"lv4",t:"Chão limpo"}],
+"Garagem":[{id:"g1",t:"Brinquedos organizados e limpos"},{id:"g2",t:"Móveis limpos"},{id:"g3",t:"Tapete aspirado"},{id:"g4",t:"Conferir se tem lixo no ambiente"},{id:"g5",t:"Conferir controles remotos"},{id:"g6",t:"Testar TV"}],
+"Frente da Casa":[{id:"f1",t:"Sem lixo aparente no chão"},{id:"f2",t:"Lixeiras na frente da casa (caso estejam cheias)"}]};
 const ALL_INSP_ITEMS=Object.values(INSP_CHECKLIST).flat();
 const calcInspScore=(checks)=>{const items=Object.values(checks).filter(v=>v&&v!=="na"&&v!=="");if(!items.length)return 0;const pts=items.reduce((s,v)=>s+(v==="ok"?2:v==="adjust"?1:0),0);return Math.round((pts/(items.length*2))*100);};
 const getScoreColor=(s)=>s>=95?"#4ADE80":s>=90?"#00B4D8":s>=80?"#FFB547":"#FF6B6B";
@@ -676,7 +679,7 @@ const[nEmpN,setNEmpN]=useState("");
 const[fin,setFin]=useState([]);const[fV,setFV]=useState("month");const[fMo,setFMo]=useState(MO[new Date().getMonth()]);const[fWk,setFWk]=useState("");const[fixedCosts,setFixedCosts]=useState([]);
 const[fF,setFF]=useState({type:"entrada",cat:"",desc:"",amt:"",date:getLocalDate(),dateFrom:"",dateTo:"",centro:"",centroClient:"",centroHouse:""});
 const[prod,setProd]=useState(IPROD);const[lin,setLin]=useState(ILINEN);const[lbp,setLbp]=useState([]);const[losses,setLosses]=useState([]);const[lossForm,setLossForm]=useState({type:"",size:"",qty:"",reason:"",loc:"deposito",house:""});const[lossFilter,setLossFilter]=useState("mes");const[trash,setTrash]=useState([]);
-const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
+const[inspections,setInspections]=useState([]);const[inspForm,setInspForm]=useState(null);const[editingInspId,setEditingInspId]=useState(null);const[schedForm,setSchedForm]=useState(null);const[inspView,setInspView]=useState("list");const[inspFilter,setInspFilter]=useState({emp:"",house:"",month:""});const[inspRpt,setInspRpt]=useState("resumo");const[inspRptMonth,setInspRptMonth]=useState(MO[new Date().getMonth()]);
 const[weekStartDate,setWeekStartDate]=useState(()=>{const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");});
 const[weekDetailModal,setWeekDetailModal]=useState(null);
 const[iTab,setITab]=useState("prod");const[pF,setPF]=useState({n:"",cat:"Cleaning",u:"un",q:"",m:"",cost:""});const[customCats,setCustomCats]=useState(["Cleaning","Supplies","Kitchen","Lavanderia"]);const[customUnits,setCustomUnits]=useState(["un","roll","box","pack","gal","bag"]);
@@ -913,6 +916,10 @@ const uTk=async n=>{setTasks(n);await sv("tk3",n);};
 const newInspection=()=>{const checks={};ALL_INSP_ITEMS.forEach(i=>{checks[i.id]="ok";});setInspForm({house:"",client:"",date:getLocalDate(),type:"Turnover",employees:[],inspector:"",checks,notes:{},status:"pending",generalNotes:""});setInspView("form");};
 const inspectFromAgenda=(ev)=>{const checks={};ALL_INSP_ITEMS.forEach(i=>{checks[i.id]="ok";});const inspectorName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase());setInspForm({house:ev.house||"",client:ev.client||"",date:getLocalDate(),type:ev.type||"Turnover",employees:ev.employees||[],inspector:inspectorName,checks,notes:{},status:"pending",generalNotes:"",fromAgendaId:ev.id});setInspView("form");};
 const setAgendaCleanStatus=async(evId,status)=>{const updated=agEvents.map(e=>e.id===evId?{...e,cleanStatus:status,cleanStatusAt:new Date().toISOString()}:e);await uAg(updated);fl("Status atualizado: "+status);};
+const setInspCleanStatus=async(id,st)=>{const updated=inspections.map(i=>i.id===id?{...i,cleanStatus:st,cleanStatusAt:new Date().toISOString()}:i);await uInsp(updated);fl("Status atualizado: "+st);};
+const openEditSched=(ins)=>setSchedForm({id:ins.id,house:ins.house||ins.houseName||"",employee:(ins.employees&&ins.employees[0])||"",checkIn:ins.checkIn||"",date:ins.date||""});
+const deleteScheduledInspection=async(ins)=>{if(!ins||!ins.planned||ins.score!=null){fl("⚠️ Só é possível apagar inspeções agendadas.");return;}if(!window.confirm("Apagar inspeção agendada de \""+(ins.houseName||ins.house)+"\"?"))return;await uInsp(inspections.filter(i=>i.id!==ins.id));fl("🗑️ Agendamento apagado");};
+const saveScheduledInspection=async()=>{const f=schedForm;if(!f||!f.house||!f.employee||!f.checkIn||!f.date){fl("⚠️ Preencha casa, cleaner, check-in e data da inspeção.");return;}const prop=db.find(p=>p.n===f.house);if(f.id){const updated=inspections.map(i=>i.id===f.id?{...i,house:f.house,houseName:f.house,client:prop?prop.c:i.client,employees:[f.employee],checkIn:f.checkIn,date:f.date}:i);await uInsp(updated);setSchedForm(null);fl("✅ Agendamento atualizado");return;}const ins={id:Date.now(),house:f.house,houseName:f.house,client:prop?prop.c:"",employees:[f.employee],checkIn:f.checkIn,date:f.date,type:"Turnover",cleanStatus:"pending",status:"pending",planned:true};await uInsp([ins,...inspections]);setSchedForm(null);fl("✅ Inspeção agendada para "+fmD(f.date));};
 
 // ========== iCAL PARSER & SYNC ==========
 const parseICalDate=(str)=>{
@@ -3106,11 +3113,12 @@ return(
 
 {inspView==="list"&&<>
 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);const avg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):0;const today=getLocalDate();const weekAgo=getLocalDateOffset(-7);const td=inspections.filter(i=>i.date===today).length;const wk=inspections.filter(i=>i.date>=weekAgo).length;const blocked=mi.filter(i=>i.status==="blocked").length;return[{l:"TOTAL",v:inspections.length,s:td+" hoje · "+wk+" sem",cl:T.ac},{l:mo.slice(0,3).toUpperCase(),v:mi.length,s:"no mês",cl:T.bl},{l:"MÉDIA",v:avg||"—",s:avg?getScoreLabel(avg):"—",cl:avg?getScoreColor(avg):T.dm},{l:"PERFEITAS",v:mi.filter(i=>i.score===100).length,s:blocked>0?blocked+" bloqueadas":"no mês",cl:T.gr}];})().map((s,i)=><div key={i} style={{background:T.cd,borderRadius:8,padding:"10px 12px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",marginTop:2}}>{s.l}</div><div style={{fontSize:9,color:T.dm}}>{s.s}</div></div>)}
+{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);const scored=mi.filter(i=>i.score!=null);const avg=scored.length?Math.round(scored.reduce((s,i)=>s+i.score,0)/scored.length):0;const today=getLocalDate();const weekAgo=getLocalDateOffset(-7);const td=inspections.filter(i=>i.date===today).length;const wk=inspections.filter(i=>i.date>=weekAgo).length;const blocked=mi.filter(i=>i.status==="blocked").length;return[{l:"TOTAL",v:inspections.length,s:td+" hoje · "+wk+" sem",cl:T.ac},{l:mo.slice(0,3).toUpperCase(),v:mi.length,s:"no mês",cl:T.bl},{l:"MÉDIA",v:avg||"—",s:avg?getScoreLabel(avg):"—",cl:avg?getScoreColor(avg):T.dm},{l:"PERFEITAS",v:mi.filter(i=>i.score===100).length,s:blocked>0?blocked+" bloqueadas":"no mês",cl:T.gr}];})().map((s,i)=><div key={i} style={{background:T.cd,borderRadius:8,padding:"10px 12px",border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:s.cl}}>{s.v}</div><div style={{fontSize:9,color:T.dm,textTransform:"uppercase",marginTop:2}}>{s.l}</div><div style={{fontSize:9,color:T.dm}}>{s.s}</div></div>)}
 </div>
 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-<button onClick={newInspection} style={bt(T.ac,T.bg,{padding:"8px 16px",borderRadius:6,fontSize:11})}>+ Nova Inspeção</button>
-<button onClick={()=>setInspView("today")} style={bt(inspView==="today"?T.or:T.or+"15",inspView==="today"?T.bg:T.or,{padding:"8px 14px",borderRadius:6,fontSize:11,fontWeight:700,position:"relative"})}>🎯 Hoje{(()=>{const td=getLocalDate();const tm=getLocalDateOffset(1);const evs=agEvents.filter(e=>(e.date===td||e.date===tm)&&e.house&&e.house!=="—");const insp=inspections.filter(i=>i.date===td);const inspH=new Set(insp.map(i=>i.house));const pend=evs.filter(e=>!inspH.has(e.house)).length;return pend>0?<span style={{position:"absolute",top:-6,right:-6,minWidth:18,height:18,borderRadius:9,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{pend}</span>:null;})()}</button>
+<button onClick={()=>{setEditingInspId(null);newInspection();}} style={bt(T.ac,T.bg,{padding:"8px 16px",borderRadius:6,fontSize:11})}>+ Nova Inspeção</button>
+<button onClick={()=>setSchedForm({house:"",employee:"",checkIn:"",date:""})} style={bt(T.bl,T.bg,{padding:"8px 16px",borderRadius:6,fontSize:11})}>+ Agendar Inspeção</button>
+<button onClick={()=>setInspView("today")} style={bt(inspView==="today"?T.or:T.or+"15",inspView==="today"?T.bg:T.or,{padding:"8px 14px",borderRadius:6,fontSize:11,fontWeight:700,position:"relative"})}>🎯 Hoje{(()=>{const td=getLocalDate();const pend=inspections.filter(i=>i.date===td&&(!i.cleanStatus||i.cleanStatus==="pending")).length;return pend>0?<span style={{position:"absolute",top:-6,right:-6,minWidth:18,height:18,borderRadius:9,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 5px"}}>{pend}</span>:null;})()}</button>
 <button onClick={()=>setInspView("week")} style={bt(inspView==="week"?T.bl:T.bl+"15",inspView==="week"?T.bg:T.bl,{padding:"8px 14px",borderRadius:6,fontSize:11,fontWeight:700})}>📅 Semana</button>
 <button onClick={()=>setInspView("ranking")} style={bt(T.pu+"15",T.pu,{padding:"8px 12px",borderRadius:6,fontSize:10})}>🏆 Ranking</button>
 <button onClick={()=>setInspView("reports")} style={bt(T.or+"15",T.or,{padding:"8px 12px",borderRadius:6,fontSize:10})}>📊 Relatórios</button>
@@ -3123,7 +3131,7 @@ return(
 <select value={inspFilter.house||""} onChange={e=>setInspFilter({...inspFilter,house:e.target.value})} style={{...sel,width:"auto",minWidth:140}}><option value="">Todas casas</option>{[...new Set(db.map(p=>p.n))].map(h=><option key={h}>{h}</option>)}</select>
 {(inspFilter.emp||inspFilter.month||inspFilter.house)&&<button onClick={()=>setInspFilter({emp:"",house:"",month:""})} style={bt(T.rd+"15",T.rd,{padding:"6px 10px"})}>Limpar</button>}
 </div>
-{(()=>{let fi=inspections;if(inspFilter.month)fi=fi.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspFilter.month);if(inspFilter.emp)fi=fi.filter(i=>(i.employees||[]).includes(inspFilter.emp));if(inspFilter.house)fi=fi.filter(i=>(i.houseName||i.house)===inspFilter.house);return fi.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma inspeção encontrada.</div>:fi.slice(0,40).map(ins=><div key={ins.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:5,background:T.c2}}>
+{(()=>{let fi=inspections.filter(i=>i.score!=null);if(inspFilter.month)fi=fi.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspFilter.month);if(inspFilter.emp)fi=fi.filter(i=>(i.employees||[]).includes(inspFilter.emp));if(inspFilter.house)fi=fi.filter(i=>(i.houseName||i.house)===inspFilter.house);return fi.length===0?<div style={{padding:"20px 0",textAlign:"center",color:T.dm,fontSize:11}}>Nenhuma inspeção encontrada.</div>:fi.slice(0,40).map(ins=><div key={ins.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:5,background:T.c2}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <div style={{width:36,height:36,borderRadius:7,background:getScoreColor(ins.score)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:getScoreColor(ins.score)}}>{ins.score}</div>
 <div><div style={{fontSize:12,fontWeight:700}}>{ins.houseName||ins.house}{ins.status==="blocked"&&<span style={{color:T.rd,fontSize:9,marginLeft:6}}>BLOQUEADA</span>}{ins.status==="released"&&<span style={{color:T.gr,fontSize:9,marginLeft:6}}>LIBERADA</span>}</div><div style={{fontSize:9,color:T.dm}}>{ins.date} · {ins.type} · {(ins.employees||[]).join(", ")}{ins.inspector?" · Insp: "+ins.inspector:""}{ins.releasedAt?" · Liberada: "+ins.releasedAt.split("T")[0]:""}</div></div></div>
@@ -3136,7 +3144,7 @@ return(
 </>}
 
 {inspView==="form"&&inspForm&&<InspForm key="inspform" init={inspForm} cls2={cls} db2={db} em2={em} agEvents2={agEvents} userName={(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())} onSave={async(ins)=>{
-  await uInsp([ins,...inspections]);
+  await uInsp([ins,...inspections.filter(x=>x.id!==editingInspId)]);setEditingInspId(null);
   // Auto-update agenda cleanStatus
   if(ins.fromAgendaId||(ins.house&&ins.date)){
     const inspectorName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase());
@@ -3151,7 +3159,7 @@ return(
   setInspForm(null);
   setInspView("list");
   fl(ins.status==="blocked"?"Casa BLOQUEADA — falha crítica":"Inspeção salva! Score: "+ins.score);
-}} onCancel={()=>{setInspForm(null);setInspView("list");}}/>}
+}} onCancel={()=>{setEditingInspId(null);setInspForm(null);setInspView("list");}}/>}
 
 {inspView==="detail"&&inspForm&&<>
 <div style={{display:"flex",gap:8,marginBottom:8}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Back</button><span style={{fontSize:14,fontWeight:700}}>🔍 {inspForm.houseName||inspForm.house}</span></div>
@@ -3177,46 +3185,32 @@ return(
   for(let i=0;i<7;i++){const d=new Date(sd);d.setDate(d.getDate()+i);const ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");days.push({date:ds,dow:["DOM","SEG","TER","QUA","QUI","SEX","SAB"][d.getDay()],dayN:d.getDate()});}
   const moveWeek=(delta)=>{const d=new Date(weekStartDate+"T12:00");d.setDate(d.getDate()+delta*7);setWeekStartDate(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));};
   const goToday=()=>{const d=new Date();const day=d.getDay();const diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);setWeekStartDate(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));};
-  
-  const getEventsForDay=(dateStr)=>{
-    // Eventos com check-in nesse dia (do iCal) ou turnover nesse dia
-    const turnovers=agEvents.filter(e=>e.date===dateStr&&e.house&&e.house!=="—");
-    const checkIns=agEvents.filter(e=>e.checkIn===dateStr&&e.house&&e.house!=="—"&&e.date!==dateStr);
-    return {turnovers,checkIns};
-  };
-  
-  // KPIs da semana
-  const allWeekEvents=agEvents.filter(e=>{const d=e.date;return d>=days[0].date&&d<=days[6].date&&e.house&&e.house!=="—";});
-  const sameDayCount=allWeekEvents.filter(e=>e.checkIn&&e.date===e.checkIn).length;
-  const noCleanerCount=allWeekEvents.filter(e=>!e.employees||e.employees.length===0).length;
-  const insptedThisWeek=inspections.filter(i=>i.date>=days[0].date&&i.date<=days[6].date).length;
-  const totalCheckIns=allWeekEvents.filter(e=>e.checkIn&&e.checkIn>=days[0].date&&e.checkIn<=days[6].date).length;
-  
-  const statusBadge=(ev)=>{
-    const s=ev.cleanStatus||"pending";
-    const colors={pending:T.dm,cleaning:T.bl,clean_complete:T.gr,inspecting:T.or,approved:T.gr,reproved:T.rd};
-    const icons={pending:"⏳",cleaning:"🧹",clean_complete:"✅",inspecting:"🔍",approved:"✓",reproved:"❌"};
-    return {color:colors[s],icon:icons[s]};
-  };
-  
-  const renderHouseCard=(ev,isCheckIn)=>{
-    const isSameDay=ev.checkIn&&ev.date===ev.checkIn;
-    const noCleaner=!ev.employees||ev.employees.length===0;
-    const sb=statusBadge(ev);
-    const inspToday=inspections.find(i=>i.house===ev.house&&i.date===ev.date);
-    return <div key={ev.id+(isCheckIn?"_ci":"")} onClick={()=>setWeekDetailModal(ev)} style={{padding:"6px 7px",marginBottom:4,borderRadius:5,background:isSameDay?T.rd+"10":isCheckIn?T.bl+"08":T.cd,border:"1px solid "+(isSameDay?T.rd+"40":isCheckIn?T.bl+"30":T.bd),borderLeft:"3px solid "+(isSameDay?T.rd:noCleaner?T.or:inspToday?T.gr:T.ac),cursor:"pointer",transition:"all 0.1s"}}>
-      <div style={{fontSize:10,fontWeight:700,color:T.tx,marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.house}</div>
+  const getInspsForDay=(dateStr)=>inspections.filter(i=>i.date===dateStr);
+  const weekInsps=inspections.filter(i=>i.date>=days[0].date&&i.date<=days[6].date);
+  const kpiTotal=weekInsps.length;
+  const kpiPending=weekInsps.filter(i=>!i.cleanStatus||i.cleanStatus==="pending").length;
+  const kpiDone=weekInsps.filter(i=>i.cleanStatus==="clean_complete").length;
+  const kpiNoCleaner=weekInsps.filter(i=>!i.employees||i.employees.length===0).length;
+  const kpiBlocked=weekInsps.filter(i=>i.status==="blocked").length;
+  const statusColor={pending:T.dm,cleaning:T.bl,clean_complete:T.gr,inspecting:T.or};
+  const statusIcon={pending:"⏳",cleaning:"🧹",clean_complete:"✅",inspecting:"🔍"};
+  const renderInspCard=(ins)=>{
+    const st=ins.cleanStatus||"pending";const noCleaner=!ins.employees||ins.employees.length===0;
+    return <div key={ins.id} onClick={()=>{setEditingInspId(ins.id);setInspForm(ins);setInspView("form");}} style={{padding:"6px 7px",marginBottom:4,borderRadius:5,background:T.cd,border:"1px solid "+T.bd,borderLeft:"3px solid "+(ins.status==="blocked"?T.rd:noCleaner?T.or:statusColor[st]),cursor:"pointer",transition:"all 0.1s"}}>
+      <div style={{fontSize:10,fontWeight:700,color:T.tx,marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ins.houseName||ins.house}</div>
       <div style={{display:"flex",gap:3,flexWrap:"wrap",alignItems:"center"}}>
-        {isSameDay&&<span style={{fontSize:8,color:T.rd,fontWeight:800}}>🔥SAME</span>}
-        {isCheckIn&&!isSameDay&&<span style={{fontSize:8,color:T.bl,fontWeight:700}}>🏨IN</span>}
-        {noCleaner&&!isCheckIn&&<span style={{fontSize:8,color:T.or,fontWeight:700}}>⚠️NO</span>}
-        {inspToday&&<span style={{fontSize:8,color:T.gr,fontWeight:700}}>✓INSP</span>}
-        {ev.cleanStatus&&!inspToday&&<span style={{fontSize:9,color:sb.color}}>{sb.icon}</span>}
-        {ev.checkInTime&&isCheckIn&&<span style={{fontSize:8,color:T.dm}}>{ev.checkInTime}</span>}
+        <span style={{fontSize:9,color:statusColor[st]}}>{statusIcon[st]}</span>
+        {ins.status==="blocked"&&<span style={{fontSize:8,color:T.rd,fontWeight:800}}>BLOQ</span>}
+        {noCleaner&&<span style={{fontSize:8,color:T.or,fontWeight:700}}>⚠️NO</span>}
+        {ins.score!=null&&<span style={{fontSize:8,fontWeight:700,color:ins.score>=90?T.gr:ins.score>=75?T.or:T.rd}}>{ins.score}</span>}
+        {(ins.planned&&ins.score==null)&&<span style={{fontSize:8,color:T.bl,fontWeight:800}}>📅AGEND</span>}
       </div>
+      {(ins.planned&&ins.score==null)&&<div style={{display:"flex",gap:4,marginTop:4}} onClick={e=>e.stopPropagation()}>
+        <button onClick={()=>openEditSched(ins)} style={bt(T.bl+"18",T.bl,{padding:"2px 6px",fontSize:8,fontWeight:700,borderRadius:4})}>✏️ Editar</button>
+        <button onClick={()=>deleteScheduledInspection(ins)} style={bt(T.rd+"12",T.rd,{padding:"2px 6px",fontSize:8,fontWeight:700,borderRadius:4})}>🗑️</button>
+      </div>}
     </div>;
   };
-  
   return <>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
       <button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm,{padding:"6px 12px"})}>← Voltar</button>
@@ -3226,230 +3220,99 @@ return(
       <button onClick={()=>moveWeek(1)} style={bt(T.c2,T.dm,{padding:"6px 10px",borderRadius:6})}>▶</button>
       <button onClick={goToday} style={bt(T.ac+"15",T.ac,{padding:"6px 12px",fontSize:10,borderRadius:6})}>Hoje</button>
     </div>
-    
-    {/* KPIs */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8,marginBottom:10}}>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Turnovers</div><div style={{fontSize:20,fontWeight:800,color:T.ac}}>{allWeekEvents.length}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Check-ins</div><div style={{fontSize:20,fontWeight:800,color:T.bl}}>{totalCheckIns}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Same-day</div><div style={{fontSize:20,fontWeight:800,color:sameDayCount>0?T.rd:T.dm}}>{sameDayCount}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Sem cleaner</div><div style={{fontSize:20,fontWeight:800,color:noCleanerCount>0?T.or:T.dm}}>{noCleanerCount}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Inspecionadas</div><div style={{fontSize:20,fontWeight:800,color:T.gr}}>{insptedThisWeek}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Inspeções</div><div style={{fontSize:20,fontWeight:800,color:T.ac}}>{kpiTotal}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Pendentes</div><div style={{fontSize:20,fontWeight:800,color:kpiPending>0?T.or:T.gr}}>{kpiPending}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Cleaning OK</div><div style={{fontSize:20,fontWeight:800,color:T.gr}}>{kpiDone}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Sem cleaner</div><div style={{fontSize:20,fontWeight:800,color:kpiNoCleaner>0?T.or:T.dm}}>{kpiNoCleaner}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Bloqueadas</div><div style={{fontSize:20,fontWeight:800,color:kpiBlocked>0?T.rd:T.dm}}>{kpiBlocked}</div></div>
     </div>
-    
-    {/* Grid semanal */}
     <Card style={{padding:8,overflowX:"auto"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(110px,1fr))",gap:5,minWidth:760}}>
         {days.map(d=>{
-          const {turnovers,checkIns}=getEventsForDay(d.date);
+          const dayInsps=getInspsForDay(d.date);
           const isToday=d.date===getLocalDate();
-          const totalDay=turnovers.length+checkIns.length;
           const dayName={DOM:"Domingo",SEG:"Segunda",TER:"Terça",QUA:"Quarta",QUI:"Quinta",SEX:"Sexta",SAB:"Sábado"}[d.dow];
           return <div key={d.date} style={{minHeight:240}}>
             <div style={{padding:"6px 8px",background:isToday?T.ac+"22":T.cd,borderRadius:6,marginBottom:6,textAlign:"center",border:isToday?"1px solid "+T.ac:"1px solid "+T.bd}}>
               <div style={{fontSize:9,fontWeight:800,color:isToday?T.ac:T.dm,letterSpacing:0.5}}>{dayName.toUpperCase()}</div>
               <div style={{fontSize:14,fontWeight:800,color:isToday?T.ac:T.tx,marginTop:2}}>{d.dayN}</div>
-              <div style={{fontSize:8,color:T.dm,marginTop:2}}>{totalDay} eventos</div>
+              <div style={{fontSize:8,color:T.dm,marginTop:2}}>{dayInsps.length} inspeç{dayInsps.length===1?"ão":"ões"}</div>
             </div>
             <div>
-              {turnovers.length>0&&<>
-                <div style={{fontSize:8,color:T.dm,fontWeight:700,marginBottom:3,textTransform:"uppercase"}}>🧹 Turnover ({turnovers.length})</div>
-                {turnovers.map(ev=>renderHouseCard(ev,false))}
-              </>}
-              {checkIns.length>0&&<>
-                <div style={{fontSize:8,color:T.bl,fontWeight:700,marginBottom:3,marginTop:6,textTransform:"uppercase"}}>🏨 Check-in ({checkIns.length})</div>
-                {checkIns.map(ev=>renderHouseCard(ev,true))}
-              </>}
-              {turnovers.length===0&&checkIns.length===0&&<div style={{padding:"20px 4px",textAlign:"center",color:T.dm,fontSize:9,fontStyle:"italic",opacity:0.5}}>—</div>}
+              {dayInsps.length>0?dayInsps.map(ins=>renderInspCard(ins)):<div style={{padding:"20px 4px",textAlign:"center",color:T.dm,fontSize:9,fontStyle:"italic",opacity:0.5}}>—</div>}
             </div>
           </div>;
         })}
       </div>
     </Card>
-    
     <div style={{padding:"10px 14px",background:T.bg+"66",borderRadius:8,fontSize:10,color:T.dm,marginTop:6,lineHeight:1.5}}>
-      <strong style={{color:T.ac}}>Legenda:</strong> 🔥SAME = same-day · 🏨IN = check-in · ⚠️NO = sem cleaner · ✓INSP = inspecionada · ⏳🧹✅🔍 = status limpeza · Clique numa casa pra ver detalhes
+      <strong style={{color:T.ac}}>Legenda:</strong> ⏳ Pending · 🧹 Cleaning · ✅ Cleaning OK · 🔍 Inspecting · BLOQ = bloqueada · ⚠️NO = sem cleaner · Clique numa inspeção pra abrir/editar
     </div>
-    
-    {/* Modal de detalhes */}
-    {weekDetailModal&&(()=>{const ev=weekDetailModal;const isSameDay=ev.checkIn&&ev.date===ev.checkIn;const inspToday=inspections.find(i=>i.house===ev.house&&i.date===ev.date);const houseObj=db.find(p=>p.n===ev.house);const sb=statusBadge(ev);return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setWeekDetailModal(null)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,gap:10}}>
-          <div>
-            <div style={{fontSize:16,fontWeight:800,color:T.ac}}>{ev.house}</div>
-            <div style={{fontSize:11,color:T.dm,marginTop:2}}>{ev.client||"—"} · {ev.type||"Turnover"}</div>
-          </div>
-          <button onClick={()=>setWeekDetailModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
-        </div>
-        
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-          {isSameDay&&<span style={{padding:"4px 9px",borderRadius:10,background:T.rd,color:"#fff",fontSize:10,fontWeight:800}}>🔥 SAME DAY</span>}
-          {(!ev.employees||ev.employees.length===0)&&<span style={{padding:"4px 9px",borderRadius:10,background:T.or,color:"#fff",fontSize:10,fontWeight:800}}>⚠️ SEM CLEANER</span>}
-          {inspToday&&<span style={{padding:"4px 9px",borderRadius:10,background:T.gr,color:"#fff",fontSize:10,fontWeight:800}}>✓ INSPECIONADA</span>}
-          {ev.icalUid&&<span style={{padding:"4px 9px",borderRadius:10,background:T.pu+"22",color:T.pu,fontSize:10,fontWeight:800}}>🤖 SYNC iCAL</span>}
-        </div>
-        
-        <div style={{background:T.bg,borderRadius:8,padding:14,marginBottom:14}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            <div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Data Turnover</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.date}</div></div>
-            {ev.checkIn&&<div><div style={{fontSize:9,color:T.bl,fontWeight:700,textTransform:"uppercase"}}>Check-in Hóspede</div><div style={{fontSize:13,fontWeight:700,marginTop:2,color:T.bl}}>{ev.checkIn}{ev.checkInTime?" · "+ev.checkInTime:""}</div></div>}
-            {ev.checkOut&&<div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Check-out</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.checkOut}</div></div>}
-            {ev.stayNights&&<div><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Estadia</div><div style={{fontSize:13,fontWeight:700,marginTop:2}}>{ev.stayNights} noite{ev.stayNights>1?"s":""}</div></div>}
-          </div>
-        </div>
-        
-        {ev.employees&&ev.employees.length>0&&<div style={{padding:"10px 12px",background:T.ac+"08",borderRadius:8,marginBottom:10}}>
-          <div style={{fontSize:9,color:T.dm,fontWeight:700,marginBottom:4}}>👤 EQUIPE DESIGNADA</div>
-          <div style={{fontSize:12,fontWeight:700}}>{ev.employees.join(", ")}</div>
-        </div>}
-        
-        {ev.cleanStatus&&<div style={{padding:"10px 12px",background:sb.color+"08",borderLeft:"3px solid "+sb.color,borderRadius:6,marginBottom:10}}>
-          <div style={{fontSize:9,color:T.dm,fontWeight:700,marginBottom:3}}>STATUS DA LIMPEZA</div>
-          <div style={{fontSize:13,fontWeight:700,color:sb.color}}>{sb.icon} {ev.cleanStatus}</div>
-          {ev.cleanStatusAt&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>Marcado em {new Date(ev.cleanStatusAt).toLocaleString("pt-BR")}{ev.cleanStatusBy?" por "+ev.cleanStatusBy:""}</div>}
-        </div>}
-        
-        {houseObj&&houseObj.notes&&<div style={{padding:"10px 12px",background:T.bg,borderRadius:6,marginBottom:10,fontSize:11,color:T.tx,fontStyle:"italic",lineHeight:1.5}}>📝 {houseObj.notes}</div>}
-        
-        {inspToday&&<div style={{padding:"10px 12px",background:T.gr+"08",borderRadius:6,marginBottom:10}}>
-          <div style={{fontSize:10,color:T.gr,fontWeight:700,marginBottom:3}}>✓ INSPEÇÃO DE HOJE</div>
-          <div style={{fontSize:12,fontWeight:700}}>Score: <span style={{color:inspToday.score>=90?T.gr:inspToday.score>=75?T.or:T.rd}}>{inspToday.score}/100</span></div>
-        </div>}
-        
-        <div style={{display:"flex",gap:8,marginTop:14}}>
-          <button onClick={()=>{inspectFromAgenda(ev);setWeekDetailModal(null);}} style={bt(T.ac,T.bg,{flex:1,padding:"11px",fontSize:12,fontWeight:700,borderRadius:8})}>🔍 {inspToday?"Re-inspecionar":"Inspecionar"}</button>
-          <button onClick={()=>{setAgForm(ev);setWeekDetailModal(null);}} style={bt(T.bl+"15",T.bl,{padding:"11px 16px",fontSize:11,borderRadius:8})}>✏️ Editar</button>
-        </div>
-      </div>
-    </div>;})()}
   </>;
 })()}
 
 {inspView==="today"&&(()=>{
   const today=getLocalDate();
-  const tomorrow=getLocalDateOffset(1);
-  const dayAfter=getLocalDateOffset(2);
-  
-  // Eventos dos 3 dias
-  const evToday=agEvents.filter(ev=>ev.date===today&&ev.house&&ev.house!=="—");
-  const evTomorrow=agEvents.filter(ev=>ev.date===tomorrow&&ev.house&&ev.house!=="—");
-  const evDayAfter=agEvents.filter(ev=>ev.date===dayAfter&&ev.house&&ev.house!=="—");
-  
-  // Detectar same-day: 2+ eventos na mesma casa hoje
-  const houseCountToday={};
-  evToday.forEach(ev=>{const k=ev.house;houseCountToday[k]=(houseCountToday[k]||0)+1;});
-  const sameDayHouses=new Set(Object.keys(houseCountToday).filter(h=>houseCountToday[h]>=2));
-  
-  // Inspeções já feitas hoje
-  const inspToday=inspections.filter(i=>i.date===today);
-  const inspectedHouses=new Set(inspToday.map(i=>i.house));
-  
-  // Enriquecer evento com info de prioridade
-  const enrich=(ev,dayLabel)=>{
-    const isSameDay=sameDayHouses.has(ev.house);
-    const noCleaner=!ev.employees||ev.employees.length===0;
-    const alreadyInspected=inspectedHouses.has(ev.house);
-    const lastInsp=inspections.filter(i=>i.house===ev.house).sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0];
-    const houseObj=db.find(p=>p.n===ev.house);
-    const status=ev.cleanStatus||"pending";
-    const priority=isSameDay?1:(noCleaner?2:(dayLabel==="hoje"?3:(dayLabel==="amanhã"?4:5)));
-    return {...ev,isSameDay,noCleaner,alreadyInspected,lastInsp,houseObj,status,priority,dayLabel};
-  };
-  
-  const enrichedToday=evToday.map(ev=>enrich(ev,"hoje")).sort((a,b)=>a.priority-b.priority);
-  const enrichedTomorrow=evTomorrow.map(ev=>enrich(ev,"amanhã")).sort((a,b)=>a.priority-b.priority);
-  const enrichedDayAfter=evDayAfter.map(ev=>enrich(ev,"depois")).sort((a,b)=>a.priority-b.priority);
-  
-  // 10 prioritárias (de hoje + amanhã)
-  const top10=[...enrichedToday,...enrichedTomorrow].slice(0,10);
-  
-  // KPIs
-  const kpiPending=top10.filter(ev=>!ev.alreadyInspected).length;
-  const kpiDone=top10.filter(ev=>ev.alreadyInspected).length;
-  const kpiBlocked=inspToday.filter(i=>i.status==="blocked").length;
-  const kpiSameDay=enrichedToday.filter(ev=>ev.isSameDay).length;
-  const kpiNoCleaner=top10.filter(ev=>ev.noCleaner).length;
-  
-  const statusColor={pending:T.dm,cleaning:T.bl,clean_complete:T.gr,inspecting:T.or,approved:T.gr,reproved:T.rd};
-  const statusLabel={pending:"⏳ Pending",cleaning:"🧹 Cleaning",clean_complete:"✅ Cleaning OK",inspecting:"🔍 Inspecting",approved:"✓ Approved",reproved:"❌ Reproved"};
-  
-  const renderCard=(ev,idx)=>{
-    const statusKey=ev.alreadyInspected?(ev.lastInsp&&ev.lastInsp.status==="blocked"?"reproved":"approved"):ev.status;
-    return <div key={ev.id} style={{padding:14,background:ev.isSameDay?T.rd+"08":T.cd,border:"1px solid "+(ev.isSameDay?T.rd+"40":T.bd),borderLeft:"4px solid "+(ev.isSameDay?T.rd:ev.noCleaner?T.or:ev.alreadyInspected?T.gr:T.ac),borderRadius:10,marginBottom:8}}>
+  const todayInsps=inspections.filter(i=>i.date===today);
+  const statusColor={pending:T.dm,cleaning:T.bl,clean_complete:T.gr,inspecting:T.or};
+  const statusLabel={pending:"⏳ Pending",cleaning:"🧹 Cleaning",clean_complete:"✅ Cleaning OK",inspecting:"🔍 Inspecting"};
+  const ord={pending:0,cleaning:1,inspecting:2,clean_complete:3};const ov=s=>(ord[s]===undefined?9:ord[s]);
+  const sorted=[...todayInsps].sort((a,b)=>ov(a.cleanStatus||"pending")-ov(b.cleanStatus||"pending"));
+  const kpiTotal=todayInsps.length;
+  const kpiPending=todayInsps.filter(i=>!i.cleanStatus||i.cleanStatus==="pending").length;
+  const kpiDone=todayInsps.filter(i=>i.cleanStatus==="clean_complete").length;
+  const kpiNoCleaner=todayInsps.filter(i=>!i.employees||i.employees.length===0).length;
+  const kpiBlocked=todayInsps.filter(i=>i.status==="blocked").length;
+  const renderCard=(ins,idx)=>{
+    const st=ins.cleanStatus||"pending";const noCleaner=!ins.employees||ins.employees.length===0;
+    return <div key={ins.id} style={{padding:14,background:T.cd,border:"1px solid "+T.bd,borderLeft:"4px solid "+(ins.status==="blocked"?T.rd:noCleaner?T.or:statusColor[st]),borderRadius:10,marginBottom:8}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:200}}>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
             <span style={{fontSize:10,color:T.dm,fontWeight:700,minWidth:20}}>#{idx+1}</span>
-            {ev.isSameDay&&<span style={{padding:"3px 8px",borderRadius:10,background:T.rd,color:"#fff",fontSize:9,fontWeight:800,letterSpacing:0.5}}>🔥 SAME DAY</span>}
-            {ev.noCleaner&&<span style={{padding:"3px 8px",borderRadius:10,background:T.or,color:"#fff",fontSize:9,fontWeight:800}}>⚠️ NO CLEANER</span>}
-            {ev.alreadyInspected&&<span style={{padding:"3px 8px",borderRadius:10,background:T.gr,color:"#fff",fontSize:9,fontWeight:800}}>✓ INSPECTED</span>}
-            <span style={{padding:"3px 8px",borderRadius:10,background:statusColor[statusKey]+"22",color:statusColor[statusKey],fontSize:9,fontWeight:700}}>{statusLabel[statusKey]}</span>
+            {noCleaner&&<span style={{padding:"3px 8px",borderRadius:10,background:T.or,color:"#fff",fontSize:9,fontWeight:800}}>⚠️ NO CLEANER</span>}
+            {ins.status==="blocked"&&<span style={{padding:"3px 8px",borderRadius:10,background:T.rd,color:"#fff",fontSize:9,fontWeight:800}}>BLOQUEADA</span>}
+            <span style={{padding:"3px 8px",borderRadius:10,background:statusColor[st]+"22",color:statusColor[st],fontSize:9,fontWeight:700}}>{statusLabel[st]}</span>
           </div>
-          <div style={{fontSize:14,fontWeight:800,color:T.tx,marginBottom:2}}>{ev.house}</div>
-          <div style={{fontSize:11,color:T.dm}}>{ev.client||"—"} · {ev.type||"Turnover"}{ev.time?" · "+ev.time:""}</div>
-          {ev.employees&&ev.employees.length>0&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>👤 {ev.employees.join(", ")}</div>}
-          {ev.lastInsp&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>📋 Última inspeção: {ev.lastInsp.date} · <span style={{color:ev.lastInsp.score>=90?T.gr:ev.lastInsp.score>=75?T.or:T.rd,fontWeight:700}}>{ev.lastInsp.score}/100</span></div>}
-          {ev.houseObj&&ev.houseObj.notes&&<div style={{fontSize:10,color:T.dm,marginTop:4,padding:"4px 8px",background:T.bg,borderRadius:4,fontStyle:"italic"}}>📝 {String(ev.houseObj.notes).slice(0,100)}{ev.houseObj.notes.length>100?"...":""}</div>}
+          <div style={{fontSize:14,fontWeight:800,color:T.tx,marginBottom:2}}>{ins.houseName||ins.house}</div>
+          <div style={{fontSize:11,color:T.dm}}>{ins.client||"—"} · {ins.type||"Turnover"}</div>
+          {ins.employees&&ins.employees.length>0&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>👤 {ins.employees.join(", ")}</div>}
+          {ins.score!=null&&<div style={{fontSize:10,color:T.dm,marginTop:3}}>📋 Score: <span style={{color:ins.score>=90?T.gr:ins.score>=75?T.or:T.rd,fontWeight:700}}>{ins.score}/100</span></div>}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:5,minWidth:140}}>
-          <button onClick={()=>inspectFromAgenda(ev)} style={bt(T.ac,T.bg,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:6})}>{ev.alreadyInspected?"🔄 Re-inspect":"🔍 Inspecionar"}</button>
-          {!ev.alreadyInspected&&<select value={ev.status||"pending"} onChange={e=>setAgendaCleanStatus(ev.id,e.target.value)} style={{...sel,fontSize:10,padding:"6px 8px",width:"100%"}}>
+          {(ins.planned&&ins.score==null)?<>
+          <button onClick={()=>{setEditingInspId(ins.id);setInspForm(ins);setInspView("form");}} style={bt(T.ac,T.bg,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:6})}>✅ Executar</button>
+          <button onClick={()=>openEditSched(ins)} style={bt(T.bl+"18",T.bl,{padding:"8px 14px",fontSize:10,fontWeight:700,borderRadius:6})}>✏️ Editar</button>
+          <button onClick={()=>deleteScheduledInspection(ins)} style={bt(T.rd+"12",T.rd,{padding:"8px 14px",fontSize:10,fontWeight:700,borderRadius:6})}>🗑️ Apagar</button>
+          </>:<button onClick={()=>{setEditingInspId(ins.id);setInspForm(ins);setInspView("form");}} style={bt(T.ac,T.bg,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:6})}>✏️ Abrir</button>}
+          <select value={st} onChange={e=>setInspCleanStatus(ins.id,e.target.value)} style={{...sel,fontSize:10,padding:"6px 8px",width:"100%"}}>
             <option value="pending">⏳ Pending</option>
             <option value="cleaning">🧹 Cleaning</option>
             <option value="clean_complete">✅ Cleaning OK</option>
             <option value="inspecting">🔍 Inspecting</option>
-          </select>}
+          </select>
         </div>
       </div>
     </div>;
   };
-  
   return <>
     <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
       <button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm,{padding:"6px 12px"})}>← Voltar</button>
       <span style={{fontSize:16,fontWeight:800}}>🎯 Inspeções do Dia</span>
       <span style={{fontSize:11,color:T.dm,marginLeft:6}}>{new Date(today+"T12:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</span>
     </div>
-    
-    {/* KPIs */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8,marginBottom:12}}>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Top 10</div><div style={{fontSize:22,fontWeight:800,color:T.ac}}>{top10.length}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Total</div><div style={{fontSize:22,fontWeight:800,color:T.ac}}>{kpiTotal}</div></div>
       <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Pendentes</div><div style={{fontSize:22,fontWeight:800,color:kpiPending>0?T.or:T.gr}}>{kpiPending}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Feitas</div><div style={{fontSize:22,fontWeight:800,color:T.gr}}>{kpiDone}</div></div>
-      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Same-day</div><div style={{fontSize:22,fontWeight:800,color:kpiSameDay>0?T.rd:T.dm}}>{kpiSameDay}</div></div>
+      <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Cleaning OK</div><div style={{fontSize:22,fontWeight:800,color:T.gr}}>{kpiDone}</div></div>
       <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Sem cleaner</div><div style={{fontSize:22,fontWeight:800,color:kpiNoCleaner>0?T.or:T.dm}}>{kpiNoCleaner}</div></div>
       <div style={{padding:"10px 12px",background:T.cd,borderRadius:8,border:"1px solid "+T.bd,textAlign:"center"}}><div style={{fontSize:9,color:T.dm,fontWeight:700,textTransform:"uppercase"}}>Bloqueadas</div><div style={{fontSize:22,fontWeight:800,color:kpiBlocked>0?T.rd:T.dm}}>{kpiBlocked}</div></div>
     </div>
-    
-    {/* Top 10 prioritárias */}
     <Card style={{padding:14}}>
-      <div style={{fontSize:13,fontWeight:800,marginBottom:10,color:T.ac}}>🎯 Top 10 — Inspeções Prioritárias</div>
-      <div style={{fontSize:10,color:T.dm,marginBottom:12}}>Ordem: Same-day → Sem cleaner → Check-in hoje → Check-in amanhã</div>
-      {top10.length===0?<div style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}><div style={{fontSize:32,marginBottom:8}}>🌴</div>Nenhuma inspeção prioritária. Dia tranquilo!</div>:top10.map((ev,idx)=>renderCard(ev,idx))}
+      <div style={{fontSize:13,fontWeight:800,marginBottom:10,color:T.ac}}>🎯 Inspeções de Hoje</div>
+      {sorted.length===0?<div style={{textAlign:"center",padding:30,color:T.dm,fontSize:12}}><div style={{fontSize:32,marginBottom:8}}>🌴</div>Nenhuma inspeção para hoje. Use "+ Nova Inspeção" para cadastrar.</div>:sorted.map((ins,idx)=>renderCard(ins,idx))}
     </Card>
-    
-    {/* Seção HOJE */}
-    {enrichedToday.length>0&&<Card style={{padding:14}}>
-      <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>📅 Hoje — {enrichedToday.length} turnover{enrichedToday.length>1?"s":""}</div>
-      {enrichedToday.map((ev,idx)=>renderCard(ev,idx))}
-    </Card>}
-    
-    {/* Seção AMANHÃ */}
-    {enrichedTomorrow.length>0&&<Card style={{padding:14}}>
-      <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>📅 Amanhã — {enrichedTomorrow.length} turnover{enrichedTomorrow.length>1?"s":""}</div>
-      {enrichedTomorrow.map((ev,idx)=>renderCard(ev,idx))}
-    </Card>}
-    
-    {/* Seção DEPOIS DE AMANHÃ */}
-    {enrichedDayAfter.length>0&&<Card style={{padding:14}}>
-      <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>📅 Depois de amanhã — {enrichedDayAfter.length} turnover{enrichedDayAfter.length>1?"s":""}</div>
-      {enrichedDayAfter.map((ev,idx)=>renderCard(ev,idx))}
-    </Card>}
-    
-    {enrichedToday.length===0&&enrichedTomorrow.length===0&&enrichedDayAfter.length===0&&<Card style={{textAlign:"center",padding:40}}>
-      <div style={{fontSize:48,marginBottom:14}}>🌴</div>
-      <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>Nenhum turnover nos próximos 3 dias</div>
-      <div style={{fontSize:11,color:T.dm}}>Verifique se a agenda está atualizada</div>
-    </Card>}
   </>;
 })()}
 
@@ -3457,7 +3320,7 @@ return(
 <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}><button onClick={()=>setInspView("list")} style={bt(T.c2,T.dm)}>← Back</button><span style={{fontSize:14,fontWeight:700}}>🏆 Ranking</span>
 <select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score por Funcionário — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const scores={};em.forEach(e=>{const all=inspections.filter(i=>matchEmp(i.employees,e));const mi=all.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(all.length){const avg=Math.round(all.reduce((s,i)=>s+i.score,0)/all.length);const mAvg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):null;const rework=all.filter(i=>i.status==="failed"||i.status==="blocked").length;const today=getLocalDate();const weekAgo=getLocalDateOffset(-7);const monthStart=today.slice(0,8)+"01";scores[e]={avg,mAvg,total:all.length,mTotal:mi.length,perfect:mi.filter(i=>i.score===100).length,rework:Math.round(rework/all.length*100),diaHoje:all.filter(i=>i.date===today).length,semana:all.filter(i=>i.date>=weekAgo).length,mes:mi.length,bonus:mAvg>=95?"integral":mAvg>=92?"parcial":"sem"};}});const sorted=Object.entries(scores).sort((a,b)=>(b[1].mAvg||0)-(a[1].mAvg||0));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>No data.</div>:sorted.map(([name,d],i)=><div key={name} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
+{(()=>{const mo=inspRptMonth;const scores={};em.forEach(e=>{const all=inspections.filter(i=>matchEmp(i.employees,e)&&i.score!=null);const mi=all.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(all.length){const avg=Math.round(all.reduce((s,i)=>s+i.score,0)/all.length);const mAvg=mi.length?Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length):null;const rework=all.filter(i=>i.status==="failed"||i.status==="blocked").length;const today=getLocalDate();const weekAgo=getLocalDateOffset(-7);const monthStart=today.slice(0,8)+"01";scores[e]={avg,mAvg,total:all.length,mTotal:mi.length,perfect:mi.filter(i=>i.score===100).length,rework:Math.round(rework/all.length*100),diaHoje:all.filter(i=>i.date===today).length,semana:all.filter(i=>i.date>=weekAgo).length,mes:mi.length,bonus:mAvg>=95?"integral":mAvg>=92?"parcial":"sem"};}});const sorted=Object.entries(scores).sort((a,b)=>(b[1].mAvg||0)-(a[1].mAvg||0));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>No data.</div>:sorted.map(([name,d],i)=><div key={name} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:6,background:T.c2}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{display:"flex",alignItems:"center",gap:10}}>
 <div style={{width:28,height:28,borderRadius:7,background:i===0?T.gr+"22":T.cd,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:i===0?T.gr:T.dm}}>#{i+1}</div>
@@ -3480,7 +3343,7 @@ return(
 <select value={inspRptMonth} onChange={e=>setInspRptMonth(e.target.value)} style={{...sel,width:"auto",minWidth:110,marginLeft:"auto"}}>{MO.map(m=><option key={m}>{m}</option>)}</select></div>
 <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
 {[["resumo","Resumo"],["casa","Por Casa"],["cleaner","Por Cleaner"],["inspetor","Por Inspetor"],["cliente","Por Cliente"],["evolucao","Evolução"],["plano","Plano de Ação"]].map(([k,l])=><button key={k} onClick={()=>setInspRpt(k)} style={{padding:"6px 14px",borderRadius:6,border:inspRpt===k?"1px solid "+T.ac:"1px solid "+T.bd,background:inspRpt===k?T.ac+"18":T.cd,color:inspRpt===k?T.ac:T.dm,fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{l}</button>)}
-<button onClick={()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return fl("No data no mês");const w=window.open("","_blank");
+<button onClick={()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo&&i.score!=null);if(!mi.length)return fl("No data no mês");const w=window.open("","_blank");
 const avg=Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length);
 const approved=mi.filter(i=>i.status==="approved").length;
 const failed=mi.filter(i=>i.status==="failed"||i.status==="blocked").length;
@@ -3506,16 +3369,16 @@ w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄
 {inspRpt==="resumo"&&<>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
 <Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Nota Média por Casa — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]={sum:0,cnt:0};byH[h].sum+=i.score;byH[h].cnt++;});const sorted=Object.entries(byH).map(([h,d])=>({h,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>a.avg-b.avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(d=><div key={d.h} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d.h} <span style={{color:T.dm}}>({d.cnt}x)</span></span><span style={{fontWeight:700,color:getScoreColor(d.avg)}}>{d.avg}</span></div>);})()}</Card>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]={sum:0,cnt:0};byH[h].sum+=i.score;byH[h].cnt++;});const sorted=Object.entries(byH).map(([h,d])=>({h,avg:Math.round(d.sum/d.cnt),cnt:d.cnt})).sort((a,b)=>a.avg-b.avg);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(d=><div key={d.h} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d.h} <span style={{color:T.dm}}>({d.cnt}x)</span></span><span style={{fontWeight:700,color:getScoreColor(d.avg)}}>{d.avg}</span></div>);})()}</Card>
 <Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Itens com Mais Falhas — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const fails={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if((i.checks||{})[item.id]==="fail"||(i.checks||{})[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+1;});});const sorted=Object.entries(fails).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,10).map(([t,c])=><div key={t} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{t}</span><span style={{fontWeight:700,color:T.rd}}>{c}x</span></div>);})()}</Card>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const fails={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if((i.checks||{})[item.id]==="fail"||(i.checks||{})[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+1;});});const sorted=Object.entries(fails).sort((a,b)=>b[1]-a[1]);return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.slice(0,10).map(([t,c])=><div key={t} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{t}</span><span style={{fontWeight:700,color:T.rd}}>{c}x</span></div>);})()}</Card>
 </div>
 <Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Volume de Inspeções — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byDay={};mi.forEach(i=>{byDay[i.date]=(byDay[i.date]||0)+1;});const sorted=Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0]));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(([d,c])=><div key={d} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d}</span><span style={{fontWeight:700,color:T.ac}}>{c} inspeções</span></div>);})()}</Card>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byDay={};mi.forEach(i=>{byDay[i.date]=(byDay[i.date]||0)+1;});const sorted=Object.entries(byDay).sort((a,b)=>b[0].localeCompare(a[0]));return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:sorted.map(([d,c])=><div key={d} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid "+T.bd,fontSize:10}}><span>{d}</span><span style={{fontWeight:700,color:T.ac}}>{c} inspeções</span></div>);})()}</Card>
 </>}
 
 {inspRpt==="casa"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Casa — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return Object.keys(byH).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byH).sort((a,b)=>a[0].localeCompare(b[0])).map(([house,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const fails={};ins.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if((i.checks||{})[item.id]==="fail")fails[item.t]=(fails[item.t]||0)+1;if((i.checks||{})[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+0.5;});});const topFails=Object.entries(fails).sort((a,b)=>b[1]-a[1]).slice(0,5);return <div key={house} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byH={};mi.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return Object.keys(byH).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byH).sort((a,b)=>a[0].localeCompare(b[0])).map(([house,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const fails={};ins.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if((i.checks||{})[item.id]==="fail")fails[item.t]=(fails[item.t]||0)+1;if((i.checks||{})[item.id]==="adjust")fails[item.t]=(fails[item.t]||0)+0.5;});});const topFails=Object.entries(fails).sort((a,b)=>b[1]-a[1]).slice(0,5);return <div key={house} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{fontSize:12,fontWeight:700}}>{house}</div>
 <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp.</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
@@ -3524,7 +3387,7 @@ w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄
 </div>;});})()}</Card>}
 
 {inspRpt==="cleaner"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cleaner — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byE={};mi.forEach(i=>{(i.employees||[]).forEach(e=>{if(!byE[e])byE[e]=[];byE[e].push(i);});});return Object.keys(byE).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byE).sort((a,b)=>a[0].localeCompare(b[0])).map(([emp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={emp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byE={};mi.forEach(i=>{(i.employees||[]).forEach(e=>{if(!byE[e])byE[e]=[];byE[e].push(i);});});return Object.keys(byE).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byE).sort((a,b)=>a[0].localeCompare(b[0])).map(([emp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={emp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
 <div style={{fontSize:12,fontWeight:700}}>{emp}</div>
 <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {ins.filter(i=>i.score===100).length} perfeitas</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
@@ -3532,7 +3395,7 @@ w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄
 </div>;});})()}</Card>}
 
 {inspRpt==="inspetor"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Inspetor — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byI={};mi.forEach(i=>{const k=i.inspector||"Sem inspetor";if(!byI[k])byI[k]=[];byI[k].push(i);});return Object.keys(byI).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byI).map(([insp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={insp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byI={};mi.forEach(i=>{const k=i.inspector||"Sem inspetor";if(!byI[k])byI[k]=[];byI[k].push(i);});return Object.keys(byI).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byI).map(([insp,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);return <div key={insp} style={{marginBottom:12,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
 <div style={{fontSize:12,fontWeight:700}}>{insp}</div>
 <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} inspeções</span><span style={{fontSize:18,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
@@ -3540,7 +3403,7 @@ w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄
 </div>;});})()}</Card>}
 
 {inspRpt==="cliente"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Relatório por Cliente — {inspRptMonth}</div>
-{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth);const byC={};mi.forEach(i=>{const c=i.client||"Sem cliente";if(!byC[c])byC[c]=[];byC[c].push(i);});return Object.keys(byC).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byC).sort((a,b)=>a[0].localeCompare(b[0])).map(([client,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const byH={};ins.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return <div key={client} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
+{(()=>{const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===inspRptMonth&&i.score!=null);const byC={};mi.forEach(i=>{const c=i.client||"Sem cliente";if(!byC[c])byC[c]=[];byC[c].push(i);});return Object.keys(byC).length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>—</div>:Object.entries(byC).sort((a,b)=>a[0].localeCompare(b[0])).map(([client,ins])=>{const avg=Math.round(ins.reduce((s,i)=>s+i.score,0)/ins.length);const byH={};ins.forEach(i=>{const h=i.houseName||i.house;if(!byH[h])byH[h]=[];byH[h].push(i);});return <div key={client} style={{marginBottom:14,padding:"10px 12px",borderRadius:8,border:"1px solid "+T.bd,background:T.c2}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
 <div style={{fontSize:13,fontWeight:700}}>{client}</div>
 <div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:9,color:T.dm}}>{ins.length} insp. · {Object.keys(byH).length} casas</span><span style={{fontSize:20,fontWeight:800,color:getScoreColor(avg)}}>{avg}</span></div></div>
@@ -3550,11 +3413,11 @@ w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);fl("📄
 </div>;});})()}</Card>}
 
 {inspRpt==="evolucao"&&<Card><div style={{fontSize:11,fontWeight:700,marginBottom:10}}>Evolução Mensal</div>
-{(()=>{const byMonth={};inspections.forEach(i=>{if(i.date){const m=MO[new Date(i.date+"T12:00").getMonth()];if(!byMonth[m])byMonth[m]={sum:0,cnt:0};byMonth[m].sum+=i.score;byMonth[m].cnt++;}});const data=MO.filter(m=>byMonth[m]).map(m=>({l:m.slice(0,3),v1:Math.round(byMonth[m].sum/byMonth[m].cnt)}));return data.length>0?<div><BarChart data={data} colors={[T.ac]}/><div style={{display:"grid",gridTemplateColumns:"repeat("+data.length+",1fr)",gap:4,marginTop:8}}>{data.map(d=><div key={d.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:getScoreColor(d.v1)}}>{d.v1}</div><div style={{fontSize:9,color:T.dm}}>{d.l}</div></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>No data suficientes.</div>;})()}</Card>}
+{(()=>{const byMonth={};inspections.forEach(i=>{if(i.date&&i.score!=null){const m=MO[new Date(i.date+"T12:00").getMonth()];if(!byMonth[m])byMonth[m]={sum:0,cnt:0};byMonth[m].sum+=i.score;byMonth[m].cnt++;}});const data=MO.filter(m=>byMonth[m]).map(m=>({l:m.slice(0,3),v1:Math.round(byMonth[m].sum/byMonth[m].cnt)}));return data.length>0?<div><BarChart data={data} colors={[T.ac]}/><div style={{display:"grid",gridTemplateColumns:"repeat("+data.length+",1fr)",gap:4,marginTop:8}}>{data.map(d=><div key={d.l} style={{textAlign:"center"}}><div style={{fontSize:14,fontWeight:800,color:getScoreColor(d.v1)}}>{d.v1}</div><div style={{fontSize:9,color:T.dm}}>{d.l}</div></div>)}</div></div>:<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>No data suficientes.</div>;})()}</Card>}
 
 {inspRpt==="plano"&&<>
 <Card><div style={{fontSize:13,fontWeight:700,marginBottom:10}}>🎯 Plano de Ação — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return <div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>No data.</div>;
+{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo&&i.score!=null);if(!mi.length)return <div style={{color:T.dm,fontSize:11,textAlign:"center",padding:20}}>No data.</div>;
 const actions={};mi.forEach(i=>{ALL_INSP_ITEMS.forEach(item=>{if((i.checks||{})[item.id]==="fail"||(i.checks||{})[item.id]==="adjust"){const k=item.t;if(!actions[k])actions[k]={houses:new Set(),emps:new Set(),fails:0,adjusts:0};actions[k].houses.add(i.houseName||i.house);(i.employees||[]).forEach(e=>actions[k].emps.add(e));if(i.checks[item.id]==="fail")actions[k].fails++;else actions[k].adjusts++;}});});
 const sorted=Object.entries(actions).sort((a,b)=>(b[1].fails*2+b[1].adjusts)-(a[1].fails*2+a[1].adjusts));
 return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}}>Nenhum problema encontrado!</div>:sorted.map(([issue,d])=>{const sev=d.fails>=3?"alta":d.fails>=1||d.adjusts>=3?"média":"baixa";const sevC=sev==="alta"?T.rd:sev==="média"?T.or:T.dm;return <div key={issue} style={{padding:"12px",borderRadius:8,border:"1px solid "+T.bd,marginBottom:8,background:T.c2}}>
@@ -3572,12 +3435,31 @@ return sorted.length===0?<div style={{color:T.dm,fontSize:11,textAlign:"center"}
 </div>});})()}</Card>
 
 <Card><div style={{fontSize:11,fontWeight:700,marginBottom:8}}>Resumo Executivo — {inspRptMonth}</div>
-{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo);if(!mi.length)return <div style={{color:T.dm,fontSize:11}}>—</div>;const avg=Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length);const appr=mi.filter(i=>i.status==="approved"||i.status==="released").length;const fail=mi.filter(i=>i.status==="failed"||i.status==="blocked").length;return <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+{(()=>{const mo=inspRptMonth;const mi=inspections.filter(i=>i.date&&MO[new Date(i.date+"T12:00").getMonth()]===mo&&i.score!=null);if(!mi.length)return <div style={{color:T.dm,fontSize:11}}>—</div>;const avg=Math.round(mi.reduce((s,i)=>s+i.score,0)/mi.length);const appr=mi.filter(i=>i.status==="approved"||i.status==="released").length;const fail=mi.filter(i=>i.status==="failed"||i.status==="blocked").length;return <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
 {[["Total",mi.length,T.ac],["Média",avg,getScoreColor(avg)],["Aprovadas",appr,T.gr],["Reprovadas",fail,T.rd]].map(([l,v,c])=><div key={l} style={{textAlign:"center",padding:"8px",borderRadius:6,background:T.cd}}><div style={{fontSize:9,color:T.dm}}>{l}</div><div style={{fontSize:18,fontWeight:800,color:c}}>{v}</div></div>)}
 </div>;})()}</Card>
 </>}
 
 </>}
+{schedForm&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setSchedForm(null)}>
+  <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:460,maxHeight:"90vh",overflowY:"auto"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+      <div style={{fontSize:16,fontWeight:800,color:T.ac}}>{schedForm.id?"✏️ Editar Agendamento":"🗓️ Agendar Inspeção"}</div>
+      <button onClick={()=>setSchedForm(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12}}>✕</button>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div><label style={lb}>Casa *</label><select value={schedForm.house} onChange={e=>setSchedForm({...schedForm,house:e.target.value})} style={sel}><option value="">Selecione a casa...</option>{[...new Set(db.map(p=>p.n))].map(h=><option key={h}>{h}</option>)}</select></div>
+      <div><label style={lb}>Cleaner *</label><select value={schedForm.employee} onChange={e=>setSchedForm({...schedForm,employee:e.target.value})} style={sel}><option value="">Selecione o cleaner...</option>{em.map(e=><option key={e}>{e}</option>)}</select></div>
+      <div><label style={lb}>Data do check-in *</label><input type="date" value={schedForm.checkIn} onChange={e=>setSchedForm({...schedForm,checkIn:e.target.value})} style={inp}/></div>
+      <div><label style={lb}>Data da inspeção *</label><input type="date" value={schedForm.date} onChange={e=>setSchedForm({...schedForm,date:e.target.value})} style={inp}/></div>
+      <div><label style={lb}>Tipo</label><div style={{...inp,display:"flex",alignItems:"center",color:T.dm}}>Turnover (padrão)</div></div>
+    </div>
+    <div style={{display:"flex",gap:8,marginTop:18}}>
+      <button onClick={()=>setSchedForm(null)} style={bt(T.c2,T.dm,{flex:1,padding:"11px",borderRadius:8,fontSize:12})}>Cancelar</button>
+      <button onClick={saveScheduledInspection} style={bt(T.ac,T.bg,{flex:1,padding:"11px",borderRadius:8,fontSize:12,fontWeight:700})}>{schedForm.id?"Salvar":"Agendar"}</button>
+    </div>
+  </div>
+</div>}
 </div>}
 
 
