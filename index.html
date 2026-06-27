@@ -506,6 +506,7 @@ const[f,setF]=useState(()=>{
 const[mode,setMode]=useState("choose");
 const[expanded,setExpanded]=useState({});
 const[showAdvanced,setShowAdvanced]=useState(false);
+const[saving,setSaving]=useState(false);
 const uf=(k,v)=>setF(p=>({...p,[k]:v}));
 const score=calcInspScore(f.checks);
 const crits=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");
@@ -518,7 +519,7 @@ const autoFillFromAgenda=(houseName)=>{if(!houseName||!agEvents2)return;const to
 
 const handleHouseSelect=(houseName)=>{const prop=db2.find(p=>p.n===houseName);setF(p=>({...p,house:houseName,houseName,client:prop?prop.c:p.client}));autoFillFromAgenda(houseName);};
 
-const saveInspection=(opts={})=>{if(!f.house){fl("Selecione uma casa primeiro!");return;}const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});};
+const saveInspection=async(opts={})=>{if(saving)return;if(!f.house){fl("Selecione uma casa primeiro!");return;}const s=calcInspScore(f.checks);const cr=ALL_INSP_ITEMS.filter(it=>it.crit&&f.checks[it.id]==="fail");setSaving(true);try{await onSave({...f,id:Date.now(),score:s,status:cr.length>0?"blocked":s>=80?"approved":"failed",criticalFails:cr.length,at:new Date().toISOString()});}finally{setSaving(false);}};
 
 const setItemStatus=(id,status)=>setF(p=>({...p,checks:{...p.checks,[id]:status}}));
 const toggleExpand=(area)=>setExpanded(p=>({...p,[area]:!p[area]}));
@@ -639,7 +640,7 @@ return <div key={area} style={{background:cd2,borderRadius:12,border:"1px solid 
 {crits.length>0&&<div style={{marginTop:8,padding:"6px 14px",borderRadius:6,background:"rgba(255,107,107,0.15)",color:"#FF6B6B",fontSize:10,fontWeight:700,display:"inline-block"}}>⛔ {crits.length} {crits.length===1?"falha crítica":"falhas críticas"} — Casa será BLOQUEADA</div>}
 </div>
 <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:12}}>
-<button type="button" onClick={()=>saveInspection()} disabled={!f.house} style={{padding:"14px 36px",borderRadius:10,fontSize:14,border:"none",cursor:f.house?"pointer":"not-allowed",fontFamily:"inherit",fontWeight:800,background:f.house?"#4ADE80":"#1A2545",color:f.house?"#0A0F1E":"#707A8A",boxShadow:f.house?"0 4px 14px rgba(74,222,128,0.25)":"none"}}>✅ Finalizar Inspeção</button>
+<button type="button" onClick={()=>saveInspection()} disabled={!f.house||saving} style={{padding:"14px 36px",borderRadius:10,fontSize:14,border:"none",cursor:(f.house&&!saving)?"pointer":"not-allowed",fontFamily:"inherit",fontWeight:800,background:(f.house&&!saving)?"#4ADE80":"#1A2545",color:(f.house&&!saving)?"#0A0F1E":"#707A8A",boxShadow:(f.house&&!saving)?"0 4px 14px rgba(74,222,128,0.25)":"none"}}>{saving?"Salvando…":"✅ Finalizar Inspeção"}</button>
 <button type="button" onClick={onCancel} style={{padding:"14px 22px",borderRadius:10,fontSize:13,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:600,background:"rgba(255,107,107,0.12)",color:"#FF6B6B"}}>Cancelar</button>
 </div>
 </div>
@@ -909,7 +910,7 @@ const fBCI={},fBCO={};fIn.forEach(e=>{fBCI[e.cat]=(fBCI[e.cat]||0)+e.amt;});fOut
 const uPr=async n=>{setProd(n);dsv("pr3",n);};const uLn=async n=>{setLin(n);dsv("ln3",n);};const uLB=async n=>{setLbp(n);dsv("lb3",n);};const uLoss=async n=>{setLosses(n);await sv("ls3",n);};const uCC=async n=>{setCustomCats(n);await sv("cc3",n);};const uCU=async n=>{setCustomUnits(n);await sv("cu3",n);};
 const toTrash=(type,item)=>{const t=[...trash,{type,item,deletedAt:new Date().toISOString(),id:Date.now()}];setTrash(t);try{sv("_trash",t);}catch{}};
 const safeDel=(msg,onConfirm,type,item)=>{if(!confirm("⚠️ "+msg+"\n\nEssa ação pode ser desfeita na Lixeira.")){return false;}if(type&&item)toTrash(type,item);onConfirm();return true;};
-const uInsp=async n=>{setInspections(n);await sv("insp3",n);};
+const uInsp=async n=>{setInspections(n);const base=inspections;const baseById=new Map(base.map(x=>[x.id,x]));const nById=new Map(n.map(x=>[x.id,x]));const deleted=new Set([...baseById.keys()].filter(id=>!nById.has(id)));const upserts=n.filter(it=>{const b=baseById.get(it.id);return !b||JSON.stringify(b)!==JSON.stringify(it);});try{const fresh=await FB.get("insp3");const remote=fresh&&fresh.value?JSON.parse(fresh.value):null;if(!Array.isArray(remote))throw new Error("remote insp3 invalido");const order=[];const map=new Map();remote.forEach(x=>{if(!map.has(x.id)){map.set(x.id,x);order.push(x.id);}});deleted.forEach(id=>map.delete(id));upserts.forEach(it=>{if(!map.has(it.id))order.unshift(it.id);map.set(it.id,it);});const merged=order.filter(id=>map.has(id)).map(id=>map.get(id));setInspections(merged);await sv("insp3",merged);}catch(e){console.error("uInsp merge falhou — gravando snapshot local:",e);await sv("insp3",n);}};
 const uAg=async n=>{setAgEvents(n);await sv("ag3",n);};
 const uTk=async n=>{setTasks(n);await sv("tk3",n);};
 
@@ -6805,5 +6806,5 @@ const root=ReactDOM.createRoot(document.getElementById("root"));root.render(Reac
 
 </script>
 <script>(function(){try{var j=document.getElementById("app-jsx").textContent;var c=Babel.transform(j,{presets:["react"]}).code;new Function(c)();}catch(e){console.error(e);document.getElementById("root").innerHTML="<div style=\"color:red;padding:40px\"><pre style=\"white-space:pre-wrap\">"+e.message+"</pre></div>";}})();</script>
-<script>if('serviceWorker' in navigator){var SC="var CACHE='sunny-v5';self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./'])}).then(function(){return self.skipWaiting()}))});self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});self.addEventListener('fetch',function(e){if(e.request.method!=='GET')return;if(e.request.url.indexOf('firestore')>-1||e.request.url.indexOf('firebase')>-1)return;e.respondWith(fetch(e.request).then(function(r){if(r.ok){var rc=r.clone();caches.open(CACHE).then(function(c){c.put(e.request,rc)})}return r}).catch(function(){return caches.match(e.request)}))})";var b=new Blob([SC],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b)).catch(function(){});}</script>
+<script>if('serviceWorker' in navigator){var SC="var CACHE='sunny-v6';self.addEventListener('install',function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(['./'])}).then(function(){return self.skipWaiting()}))});self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});self.addEventListener('fetch',function(e){if(e.request.method!=='GET')return;if(e.request.url.indexOf('firestore')>-1||e.request.url.indexOf('firebase')>-1)return;e.respondWith(fetch(e.request).then(function(r){if(r.ok){var rc=r.clone();caches.open(CACHE).then(function(c){c.put(e.request,rc)})}return r}).catch(function(){return caches.match(e.request)}))})";var b=new Blob([SC],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(b)).catch(function(){});}</script>
 </body></html>
