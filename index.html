@@ -961,6 +961,27 @@ const parseICalText=(text)=>{
   return {events,propertyName:calName||propertyName,calName};
 };
 
+// --- Multi-source helpers ---
+const inferIcalPlatform=(url="")=>{const u=(url||"").toLowerCase();return u.includes("airbnb")?"airbnb":u.includes("booking")?"booking":(u.includes("vrbo")||u.includes("homeaway"))?"vrbo":"other";};
+const ICAL_PLATFORM_LABEL={airbnb:"Airbnb",booking:"Booking",vrbo:"VRBO",other:"Outro"};
+// Label vazio / cabeçalho técnico do .ics (ex "-//Airbnb Inc//...") => nome limpo da plataforma; senão mantém o que o usuário digitou
+const cleanIcalLabel=(label,platform)=>{const l=(label||"").trim();return (!l||l.startsWith("-//")||l.includes("//"))?(ICAL_PLATFORM_LABEL[platform]||"iCal"):l;};
+const ICAL_BLOCK_PATTERNS=[/not available/i,/unavailable/i,/blocked/i,/\bblock\b/i,/closed/i];
+const isOwnerBlock=(summary)=>!!summary&&ICAL_BLOCK_PATTERNS.some(re=>re.test(summary)); // sem summary => NÃO é bloqueio (mantém reserva)
+// Migração lazy: casa com icalSources[] usa o array (mesmo vazio = desconectado de propósito); só icalUrl legado => sintetiza 1 fonte; nada => []
+const getIcalSources=(h)=>{
+  if(Array.isArray(h.icalSources))return h.icalSources;
+  if(h.icalUrl){const plat=(h.icalSource||inferIcalPlatform(h.icalUrl));return [{id:"legacy",platform:plat,label:cleanIcalLabel(h.icalSourceName,plat),url:h.icalUrl,active:h.icalConfirmed!==false,lastSync:h.icalLastSync,lastResult:h.icalLastResult,sourceName:h.icalSourceName}];}
+  return [];
+};
+const icalUid=()=>"src_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+// Labels das plataformas que geraram um evento (ex: "Airbnb + Booking"); "" se não for iCal
+const icalPlatformsLabel=(ev)=>{
+  const srcs=Array.isArray(ev.icalSources)?ev.icalSources:(ev.icalSource?[{platform:ev.icalSource,label:ICAL_PLATFORM_LABEL[ev.icalSource]||ev.icalSource}]:[]);
+  const labels=[...new Set(srcs.map(s=>cleanIcalLabel(s.label,s.platform)).filter(Boolean))];
+  return labels.join(" + ");
+};
+
 const fetchICalURL=async(url)=>{
   // Usar um proxy CORS pq Airbnb/Vrbo não retornam CORS
   // Tenta direto primeiro (caso seja Google Calendar ou similar)
@@ -996,123 +1017,150 @@ const testICalConnection=async(url)=>{
   }
 };
 
+const stayNightsOf=(start,end)=>{try{const s=new Date(start+"T12:00");const e=new Date(end+"T12:00");return Math.max(1,Math.round((e-s)/(1000*60*60*24)));}catch{return null;}};
+const isIcalEvent=(ev)=>ev.source==="ical"||!!ev.icalUid||Array.isArray(ev.icalSources); // nunca toca turnover manual
 const syncOneHouseFromICal=async(houseObj,currentAgEvents)=>{
-  if(!houseObj.icalUrl)return {created:0,updated:0,removed:0,error:"Sem URL"};
-  try{
-    const{text}=await fetchICalURL(houseObj.icalUrl);
-    const{events}=parseICalText(text);
-    const today=getLocalDate();
-    // Reservas futuras (com check-out a partir de hoje)
-    const futureRes=events.filter(e=>e.start&&e.end&&e.end>=today&&(!e.status||e.status!=="CANCELLED"));
-    
-    let created=0,updated=0,removed=0;
-    let newAg=[...currentAgEvents];
-    
-    // Para cada reserva, criar/atualizar turnover na data do check-out
-    const seenUids=new Set();
-    futureRes.forEach(res=>{
-      if(!res.uid||!res.end)return;
-      seenUids.add(res.uid);
-      const turnoverDate=res.end; // checkout = dia da limpeza
-      // Existe turnover dessa reserva?
-      const existing=newAg.find(ev=>ev.icalUid===res.uid);
-      const stayNights=(()=>{try{const s=new Date(res.start+"T12:00");const e=new Date(res.end+"T12:00");return Math.max(1,Math.round((e-s)/(1000*60*60*24)));}catch{return null;}})();
-      if(existing){
-        // Atualizar se data mudou
-        if(existing.date!==turnoverDate){
-          newAg=newAg.map(ev=>ev.icalUid===res.uid?{...ev,date:turnoverDate,checkIn:res.start,checkOut:res.end,stayNights}:ev);
-          updated++;
-        }
-      }else{
-        // Criar novo turnover
-        const newEv={
-          id:Date.now()+Math.random(),
-          date:turnoverDate,
-          house:houseObj.n,
-          client:houseObj.c||"",
-          type:"Turnover",
-          employees:[],
-          notes:"",
-          icalUid:res.uid,
-          icalSource:houseObj.icalSource||"airbnb",
-          source:"ical",
-          checkIn:res.start,
-          checkOut:res.end,
-          stayNights,
-          createdAt:new Date().toISOString()
-        };
-        newAg.push(newEv);
-        created++;
-      }
-    });
-    
-    // Remover turnovers de reservas que sumiram do iCal (canceladas)
-    // Só remove se: tem icalUid, é da mesma casa, é futuro, e não tá em seenUids
-    const toRemove=newAg.filter(ev=>ev.icalUid&&ev.house===houseObj.n&&ev.date>=today&&!seenUids.has(ev.icalUid));
+  const sources=getIcalSources(houseObj).filter(s=>s.active&&s.url);
+  if(sources.length===0)return {created:0,updated:0,removed:0,total:0,perSource:[],newAg:currentAgEvents};
+  const today=getLocalDate();
+  const perSource=[]; // {id, ok, error, propertyName, count}
+  const pool=[]; // reservas de todas as fontes, taggeadas com a origem
+
+  // 1) Buscar+parsear cada fonte isoladamente — uma falha não interrompe as demais
+  for(const s of sources){
+    try{
+      const{text}=await fetchICalURL(s.url);
+      if(!text||!text.includes("BEGIN:VCALENDAR"))throw new Error("Resposta não parece ser um iCal válido");
+      const{events,propertyName}=parseICalText(text);
+      let count=0;
+      events.forEach(e=>{pool.push({...e,_srcId:s.id,_srcPlatform:s.platform,_srcLabel:s.label||ICAL_PLATFORM_LABEL[s.platform]||s.platform});count++;});
+      perSource.push({id:s.id,ok:true,propertyName,count});
+    }catch(e){
+      perSource.push({id:s.id,ok:false,error:e.message||"Falha ao buscar iCal"});
+    }
+  }
+
+  // 2) Reservas válidas: futuras, não canceladas e não-bloqueio-de-dono
+  const futureRes=pool.filter(e=>e.start&&e.end&&e.end>=today&&(!e.status||e.status!=="CANCELLED")&&!isOwnerBlock(e.summary));
+
+  // 3) Dedup por data de checkout (DTEND): um Turnover por casa+data, com todas as fontes que o geraram
+  const byDate={}; // turnoverDate -> {date, sources:[{platform,uid,label}], checkIn, checkOut, stayNights}
+  futureRes.forEach(res=>{
+    if(!res.end)return;
+    const d=res.end;
+    if(!byDate[d])byDate[d]={date:d,sources:[],checkIn:res.start,checkOut:res.end,stayNights:stayNightsOf(res.start,res.end)};
+    // evita duplicar a mesma (plataforma+uid) no mesmo dia
+    if(!byDate[d].sources.some(x=>x.platform===res._srcPlatform&&x.uid===res.uid))
+      byDate[d].sources.push({platform:res._srcPlatform,uid:res.uid||null,label:res._srcLabel});
+  });
+
+  let created=0,updated=0,removed=0;
+  let newAg=[...currentAgEvents];
+  const seenDates=new Set();
+
+  Object.values(byDate).forEach(grp=>{
+    const turnoverDate=grp.date;
+    seenDates.add(turnoverDate);
+    // Reconciliação por (casa + data + é-iCal) — migra em lugar eventos antigos que só têm icalUid
+    const existing=newAg.find(ev=>ev.house===houseObj.n&&ev.date===turnoverDate&&isIcalEvent(ev));
+    if(existing){
+      const changed=JSON.stringify(existing.icalSources||[])!==JSON.stringify(grp.sources)||existing.checkIn!==grp.checkIn||existing.checkOut!==grp.checkOut;
+      newAg=newAg.map(ev=>ev===existing?{...ev,icalSources:grp.sources,icalUid:(grp.sources[0]&&grp.sources[0].uid)||ev.icalUid,icalSource:(grp.sources[0]&&grp.sources[0].platform)||ev.icalSource,source:"ical",checkIn:grp.checkIn,checkOut:grp.checkOut,stayNights:grp.stayNights}:ev);
+      if(changed)updated++;
+    }else{
+      newAg.push({
+        id:Date.now()+Math.random(),
+        date:turnoverDate,
+        house:houseObj.n,
+        client:houseObj.c||"",
+        type:"Turnover",
+        employees:[],
+        notes:"",
+        icalSources:grp.sources,
+        icalUid:(grp.sources[0]&&grp.sources[0].uid)||null,
+        icalSource:(grp.sources[0]&&grp.sources[0].platform)||"other",
+        source:"ical",
+        checkIn:grp.checkIn,
+        checkOut:grp.checkOut,
+        stayNights:grp.stayNights,
+        createdAt:new Date().toISOString()
+      });
+      created++;
+    }
+  });
+
+  // 4) Remover turnovers iCal desta casa (futuros) cuja data sumiu de todas as fontes ativas.
+  //    Só remove se ao menos uma fonte respondeu OK — evita apagar tudo quando o feed cai.
+  const anySourceOk=perSource.some(p=>p.ok);
+  if(anySourceOk){
+    const toRemove=newAg.filter(ev=>isIcalEvent(ev)&&ev.house===houseObj.n&&ev.date>=today&&!seenDates.has(ev.date));
     if(toRemove.length>0){
-      const toRemoveIds=new Set(toRemove.map(e=>e.id));
-      newAg=newAg.filter(ev=>!toRemoveIds.has(ev.id));
+      const ids=new Set(toRemove.map(e=>e.id));
+      newAg=newAg.filter(ev=>!ids.has(ev.id));
       removed=toRemove.length;
     }
-    
-    return {created,updated,removed,total:created+updated+removed,newAg};
-  }catch(e){
-    return {created:0,updated:0,removed:0,error:e.message};
   }
+
+  return {created,updated,removed,total:created+updated+removed,perSource,newAg};
 };
 
 const syncAllICalConnections=async()=>{
   setIcalSyncing(true);
   const log=[];
+  const now=new Date().toISOString();
   let totalCreated=0,totalUpdated=0,totalRemoved=0,totalErr=0;
   let workingAg=[...agEvents];
-  const connectedHouses=db.filter(h=>h.icalUrl&&h.icalConfirmed);
+  const connectedHouses=db.filter(h=>getIcalSources(h).some(s=>s.active&&s.url));
   if(connectedHouses.length===0){
     fl("Nenhuma casa conectada ao iCal ainda");
     setIcalSyncing(false);
     return;
   }
+  const perHouseResults={}; // n -> perSource[] p/ gravar lastSync/lastResult por fonte
   for(const h of connectedHouses){
     const result=await syncOneHouseFromICal(h,workingAg);
-    if(result.error){
-      log.push({house:h.n,status:"error",msg:result.error});
-      totalErr++;
-    }else{
-      if(result.newAg)workingAg=result.newAg;
-      log.push({house:h.n,status:"ok",created:result.created,updated:result.updated,removed:result.removed});
-      totalCreated+=result.created;
-      totalUpdated+=result.updated;
-      totalRemoved+=result.removed;
-    }
+    if(result.newAg)workingAg=result.newAg;
+    perHouseResults[h.n]=result.perSource||[];
+    const failed=(result.perSource||[]).filter(p=>!p.ok);
+    totalCreated+=result.created;totalUpdated+=result.updated;totalRemoved+=result.removed;
+    if(failed.length>0)totalErr+=failed.length;
+    log.push({house:h.n,status:(failed.length&&failed.length===(result.perSource||[]).length)?"error":"ok",
+      created:result.created,updated:result.updated,removed:result.removed,
+      sources:(result.perSource||[]).map(p=>({label:(getIcalSources(h).find(s=>s.id===p.id)||{}).label||p.id,ok:p.ok,error:p.error})),
+      msg:failed.map(f=>f.error).join(" · ")});
   }
-  // Update house lastSync
+  // Grava lastSync/lastResult por fonte + legados agregados
   const updatedDb=db.map(h=>{
-    if(h.icalUrl&&h.icalConfirmed){
-      const entry=log.find(l=>l.house===h.n);
-      return {...h,icalLastSync:new Date().toISOString(),icalLastResult:entry?(entry.status==="error"?"error":"ok"):"unknown"};
-    }
-    return h;
+    const ps=perHouseResults[h.n];
+    if(!ps)return h;
+    const srcs=getIcalSources(h).map(s=>{const r=ps.find(p=>p.id===s.id);return r?{...s,lastSync:now,lastResult:r.ok?"ok":"error"}:{...s,lastSync:now};});
+    const anyOk=ps.some(p=>p.ok),allFail=ps.length>0&&ps.every(p=>!p.ok);
+    return {...h,icalSources:srcs,icalLastSync:now,icalLastResult:allFail?"error":anyOk?"ok":"unknown"};
   });
   await uAg(workingAg);
   setDb(updatedDb);
   await sv("db3",updatedDb);
-  setIcalSyncLog([{at:new Date().toISOString(),totalCreated,totalUpdated,totalRemoved,totalErr,details:log},...icalSyncLog].slice(0,20));
-  await sv("ical_sync_log",[{at:new Date().toISOString(),totalCreated,totalUpdated,totalRemoved,totalErr,details:log},...icalSyncLog].slice(0,20));
-  fl("✅ Sync completo: "+totalCreated+" criados, "+totalUpdated+" atualizados, "+totalRemoved+" removidos");
+  const entry={at:now,totalCreated,totalUpdated,totalRemoved,totalErr,details:log};
+  setIcalSyncLog([entry,...icalSyncLog].slice(0,20));
+  await sv("ical_sync_log",[entry,...icalSyncLog].slice(0,20));
+  fl("✅ Sync completo: "+totalCreated+" criados, "+totalUpdated+" atualizados, "+totalRemoved+" removidos"+(totalErr>0?" · "+totalErr+" fonte(s) com erro":""));
   setIcalSyncing(false);
 };
 
-const confirmICalConnection=async(houseN,houseC,url,testResult)=>{
-  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalUrl:url,icalConfirmed:true,icalSourceName:testResult.propertyName||testResult.calName||"",icalConnectedAt:new Date().toISOString()}:h);
+// Salva o array de fontes iCal de uma casa (do modal editor). Preserva icalUrl legado; mantém retrocompat setando os campos antigos a partir da 1ª fonte ativa.
+const saveIcalSources=async(houseN,houseC,sources)=>{
+  const clean=sources.filter(s=>(s.url||"").trim()).map(s=>({id:s.id||icalUid(),platform:s.platform||"other",label:cleanIcalLabel(s.label,s.platform||"other"),url:s.url.trim(),active:s.active!==false,lastSync:s.lastSync||null,lastResult:s.lastResult||null,sourceName:s.sourceName||""}));
+  const firstActive=clean.find(s=>s.active);
+  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalSources:clean,icalConfirmed:clean.some(s=>s.active),icalUrl:firstActive?firstActive.url:(h.icalUrl||""),icalSourceName:firstActive?firstActive.sourceName:h.icalSourceName,icalSource:firstActive?firstActive.platform:h.icalSource,icalConnectedAt:h.icalConnectedAt||new Date().toISOString()}:h);
   setDb(updated);
   await sv("db3",updated);
-  fl("✅ iCal conectado! Use o botão Sincronizar para puxar reservas.");
+  fl(clean.length?"✅ Fontes iCal salvas! Use Sincronizar para puxar reservas.":"Fontes iCal removidas");
   setIcalTestModal(null);
 };
 
 const disconnectICal=async(houseN,houseC)=>{
   if(!confirm("Desconectar iCal desta casa? Os turnovers já criados pelo iCal serão mantidos, mas novas reservas não serão sincronizadas."))return;
-  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalUrl:"",icalConfirmed:false,icalSourceName:"",icalConnectedAt:null,icalLastSync:null}:h);
+  const updated=db.map(h=>(h.n===houseN&&h.c===houseC)?{...h,icalSources:[],icalConfirmed:false,icalLastSync:null,icalLastResult:null}:h); // mantém icalUrl legado; icalSources:[] = desconectado
   setDb(updated);
   await sv("db3",updated);
   fl("iCal desconectado");
@@ -4463,7 +4511,7 @@ return <div style={{background:T.cd,borderRadius:12,border:"1px solid "+T.bd,ove
 <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))"}}>
 {wkDays.map((ds,i)=>{const dayEvts=agEvents.filter(e=>e.date===ds).sort((a,b)=>(a.time||"").localeCompare(b.time||""));const dayTks=tasks.filter(t=>t.date===ds);const isSel=agSelDay===ds;
 return <div key={ds} onClick={()=>setAgSelDay(ds)} style={{minHeight:280,borderRight:"1px solid "+T.bd+"33",padding:"6px 4px",cursor:"pointer",background:isSel?T.ac+"0C":"transparent",borderLeft:isSel?"3px solid "+T.ac:"3px solid transparent",boxSizing:"border-box",overflow:"hidden"}}>
-{dayEvts.map(ev=>{const cl=evColor(ev.client);return <div key={ev.id} onClick={e=>{e.stopPropagation();setAgForm(ev);}} style={{fontSize:9,padding:"4px 6px",borderRadius:4,marginBottom:3,background:cl+"15",borderLeft:"3px solid "+cl,cursor:"pointer"}}><div style={{fontWeight:700,color:T.tx,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{ev.title||ev.house||"—"}</div><div style={{display:"flex",alignItems:"center",gap:3,marginTop:1}}>{ev.time&&<span style={{color:T.dm,fontSize:8}}>{ev.time}</span>}{(ev.employees||[]).map(emp=><span key={emp} style={{width:14,height:14,borderRadius:7,background:cl,color:"#fff",fontSize:7,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{emp.charAt(0).toUpperCase()}</span>)}</div></div>})}
+{dayEvts.map(ev=>{const cl=evColor(ev.client);return <div key={ev.id} onClick={e=>{e.stopPropagation();setAgForm(ev);}} style={{fontSize:9,padding:"4px 6px",borderRadius:4,marginBottom:3,background:cl+"15",borderLeft:"3px solid "+cl,cursor:"pointer"}}><div style={{fontWeight:700,color:T.tx,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{ev.title||ev.house||"—"}</div><div style={{display:"flex",alignItems:"center",gap:3,marginTop:1}}>{ev.time&&<span style={{color:T.dm,fontSize:8}}>{ev.time}</span>}{icalPlatformsLabel(ev)&&<span title={icalPlatformsLabel(ev)} style={{color:T.gr,fontSize:8,flexShrink:0}}>🤖</span>}{(ev.employees||[]).map(emp=><span key={emp} style={{width:14,height:14,borderRadius:7,background:cl,color:"#fff",fontSize:7,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{emp.charAt(0).toUpperCase()}</span>)}</div></div>})}
 {dayTks.map(tk=><div key={tk.id} onClick={e=>{e.stopPropagation();setTaskForm(tk);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:tk.done?T.gr+"15":T.or+"15",color:tk.done?T.gr:T.or,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer",textDecoration:tk.done?"line-through":"none"}}>📋 {tk.title||"—"}</div>)}
 </div>})}
 </div></div>;}
@@ -4479,7 +4527,7 @@ const isToday=dateStr===today;const isSel=agSelDay===dateStr;
 const dayEvts=moEvents.filter(e=>e.date===dateStr);const dayTks=tasks.filter(t=>t.date===dateStr);const total=dayEvts.length+dayTks.length;
 return <div key={i} onClick={()=>setAgSelDay(dateStr)} style={{minHeight:110,borderRight:"1px solid "+T.bd+"33",borderBottom:"1px solid "+T.bd+"33",padding:"4px 5px",cursor:"pointer",background:isSel?T.ac+"0C":isToday?darkMode?"#00B4D808":"#E0F7FA22":"transparent",transition:"background 0.15s",borderLeft:isSel?"3px solid "+T.ac:"3px solid transparent",minWidth:0,overflow:"hidden",boxSizing:"border-box"}}>
 <div style={{display:"flex",justifyContent:"flex-start",marginBottom:4}}>{isToday?<span style={{width:26,height:26,borderRadius:13,background:"linear-gradient(135deg,#00B4D8,#0094B0)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,boxShadow:"0 2px 8px rgba(0,180,216,0.4)"}}>{day}</span>:<span style={{fontSize:12,fontWeight:isSel?700:total>0?600:400,color:isSel?T.ac:T.tx,padding:"2px 4px"}}>{day}</span>}</div>
-{dayEvts.slice(0,3).map(ev=>{const cl=evColor(ev.client);const e0=(ev.employees||[])[0];return <div key={ev.id} onClick={e=>{e.stopPropagation();setAgForm(ev);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:cl+"15",borderLeft:"2px solid "+cl,color:T.tx,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>{e0&&<span style={{width:14,height:14,borderRadius:7,background:cl,color:"#fff",fontSize:8,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{e0.charAt(0).toUpperCase()}</span>}{ev.title||ev.house||ev.client||"—"}</div>})}
+{dayEvts.slice(0,3).map(ev=>{const cl=evColor(ev.client);const e0=(ev.employees||[])[0];return <div key={ev.id} onClick={e=>{e.stopPropagation();setAgForm(ev);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:cl+"15",borderLeft:"2px solid "+cl,color:T.tx,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer",display:"flex",alignItems:"center",gap:3}}>{e0&&<span style={{width:14,height:14,borderRadius:7,background:cl,color:"#fff",fontSize:8,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{e0.charAt(0).toUpperCase()}</span>}{icalPlatformsLabel(ev)&&<span title={icalPlatformsLabel(ev)} style={{color:T.gr,fontSize:8,flexShrink:0}}>🤖</span>}{ev.title||ev.house||ev.client||"—"}</div>})}
 {dayTks.slice(0,1).map(tk=><div key={tk.id} onClick={e=>{e.stopPropagation();setTaskForm(tk);}} style={{fontSize:9,padding:"3px 6px",borderRadius:4,marginBottom:2,background:tk.done?T.gr+"15":T.or+"15",color:tk.done?T.gr:T.or,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer",textDecoration:tk.done?"line-through":"none"}}>📋 {tk.title||"—"}</div>)}
 {total>4&&<div onClick={e=>{e.stopPropagation();setAgSelDay(dateStr);}} style={{fontSize:9,color:T.ac,fontWeight:600,padding:"2px 4px",cursor:"pointer"}}>+{total-4} mais</div>}
 </div>})}
@@ -4499,7 +4547,7 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 {dayEvts.length>0&&<div style={{marginBottom:dayTks.length>0?14:0}}>
 <div style={{fontSize:10,fontWeight:800,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>📅 Eventos ({dayEvts.length})</div>
 {dayEvts.map((ev,i)=>{const cl=evColor(ev.client);const typeCl=typeColors[ev.type]||T.ac;return <div key={ev.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 10px",borderLeft:"3px solid "+cl,background:T.c2+"40",borderRadius:6,marginBottom:4}}>
-<div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13,fontWeight:700}}>{ev.title||ev.house||"—"}</span><span style={{fontSize:8,padding:"2px 6px",borderRadius:3,background:typeCl+"20",color:typeCl,fontWeight:700}}>{ev.type}</span></div><div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",fontSize:10,color:T.dm,marginTop:3}}><span>{ev.client||""} · {ev.time||""}</span>{(ev.employees||[]).length>0?(ev.employees||[]).map(emp=><span key={emp} style={{display:"inline-flex",alignItems:"center",gap:3}}><span style={{width:16,height:16,borderRadius:8,background:cl,color:"#fff",fontSize:8,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>{emp.charAt(0).toUpperCase()}</span>{emp}</span>):<span>· sem equipe</span>}</div></div>
+<div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><span style={{fontSize:13,fontWeight:700}}>{ev.title||ev.house||"—"}</span><span style={{fontSize:8,padding:"2px 6px",borderRadius:3,background:typeCl+"20",color:typeCl,fontWeight:700}}>{ev.type}</span>{icalPlatformsLabel(ev)&&<span style={{fontSize:8,padding:"2px 6px",borderRadius:3,background:T.gr+"18",color:T.gr,fontWeight:700}}>🤖 {icalPlatformsLabel(ev)}</span>}</div><div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",fontSize:10,color:T.dm,marginTop:3}}><span>{ev.client||""} · {ev.time||""}</span>{(ev.employees||[]).length>0?(ev.employees||[]).map(emp=><span key={emp} style={{display:"inline-flex",alignItems:"center",gap:3}}><span style={{width:16,height:16,borderRadius:8,background:cl,color:"#fff",fontSize:8,fontWeight:700,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>{emp.charAt(0).toUpperCase()}</span>{emp}</span>):<span>· sem equipe</span>}</div></div>
 <div style={{display:"flex",gap:3,flexShrink:0}}>
 <button onClick={()=>setAgForm(ev)} style={bt(T.bl+"15",T.bl,{padding:"5px 8px",fontSize:9,borderRadius:5})} title="Editar">✏️</button>
 <button onClick={()=>{const prop=findProp(ev.house,ev.client);setSE((ev.employees||[])[0]||"");setWkFrom(ev.date);setWkTo(ev.date);setPM(ev.date?MO[new Date(ev.date+"T12:00").getMonth()]:pM);setPI([{id:Date.now(),c:ev.client||"",n:ev.house||ev.title||"",a:prop?prop.a:"",date:ev.date,ep:prop?prop.ep||0:0,ip:prop?prop.ip||0:0}]);setVw("payroll");setAgSelDay(null);fl("Folha criada!");}} style={bt(T.ac+"15",T.ac,{padding:"5px 8px",fontSize:9,borderRadius:5})} title="Folha">💰</button>
@@ -4522,7 +4570,7 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 {agForm&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:9997,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.15s ease"}} onClick={()=>setAgForm(null)}>
 <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:24,border:"1px solid "+T.bd,width:"100%",maxWidth:540,boxShadow:"0 16px 48px rgba(0,0,0,0.4)",maxHeight:"90vh",overflowY:"auto",animation:"popIn 0.2s ease"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15,fontWeight:800,color:T.ac}}>{agEvents.find(e=>e.id===agForm.id)?"✏️ Editar Evento":"📅 Novo Agendamento"}</span>{agForm.icalUid&&<span style={{fontSize:9,color:T.gr,background:T.gr+"15",padding:"2px 8px",borderRadius:4,fontWeight:700}}>🤖 iCal</span>}</div>
+<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15,fontWeight:800,color:T.ac}}>{agEvents.find(e=>e.id===agForm.id)?"✏️ Editar Evento":"📅 Novo Agendamento"}</span>{(agForm.icalUid||agForm.icalSources)&&<span style={{fontSize:9,color:T.gr,background:T.gr+"15",padding:"2px 8px",borderRadius:4,fontWeight:700}}>🤖 {icalPlatformsLabel(agForm)||"iCal"}</span>}</div>
 <button onClick={()=>setAgForm(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>
 <div style={{fontSize:10,fontWeight:800,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>⏰ QUANDO</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
@@ -6662,64 +6710,57 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
 </div>}
 
 {vw==="icalsync"&&(()=>{
-  const connectedHouses=db.filter(h=>h.icalUrl&&h.icalConfirmed);
-  const notConnectedHouses=db.filter(h=>!h.icalUrl||!h.icalConfirmed).filter(h=>h.n!=="(nova)");
+  const isConnected=(h)=>getIcalSources(h).some(s=>s.active&&s.url);
+  const connectedHouses=db.filter(isConnected);
+  const notConnectedHouses=db.filter(h=>!isConnected(h)).filter(h=>h.n!=="(nova)");
   const groupByClient=(houses)=>{const g={};houses.forEach(h=>{const c=h.c||"(sem cliente)";if(!g[c])g[c]=[];g[c].push(h);});return g;};
   const connByClient=groupByClient(connectedHouses);
   const notByClient=groupByClient(notConnectedHouses);
   const lastSyncEntry=icalSyncLog[0];
-  
-  const openTestModal=(house)=>{setIcalTestModal({house,url:house.icalUrl||"",testing:false,result:null});};
-  
-  const runTest=async()=>{
-    if(!icalTestModal||!icalTestModal.url.trim()){fl("Cole o link primeiro");return;}
-    setIcalTestModal({...icalTestModal,testing:true,result:null});
-    const result=await testICalConnection(icalTestModal.url);
-    setIcalTestModal({...icalTestModal,testing:false,result});
+
+  // Modal editor de lista: icalTestModal = { house, sources:[{id,platform,label,url,active,testing,result,lastResult,sourceName}] }
+  const openTestModal=(house)=>{const existing=getIcalSources(house);setIcalTestModal({house,sources:existing.length?existing.map(s=>({...s,testing:false,result:null})):[{id:icalUid(),platform:"airbnb",label:"Airbnb",url:"",active:true}]});};
+  const patchSource=(id,patch)=>setIcalTestModal(m=>({...m,sources:m.sources.map(s=>s.id===id?{...s,...patch}:s)}));
+  const addSource=()=>setIcalTestModal(m=>({...m,sources:[...m.sources,{id:icalUid(),platform:"airbnb",label:"Airbnb",url:"",active:true}]}));
+  const removeSource=(id)=>setIcalTestModal(m=>({...m,sources:m.sources.filter(s=>s.id!==id)}));
+  const testSource=async(id)=>{
+    const src=icalTestModal.sources.find(s=>s.id===id);
+    if(!src||!(src.url||"").trim()){fl("Cole o link primeiro");return;}
+    patchSource(id,{testing:true,result:null});
+    const result=await testICalConnection(src.url.trim());
+    patchSource(id,{testing:false,result,sourceName:(result&&result.success)?(result.propertyName||result.calName||src.sourceName||""):src.sourceName});
   };
-  
+
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
     {icalTestModal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(6px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setIcalTestModal(null)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <span style={{fontSize:14,fontWeight:800,color:T.ac}}>🔗 Conectar iCal — {icalTestModal.house.n}</span>
+      <div onClick={e=>e.stopPropagation()} style={{background:T.cd,borderRadius:16,padding:22,border:"1px solid "+T.ac+"60",width:"100%",maxWidth:600,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontSize:14,fontWeight:800,color:T.ac}}>🔗 Fontes iCal — {icalTestModal.house.n}</span>
           <button onClick={()=>setIcalTestModal(null)} style={{width:28,height:28,borderRadius:14,border:"none",background:T.dm+"15",color:T.dm,cursor:"pointer"}}>✕</button>
         </div>
-        <div style={{fontSize:11,color:T.dm,marginBottom:6}}>Cliente: <strong style={{color:T.tx}}>{icalTestModal.house.c||"—"}</strong></div>
-        <div style={{marginBottom:12}}>
-          <label style={lb}>URL iCal (do Airbnb, Vrbo, Booking, etc.)</label>
-          <textarea value={icalTestModal.url} onChange={e=>setIcalTestModal({...icalTestModal,url:e.target.value,result:null})} style={{...inp,width:"100%",minHeight:60,fontFamily:"monospace",fontSize:11}} placeholder="https://www.airbnb.com/calendar/ical/12345.ics?s=..."/>
-        </div>
-        {!icalTestModal.testing&&!icalTestModal.result&&<button onClick={runTest} style={bt(T.ac,T.bg,{padding:"10px 18px",fontSize:12,fontWeight:700,borderRadius:8,width:"100%"})}>🔍 Testar Conexão</button>}
-        {icalTestModal.testing&&<div style={{padding:14,textAlign:"center",color:T.ac,fontSize:12}}>⏳ Testando conexão...</div>}
-        {icalTestModal.result&&icalTestModal.result.success===false&&<div style={{padding:14,background:T.rd+"10",border:"1px solid "+T.rd+"40",borderRadius:8,marginTop:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:T.rd,marginBottom:6}}>❌ Erro</div>
-          <div style={{fontSize:11,color:T.tx}}>{icalTestModal.result.error}</div>
-          <button onClick={runTest} style={bt(T.ac+"15",T.ac,{padding:"8px 14px",fontSize:11,marginTop:10,borderRadius:6})}>🔁 Tentar Novamente</button>
-        </div>}
-        {icalTestModal.result&&icalTestModal.result.success&&<>
-          <div style={{padding:14,background:T.gr+"08",border:"1px solid "+T.gr+"40",borderRadius:8,marginTop:10,marginBottom:14}}>
-            <div style={{fontSize:13,fontWeight:800,color:T.gr,marginBottom:8}}>✅ Conexão OK!</div>
-            <div style={{fontSize:11,color:T.dm,marginBottom:4}}>Encontrei essa propriedade no iCal:</div>
-            <div style={{fontSize:13,color:T.tx,fontWeight:700,marginBottom:8}}>{icalTestModal.result.propertyName||icalTestModal.result.calName||"(sem nome)"}</div>
-            <div style={{display:"flex",gap:12,fontSize:11,color:T.dm}}>
-              <span>📅 {icalTestModal.result.totalEvents} eventos totais</span>
-              <span>🔜 {icalTestModal.result.futureEvents} reservas futuras</span>
+        <div style={{fontSize:11,color:T.dm,marginBottom:12}}>Cliente: <strong style={{color:T.tx}}>{icalTestModal.house.c||"—"}</strong> · adicione um link por plataforma (Airbnb, Booking, VRBO…)</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {icalTestModal.sources.map(s=>{const r=s.result;return <div key={s.id} style={{padding:12,background:T.bg,borderRadius:10,border:"1px solid "+(r?(r.success?T.gr+"55":T.rd+"55"):T.bd)}}>
+            <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,flexWrap:"wrap"}}>
+              <select value={s.platform} onChange={e=>{const p=e.target.value;patchSource(s.id,{platform:p,label:(!s.label||Object.values(ICAL_PLATFORM_LABEL).includes(s.label))?ICAL_PLATFORM_LABEL[p]:s.label});}} style={{...sel,width:120}}>{Object.keys(ICAL_PLATFORM_LABEL).map(p=><option key={p} value={p}>{ICAL_PLATFORM_LABEL[p]}</option>)}</select>
+              <input value={s.label||""} onChange={e=>patchSource(s.id,{label:e.target.value})} placeholder="Rótulo (ex: Airbnb)" style={{...inp,flex:1,minWidth:120}}/>
+              <label style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.dm,cursor:"pointer",fontWeight:600}}><input type="checkbox" checked={s.active!==false} onChange={e=>patchSource(s.id,{active:e.target.checked})} style={{width:15,height:15,cursor:"pointer",accentColor:T.ac}}/>Ativa</label>
+              <button onClick={()=>removeSource(s.id)} style={bt(T.rd+"15",T.rd,{padding:"6px 10px",fontSize:10,borderRadius:6})}>🗑️</button>
             </div>
-            {icalTestModal.result.events&&icalTestModal.result.events.length>0&&<div style={{marginTop:10,padding:"8px 10px",background:T.bg,borderRadius:6}}>
-              <div style={{fontSize:10,color:T.dm,fontWeight:700,marginBottom:5}}>PRÓXIMAS RESERVAS:</div>
-              {icalTestModal.result.events.slice(0,4).map((e,i)=><div key={i} style={{fontSize:11,color:T.tx,padding:"3px 0",borderBottom:i<3?"1px dashed "+T.bd:"none"}}>📅 {e.start} → {e.end||"?"}</div>)}
-            </div>}
-          </div>
-          <div style={{padding:12,background:T.ac+"08",borderRadius:8,marginBottom:14,border:"1px dashed "+T.ac+"40"}}>
-            <div style={{fontSize:12,fontWeight:700,color:T.ac,marginBottom:5}}>⚠️ Confirma o vínculo?</div>
-            <div style={{fontSize:11,color:T.tx,lineHeight:1.5}}>Você está vinculando o iCal "<strong>{icalTestModal.result.propertyName||"sem nome"}</strong>" à sua casa <strong>{icalTestModal.house.n}</strong> (cliente {icalTestModal.house.c}).<br/><br/>De agora em diante, reservas desse iCal vão criar turnovers com <strong>SEUS códigos e dados</strong>, não com o nome do Airbnb.</div>
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>confirmICalConnection(icalTestModal.house.n,icalTestModal.house.c,icalTestModal.url,icalTestModal.result)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:12,fontWeight:700,borderRadius:8})}>✅ Confirmar Vínculo</button>
-            <button onClick={()=>setIcalTestModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:8})}>Cancel</button>
-          </div>
-        </>}
+            <textarea value={s.url||""} onChange={e=>patchSource(s.id,{url:e.target.value,result:null})} style={{...inp,width:"100%",minHeight:46,fontFamily:"monospace",fontSize:11}} placeholder="https://www.airbnb.com/calendar/ical/12345.ics?s=..."/>
+            <div style={{display:"flex",gap:8,alignItems:"center",marginTop:8,flexWrap:"wrap"}}>
+              <button onClick={()=>testSource(s.id)} disabled={s.testing} style={bt(T.ac+"15",T.ac,{padding:"6px 12px",fontSize:11,borderRadius:6,opacity:s.testing?0.5:1})}>{s.testing?"⏳ Testando…":"🔍 Testar"}</button>
+              {s.lastResult&&!r&&<span style={{fontSize:10,color:s.lastResult==="error"?T.rd:T.gr}}>{s.lastResult==="error"?"❌ último sync falhou":"✓ último sync OK"}</span>}
+              {r&&r.success&&<span style={{fontSize:11,color:T.gr,fontWeight:700}}>✅ OK · {r.propertyName||r.calName||"sem nome"} · 🔜 {r.futureEvents} futuras</span>}
+              {r&&r.success===false&&<span style={{fontSize:11,color:T.rd,fontWeight:700}}>❌ {r.error}</span>}
+            </div>
+          </div>;})}
+        </div>
+        <button onClick={addSource} style={bt(T.ac+"12",T.ac,{padding:"9px 14px",fontSize:11,fontWeight:700,borderRadius:8,width:"100%",marginTop:10,border:"1px dashed "+T.ac+"55"})}>+ Adicionar fonte</button>
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button onClick={()=>saveIcalSources(icalTestModal.house.n,icalTestModal.house.c,icalTestModal.sources)} style={bt(T.gr,T.bg,{flex:1,padding:"12px",fontSize:12,fontWeight:700,borderRadius:8})}>💾 Salvar</button>
+          <button onClick={()=>setIcalTestModal(null)} style={bt(T.dm+"15",T.dm,{padding:"12px 18px",fontSize:12,borderRadius:8})}>Cancelar</button>
+        </div>
       </div>
     </div>}
     
@@ -6751,13 +6792,11 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
       {Object.entries(connByClient).map(([client,houses])=><div key={client} style={{marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,color:T.ac,marginBottom:6}}>{client} ({houses.length})</div>
         {houses.map(h=>{
-          const lastSyncResult=h.icalLastResult;
-          const statusColor=lastSyncResult==="error"?T.rd:lastSyncResult==="ok"?T.gr:T.dm;
+          const srcs=getIcalSources(h).filter(s=>s.url);
           return <div key={h.id} style={{padding:"10px 12px",background:T.bg,borderRadius:8,marginBottom:5,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap",border:"1px solid "+T.bd}}>
             <div style={{flex:1,minWidth:180}}>
               <div style={{fontSize:12,fontWeight:700}}>{h.n}</div>
-              <div style={{fontSize:9,color:T.dm,marginTop:2}}>🔗 {h.icalSourceName||"sem nome"}</div>
-              {h.icalLastSync&&<div style={{fontSize:9,color:statusColor,marginTop:2}}>{lastSyncResult==="error"?"❌":"✓"} Sync: {new Date(h.icalLastSync).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>}
+              {srcs.map(s=>{const c=s.lastResult==="error"?T.rd:s.lastResult==="ok"?T.gr:T.dm;return <div key={s.id} style={{fontSize:9,color:c,marginTop:2}}>{s.active===false?"⏸️":s.lastResult==="error"?"❌":s.lastResult==="ok"?"✓":"🔗"} {s.label||ICAL_PLATFORM_LABEL[s.platform]||"iCal"}{s.lastSync?" · "+new Date(s.lastSync).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}</div>;})}
             </div>
             <div style={{display:"flex",gap:5}}>
               <button onClick={()=>openTestModal(h)} style={bt(T.bl+"15",T.bl,{padding:"6px 10px",fontSize:10,borderRadius:5})}>✏️ Editar</button>
@@ -6792,7 +6831,8 @@ h+=pdfFooter()+"</body></html>";w.document.write(h);w.document.close();setTimeou
         </summary>
         <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.bd,fontSize:10}}>
           {entry.details.map((d,j)=><div key={j} style={{padding:"3px 0",color:d.status==="error"?T.rd:T.tx}}>
-            {d.status==="error"?"❌ "+d.house+": "+d.msg:"✓ "+d.house+" — +"+d.created+" criados, "+d.updated+" atualizados, "+d.removed+" removidos"}
+            {d.status==="error"?"❌ "+d.house+": "+(d.msg||"todas as fontes falharam"):"✓ "+d.house+" — +"+d.created+" criados, "+d.updated+" atualizados, "+d.removed+" removidos"}
+            {(d.sources||[]).filter(s=>!s.ok).map((s,k)=><div key={k} style={{paddingLeft:14,color:T.rd,fontSize:9}}>↳ ❌ {s.label}: {s.error}</div>)}
           </div>)}
         </div>
       </details>)}
