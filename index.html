@@ -1042,13 +1042,15 @@ const syncOneHouseFromICal=async(houseObj,currentAgEvents)=>{
 
   // 2) Reservas válidas: futuras, não canceladas e não-bloqueio-de-dono
   const futureRes=pool.filter(e=>e.start&&e.end&&e.end>=today&&(!e.status||e.status!=="CANCELLED")&&!isOwnerBlock(e.summary));
+  // Candidatos a "próximo check-in": todos os DTSTART (reservas reais, todas as fontes), ordenados
+  const allStarts=[...new Set(futureRes.map(r=>r.start).filter(Boolean))].sort();
 
   // 3) Dedup por data de checkout (DTEND): um Turnover por casa+data, com todas as fontes que o geraram
   const byDate={}; // turnoverDate -> {date, sources:[{platform,uid,label}], checkIn, checkOut, stayNights}
   futureRes.forEach(res=>{
     if(!res.end)return;
     const d=res.end;
-    if(!byDate[d])byDate[d]={date:d,sources:[],checkIn:res.start,checkOut:res.end,stayNights:stayNightsOf(res.start,res.end)};
+    if(!byDate[d]){const nextCheckIn=allStarts.find(s=>s>=d)||null;byDate[d]={date:d,sources:[],checkIn:res.start,checkOut:res.end,stayNights:stayNightsOf(res.start,res.end),nextCheckIn,sameDay:nextCheckIn===d};}
     // evita duplicar a mesma (plataforma+uid) no mesmo dia
     if(!byDate[d].sources.some(x=>x.platform===res._srcPlatform&&x.uid===res.uid))
       byDate[d].sources.push({platform:res._srcPlatform,uid:res.uid||null,label:res._srcLabel});
@@ -1064,8 +1066,8 @@ const syncOneHouseFromICal=async(houseObj,currentAgEvents)=>{
     // Reconciliação por (casa + data + é-iCal) — migra em lugar eventos antigos que só têm icalUid
     const existing=newAg.find(ev=>ev.house===houseObj.n&&ev.date===turnoverDate&&isIcalEvent(ev));
     if(existing){
-      const changed=JSON.stringify(existing.icalSources||[])!==JSON.stringify(grp.sources)||existing.checkIn!==grp.checkIn||existing.checkOut!==grp.checkOut;
-      newAg=newAg.map(ev=>ev===existing?{...ev,icalSources:grp.sources,icalUid:(grp.sources[0]&&grp.sources[0].uid)||ev.icalUid,icalSource:(grp.sources[0]&&grp.sources[0].platform)||ev.icalSource,source:"ical",checkIn:grp.checkIn,checkOut:grp.checkOut,stayNights:grp.stayNights}:ev);
+      const changed=JSON.stringify(existing.icalSources||[])!==JSON.stringify(grp.sources)||existing.checkIn!==grp.checkIn||existing.checkOut!==grp.checkOut||existing.nextCheckIn!==grp.nextCheckIn;
+      newAg=newAg.map(ev=>ev===existing?{...ev,icalSources:grp.sources,icalUid:(grp.sources[0]&&grp.sources[0].uid)||ev.icalUid,icalSource:(grp.sources[0]&&grp.sources[0].platform)||ev.icalSource,source:"ical",checkIn:grp.checkIn,checkOut:grp.checkOut,stayNights:grp.stayNights,nextCheckIn:grp.nextCheckIn,sameDay:grp.sameDay}:ev);
       if(changed)updated++;
     }else{
       newAg.push({
@@ -1083,6 +1085,8 @@ const syncOneHouseFromICal=async(houseObj,currentAgEvents)=>{
         checkIn:grp.checkIn,
         checkOut:grp.checkOut,
         stayNights:grp.stayNights,
+        nextCheckIn:grp.nextCheckIn,
+        sameDay:grp.sameDay,
         createdAt:new Date().toISOString()
       });
       created++;
@@ -4587,12 +4591,12 @@ return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"r
 <div style={{fontSize:10,color:T.bl,fontWeight:700,marginBottom:6}}>📅 PRÓXIMO HÓSPEDE</div>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
 <div><label style={lb}>Check-out (anterior)</label><DI value={agForm.checkOut||""} onChange={e=>setAgForm({...agForm,checkOut:e.target.value})} style={{...inp,width:"100%"}}/></div>
-<div><label style={lb}>Check-in (próximo)</label><DI value={agForm.checkIn||""} onChange={e=>setAgForm({...agForm,checkIn:e.target.value})} style={{...inp,width:"100%"}}/></div>
+<div><label style={lb}>Check-in (próximo)</label><DI value={agForm.nextCheckIn||""} onChange={e=>setAgForm({...agForm,nextCheckIn:e.target.value})} style={{...inp,width:"100%"}}/>{!agForm.nextCheckIn&&<div style={{fontSize:9,color:T.dm,marginTop:3}}>sem próxima reserva</div>}{agForm.nextCheckIn&&agForm.nextCheckIn===agForm.date&&<span style={{display:"inline-block",marginTop:4,fontSize:9,padding:"2px 6px",borderRadius:3,background:T.or+"20",color:T.or,fontWeight:700}}>⚡ same-day</span>}</div>
 <div><label style={lb}>Hora Check-in</label><TI value={agForm.checkInTime||""} onChange={e=>setAgForm({...agForm,checkInTime:e.target.value})} style={{...inp,width:"100%"}} placeholder="16:00"/></div>
 <div><label style={lb}>Hóspedes</label><NI value={agForm.guests??""} onChange={e=>setAgForm({...agForm,guests:e.target.value===""?undefined:Math.max(0,parseInt(e.target.value)||0)})} style={{...inp,width:"100%"}}/></div>
 <div style={{gridColumn:"1/3",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}><label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:11,color:T.tx,fontWeight:600}}><input type="checkbox" checked={!!agForm.pets} onChange={e=>setAgForm({...agForm,pets:e.target.checked})} style={{width:16,height:16,cursor:"pointer",accentColor:T.ac}}/>🐾 Próximo check-in tem pets</label></div>
 </div>
-{agForm.checkIn===agForm.date&&agForm.date&&<div style={{marginTop:8,padding:"6px 10px",background:T.rd+"15",borderRadius:6,fontSize:10,color:T.rd,fontWeight:700}}>🔥 SAME DAY — hóspede chega no mesmo dia do turnover</div>}
+{agForm.nextCheckIn&&agForm.nextCheckIn===agForm.date&&<div style={{marginTop:8,padding:"6px 10px",background:T.rd+"15",borderRadius:6,fontSize:10,color:T.rd,fontWeight:700}}>🔥 SAME DAY — hóspede chega no mesmo dia do turnover</div>}
 {agForm.stayNights&&<div style={{marginTop:6,fontSize:10,color:T.dm}}>🛏️ Estadia: {agForm.stayNights} noite{agForm.stayNights>1?"s":""}</div>}
 </div>}
 <div style={{fontSize:10,fontWeight:800,color:T.dm,textTransform:"uppercase",letterSpacing:"1px",marginTop:12,marginBottom:8}}>👥 QUEM · {(agForm.employees||[]).length} de {em.length}</div>
