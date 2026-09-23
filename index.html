@@ -1699,7 +1699,8 @@ const invDue=getInvoicesDueToday().filter(d=>!d.alreadyGenerated&&!d.alreadyTrig
 const payDueObj=getPayrollDueToday();
 const payPending=payDueObj&&!payDueObj.alreadyTriggered;
 const td=getLocalDate(),tm=getLocalDateOffset(1);
-const turnoversNoInsp=agEvents.filter(e=>(e.type==="Turnover"||!e.type)&&(e.checkIn===td||e.checkIn===tm)&&!inspections.find(i=>i.house===e.house&&i.date===e.date));
+const effInDate=(e)=>("nextCheckIn" in e)?(e.nextCheckIn||null):e.checkIn; // presente: string=>usa, null/""=>null(não notifica); ausente=>fallback checkIn
+const turnoversNoInsp=agEvents.filter(e=>{if(!(e.type==="Turnover"||!e.type))return false;const d=effInDate(e);return !!d&&(d===td||d===tm)&&!inspections.find(i=>i.house===e.house&&i.date===e.date);});
 const totalNotif=invDue.length+(payPending?1:0)+turnoversNoInsp.length;
 const userName=(userEmail||"").split("@")[0].replace(/[._-]/g," ").replace(/\b\w/g,c=>c.toUpperCase())||"User";
 const userInitial=(userEmail||"?").trim().charAt(0).toUpperCase()||"?";
@@ -1721,7 +1722,7 @@ return <React.Fragment>
 {totalNotif===0?<div style={{padding:"20px 10px",fontSize:12,color:T.dm,textAlign:"center"}}>Nada pendente ✓</div>:<React.Fragment>
 {invDue.map((d,i)=><div key={"i"+i} onClick={()=>{setVw("invoice");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>📄</span><span><b>{d.client||"—"}</b> — {d.turnoverCount}x</span></div>)}
 {payPending&&<div onClick={()=>{setVw("payroll");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>💰</span><span>Folha pendente — <b>{payDueObj.cleanerCount}</b> cleaner(s)</span></div>}
-{turnoversNoInsp.map((e,i)=><div key={"t"+i} onClick={()=>{setVw("inspect");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>🔍</span><span>Inspeção <b>{e.house}</b> ({e.checkIn})</span></div>)}
+{turnoversNoInsp.map((e,i)=><div key={"t"+i} onClick={()=>{setVw("inspect");setNotifOpen(false);}} onMouseEnter={ev=>ev.currentTarget.style.background=T.bd+"4d"} onMouseLeave={ev=>ev.currentTarget.style.background="transparent"} style={{padding:"10px",cursor:"pointer",borderRadius:7,fontSize:12,color:T.tx,display:"flex",alignItems:"center",gap:10,transition:"background 0.15s"}}><span style={{fontSize:16}}>🔍</span><span>Inspeção <b>{e.house}</b> ({effInDate(e)})</span></div>)}
 </React.Fragment>}
 </div>}
 </div>
